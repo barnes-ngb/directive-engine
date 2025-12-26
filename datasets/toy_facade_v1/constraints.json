@@ -1,0 +1,59 @@
+{
+  "jobId": "toy_facade_v1",
+  "defaults": {
+    "toleranceMm": 2.0,
+    "confidenceThreshold": 0.85
+  },
+  "parts": {
+    "P-0001": {
+      "allowedTranslations": {
+        "axes": [
+          "x",
+          "y",
+          "z"
+        ],
+        "maxMm": 15
+      },
+      "allowedRotation": {
+        "type": "none"
+      },
+      "tolerances": {
+        "translationMm": 2.0,
+        "rotationDeg": 1.0
+      },
+      "notes": [
+        "Loosen anchors A/B",
+        "Shim behind bracket if needed",
+        "Re-torque to spec"
+      ]
+    },
+    "P-0002": {
+      "allowedTranslations": {
+        "axes": [
+          "x",
+          "y"
+        ],
+        "maxMm": 10
+      },
+      "allowedRotation": {
+        "type": "index",
+        "axis": "z",
+        "stepDegrees": 90,
+        "allowedIndices": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "tolerances": {
+        "translationMm": 2.0,
+        "rotationDeg": 1.0
+      },
+      "notes": [
+        "Rotate to nearest index",
+        "Verify plumb after adjustment"
+      ]
+    }
+  }
+}

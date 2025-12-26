@@ -1,0 +1,51 @@
+{
+  "job": {
+    "jobId": "toy_facade_v1",
+    "site": "demo"
+  },
+  "units": "mm",
+  "parts": [
+    {
+      "partId": "P-0001",
+      "T_world_part_asBuilt": {
+        "t": [
+          1000,
+          0,
+          0
+        ],
+        "q": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "confidence": 0.92,
+      "source": {
+        "type": "scan",
+        "id": "scan_001"
+      }
+    },
+    {
+      "partId": "P-0002",
+      "T_world_part_asBuilt": {
+        "t": [
+          2000,
+          5,
+          0
+        ],
+        "q": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "confidence": 0.88,
+      "source": {
+        "type": "scan",
+        "id": "scan_001"
+      }
+    }
+  ]
+}

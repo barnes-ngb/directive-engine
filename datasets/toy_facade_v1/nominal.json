@@ -1,0 +1,41 @@
+{
+  "job": {
+    "jobId": "toy_facade_v1",
+    "site": "demo"
+  },
+  "units": "mm",
+  "parts": [
+    {
+      "partId": "P-0001",
+      "T_world_part_nominal": {
+        "t": [
+          997,
+          1,
+          0
+        ],
+        "q": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "partId": "P-0002",
+      "T_world_part_nominal": {
+        "t": [
+          1998.5,
+          4.5,
+          0
+        ],
+        "q": [
+          0,
+          0,
+          0.7071068,
+          0.7071068
+        ]
+      }
+    }
+  ]
+}

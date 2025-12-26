@@ -1,0 +1,67 @@
+{
+  "jobId": "toy_facade_v1",
+  "generatedAt": "2025-12-26T00:00:00Z",
+  "metrics": {
+    "beforeMaxDeviationMm": 3.2,
+    "afterMaxDeviationMm": 0.5
+  },
+  "steps": [
+    {
+      "stepId": "S-0001",
+      "partId": "P-0001",
+      "priority": 1,
+      "status": "ok",
+      "actions": [
+        {
+          "type": "translate",
+          "frame": "part",
+          "vectorMm": [
+            -3.0,
+            1.0,
+            0.0
+          ]
+        }
+      ],
+      "verification": {
+        "type": "measure",
+        "passIfMaxDeviationMm": 2.0
+      },
+      "notes": [
+        "Loosen anchors A/B",
+        "Shim behind bracket if needed",
+        "Re-torque to spec"
+      ]
+    },
+    {
+      "stepId": "S-0002",
+      "partId": "P-0002",
+      "priority": 2,
+      "status": "ok",
+      "actions": [
+        {
+          "type": "translate",
+          "frame": "part",
+          "vectorMm": [
+            -1.5,
+            -0.5,
+            0.0
+          ]
+        },
+        {
+          "type": "rotate_index",
+          "frame": "part",
+          "axis": "z",
+          "index": 1
+        }
+      ],
+      "verification": {
+        "type": "rescan",
+        "passIfMaxDeviationMm": 2.0
+      },
+      "notes": [
+        "Rotate to nearest index",
+        "Verify plumb after adjustment"
+      ]
+    }
+  ]
+}

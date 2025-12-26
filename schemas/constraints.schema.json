@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/constraints.schema.json",
+  "title": "ConstraintsDataset",
+  "type": "object",
+  "required": [
+    "jobId",
+    "defaults",
+    "parts"
+  ],
+  "properties": {
+    "jobId": {
+      "type": "string"
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "toleranceMm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "confidenceThreshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "parts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "allowedTranslations": {
+            "type": "object",
+            "properties": {
+              "axes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "x",
+                    "y",
+                    "z"
+                  ]
+                }
+              },
+              "maxMm": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          },
+          "allowedRotation": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "continuous",
+                  "index"
+                ]
+              },
+              "axis": {
+                "type": "string",
+                "enum": [
+                  "x",
+                  "y",
+                  "z"
+                ]
+              },
+              "maxDegrees": {
+                "type": "number",
+                "minimum": 0
+              },
+              "stepDegrees": {
+                "type": "number",
+                "minimum": 0
+              },
+              "allowedIndices": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "tolerances": {
+            "type": "object",
+            "properties": {
+              "translationMm": {
+                "type": "number",
+                "minimum": 0
+              },
+              "rotationDeg": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/as_built.schema.json",
+  "title": "AsBuiltDataset",
+  "type": "object",
+  "required": [
+    "job",
+    "units",
+    "parts"
+  ],
+  "properties": {
+    "job": {
+      "type": "object",
+      "required": [
+        "jobId"
+      ],
+      "properties": {
+        "jobId": {
+          "type": "string"
+        },
+        "site": {
+          "type": "string"
+        }
+      }
+    },
+    "units": {
+      "type": "string",
+      "enum": [
+        "mm",
+        "cm",
+        "m",
+        "in"
+      ]
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "partId",
+          "T_world_part_asBuilt",
+          "confidence"
+        ],
+        "properties": {
+          "partId": {
+            "type": "string"
+          },
+          "T_world_part_asBuilt": {
+            "$ref": "#/$defs/transform"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "scan",
+                  "total_station",
+                  "manual"
+                ]
+              },
+              "id": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "transform": {
+      "type": "object",
+      "required": [
+        "t",
+        "q"
+      ],
+      "properties": {
+        "t": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "q": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      }
+    }
+  }
+}
