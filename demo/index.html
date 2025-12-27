@@ -3,38 +3,51 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Directive Engine — Browser Demo</title>
+    <title>Directive Engine Demo</title>
+    <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <div id="app">
-      <header class="hero">
-        <div>
-          <p class="eyebrow">Directive Engine · v0.1</p>
-          <h1>Installer Directive Center</h1>
-          <p class="subhead">Load nominal + as-built data, compute correction directives, and verify closure.</p>
-        </div>
-        <div class="dataset-card">
-          <p class="label">Dataset</p>
-          <p id="dataset-name" class="value">Loading…</p>
-          <p id="dataset-meta" class="meta">&nbsp;</p>
-        </div>
-      </header>
+    <header class="page-header">
+      <div>
+        <h1>Directive Engine Demo</h1>
+        <p class="subtitle">Minimal shell for browser-based runs</p>
+      </div>
+      <button class="run-button" type="button">Run</button>
+    </header>
 
-      <main>
-        <section class="summary">
-          <div>
-            <h2>Summary</h2>
-            <p id="summary-caption">Computing directive output…</p>
-          </div>
-          <div id="summary-counts" class="summary-grid"></div>
-        </section>
+    <main class="page-content">
+      <section class="panel" aria-labelledby="parts-title">
+        <h2 id="parts-title">Part List</h2>
+        <div class="panel-body" id="part-list">
+          <p class="placeholder">Parts will appear here.</p>
+        </div>
+      </section>
 
-        <section>
-          <h2>Directive Cards</h2>
-          <div id="cards" class="cards"></div>
-        </section>
-      </main>
-    </div>
-    <script type="module" src="../src/web/index.ts"></script>
+      <section class="panel" aria-labelledby="status-title">
+        <div class="panel-header">
+          <h2 id="status-title">Status</h2>
+          <span class="badge" id="status-badge">Idle</span>
+        </div>
+        <div class="panel-body" id="status-details">
+          <p class="placeholder">Status details will appear here.</p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="actions-title">
+        <h2 id="actions-title">Action List</h2>
+        <div class="panel-body" id="action-list">
+          <p class="placeholder">Actions will appear here.</p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="verification-title">
+        <h2 id="verification-title">Verification Expected Residual</h2>
+        <div class="panel-body" id="verification-residual">
+          <p class="placeholder">Expected residual output will appear here.</p>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./main.ts"></script>
   </body>
 </html>
