@@ -12,11 +12,22 @@ Runs in browser so it can be deployed to any device as a static web app.
 - site/            # (optional) docs/marketing; keep minimal
 
 ## Canonical fixtures
-Use these fixtures for tests and the browser demo (v0.1):
+Two toy fixture sets coexist, each aligned to a different schema/version:
+
+**v0.1 schema fixtures (canonical for v0.1 tests/demo):**
 - Nominal poses: `datasets/toy_v0_1/toy_nominal_poses.json`
 - As-built poses: `datasets/toy_v0_1/toy_asbuilt_poses.json`
 - Constraints: `datasets/toy_v0_1/toy_constraints.json`
 - Expected directives: `datasets/toy_v0_1/expected_directives.json`
+
+**Legacy facade fixtures (toy_facade_v1):**
+- Nominal poses: `datasets/toy_facade_v1/nominal.json`
+- As-built poses: `datasets/toy_facade_v1/as_built.json`
+- Constraints: `datasets/toy_facade_v1/constraints.json`
+- Expected directives: `datasets/toy_facade_v1/expected_directives.json`
+
+Use the v0.1 schema fixtures when validating `schemas/*` v0.1 expectations, and use
+`toy_facade_v1` only for legacy/facade compatibility checks.
 
 Note: There is no `data/` directory in this repo; use `datasets/` instead.
 
