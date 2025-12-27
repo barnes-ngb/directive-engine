@@ -58,7 +58,7 @@ describe("extractPartSummaries", () => {
     const summaries = extractPartSummaries({ ...baseDirectives, steps });
 
     expect(summaries).toHaveLength(2);
-    expect(summaries.map((summary) => summary.part_id)).toEqual(["P1", "P2"]);
+    expect(summaries.map((summary) => summary.id)).toEqual(["P1", "P2"]);
     expect(summaries[1].status).toBe("ok");
   });
 
@@ -70,7 +70,7 @@ describe("extractPartSummaries", () => {
     const directives: DirectivesWithStepMap = { ...baseDirectives, steps: stepMap };
     const summaries = extractPartSummaries(directives);
 
-    expect(summaries.map((summary) => summary.part_id)).toEqual(["P1", "P2"]);
+    expect(summaries.map((summary) => summary.id)).toEqual(["P1", "P2"]);
     expect(summaries[0].status).toBe("blocked");
   });
 });
@@ -90,7 +90,8 @@ describe("deriveOverallStatus", () => {
       }
     };
 
-    expect(deriveOverallStatus(directives)).toBe(STATUS_PRIORITY[0]);
+    const parts = extractPartSummaries(directives);
+    expect(deriveOverallStatus(parts, directives)).toBe(STATUS_PRIORITY[0]);
   });
 
   it("aggregates statuses from steps when summary is empty", () => {
@@ -113,7 +114,8 @@ describe("deriveOverallStatus", () => {
       steps
     };
 
-    expect(deriveOverallStatus(directives)).toBe("clamped");
+    const parts = extractPartSummaries(directives);
+    expect(deriveOverallStatus(parts, directives)).toBe("clamped");
   });
 });
 
@@ -141,7 +143,7 @@ describe("describeAction", () => {
       clamp_applied: false
     };
 
-    expect(describeAction(action)).toBe("Translate by [1.00, 2.00, 3.00] mm");
+    expect(describeAction(action)).toBe("Translate (Δt: [1.00, 2.00, 3.00] mm)");
   });
 
   it("describes rotation actions with and without axis", () => {
@@ -160,8 +162,8 @@ describe("describeAction", () => {
       clamp_applied: false
     };
 
-    expect(describeAction(withAxis)).toBe("Rotate about Y axis");
-    expect(describeAction(withoutAxis)).toBe("Rotate about ? axis");
+    expect(describeAction(withAxis)).toBe("Rotate (Axis: Y)");
+    expect(describeAction(withoutAxis)).toBe("Rotate (Axis: ?)");
   });
 
   it("describes rotate-to-index actions and no-ops", () => {
@@ -187,8 +189,8 @@ describe("describeAction", () => {
       clamp_applied: false
     };
 
-    expect(describeAction(indexed)).toBe("Rotate to index 4");
-    expect(describeAction(missingIndex)).toBe("Rotate to index n/a");
+    expect(describeAction(indexed)).toBe("Rotate to index (Index: 4)");
+    expect(describeAction(missingIndex)).toBe("Rotate to index (Index: n/a)");
     expect(describeAction(noop)).toBe("No action");
   });
 });

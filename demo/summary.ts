@@ -1,12 +1,19 @@
-import type { Action, DirectivesOutput, Status, Step, Vec3 } from "../src/core/types.js";
+import type {
+  Action,
+  DirectivesOutput,
+  Status,
+  Step,
+  Vec3,
+  Verification
+} from "../src/core/types.js";
 
 export const STATUS_PRIORITY: Status[] = ["blocked", "needs_review", "clamped", "pending", "ok"];
 
 export type PartSummary = {
-  part_id: string;
+  id: string;
   status: Status;
   actions: Action[];
-  step: Step;
+  expectedResidual: Verification["expected_residual"] | null;
 };
 
 type DirectivesLike = Omit<DirectivesOutput, "steps" | "summary"> & {
@@ -31,19 +38,22 @@ function normalizeSteps(steps: Step[] | Record<string, Step>): Step[] {
 
 export function extractPartSummaries(directives: DirectivesLike): PartSummary[] {
   return normalizeSteps(directives.steps).map((step) => ({
-    part_id: step.part_id,
+    id: step.part_id,
     status: step.status,
-    actions: step.actions,
-    step
+    actions: step.actions ?? [],
+    expectedResidual: step.verification?.[0]?.expected_residual ?? null
   }));
 }
 
-export function deriveOverallStatus(directives: DirectivesLike): Status {
-  let counts = normalizeStatusCounts(directives.summary?.counts_by_status);
+export function deriveOverallStatus(
+  parts: PartSummary[],
+  directives?: Pick<DirectivesLike, "summary">
+): Status {
+  let counts = normalizeStatusCounts(directives?.summary?.counts_by_status);
 
   if (Object.values(counts).every((value) => value === 0)) {
-    const aggregated = normalizeSteps(directives.steps).reduce((acc, step) => {
-      acc[step.status] = (acc[step.status] ?? 0) + 1;
+    const aggregated = parts.reduce((acc, part) => {
+      acc[part.status] = (acc[part.status] ?? 0) + 1;
       return acc;
     }, {} as Record<Status, number>);
     counts = normalizeStatusCounts(aggregated);
@@ -56,8 +66,8 @@ export function deriveOverallStatus(directives: DirectivesLike): Status {
   return "ok";
 }
 
-export function formatResidual(value: number | null | undefined, digits = 2): string {
-  if (value === null || value === undefined || !Number.isFinite(value)) return "n/a";
+export function formatResidual(value: number | null, digits = 2): string {
+  if (value === null || !Number.isFinite(value)) return "n/a";
   return value.toFixed(digits);
 }
 
@@ -66,18 +76,30 @@ function formatVec3(value: Vec3 | null | undefined, digits = 2): string {
   return value.map((component) => formatResidual(component, digits)).join(", ");
 }
 
-export function describeAction(action?: Action): string {
+export function describeAction(action?: Partial<Action> | null): string {
   if (!action) return "No action";
+  const description = action.description?.trim();
+  const typeLabel = action.type?.replace(/_/g, " ") ?? "action";
+  const base =
+    description ||
+    (action.type === "noop" ? "No action" : typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1));
+  let detail = "";
   switch (action.type) {
     case "translate":
-      return `Translate by [${formatVec3(action.delta?.translation_mm)}] mm`;
+      detail = `Δt: [${formatVec3(action.delta?.translation_mm)}] mm`;
+      break;
     case "rotate":
-      return `Rotate about ${action.axis ? action.axis.toUpperCase() : "?"} axis`;
+      detail = `Axis: ${action.axis ? action.axis.toUpperCase() : "?"}`;
+      break;
     case "rotate_to_index":
-      return `Rotate to index ${action.target_index ?? "n/a"}`;
+      detail = `Index: ${action.target_index ?? "n/a"}`;
+      break;
     case "noop":
-      return "No action";
+      detail = "";
+      break;
     default:
-      return "Action";
+      detail = "";
+      break;
   }
+  return detail ? `${base} (${detail})` : base;
 }
