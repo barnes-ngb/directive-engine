@@ -15,8 +15,40 @@ When reality capture shows deviations, teams still need **field-executable instr
 ## What’s included
 - `docs/` — overview, demo script, data contract
 - `schemas/` — JSON Schemas for inputs/outputs
-- `datasets/` — toy dataset + golden expected output
+- `datasets/` — fixture datasets + golden expected outputs
 - `site/` — markdown “website bones” (content-only)
+
+## Core API usage (v0.1)
+`generateDirectives` is the canonical entry point for producing installer-ready directives.
+The v0.1 contract assumes:
+- **Units**: millimeters
+- **Pose**: `T_world_part` (pose of part frame in world)
+- **Rotation**: quaternion `[x, y, z, w]`
+- **Statuses**: `ok | pending | clamped | blocked | needs_review`
+- **Actions**: `translate | rotate | rotate_to_index | noop`
+
+```ts
+import { generateDirectives } from "./src/core/index.js";
+import type { NominalPosesDataset, AsBuiltPosesDataset, ConstraintsDataset } from "./src/core/types.js";
+
+const nominal: NominalPosesDataset = /* load datasets/toy_facade_v1/nominal.json */;
+const asBuilt: AsBuiltPosesDataset = /* load datasets/toy_facade_v1/as_built.json */;
+const constraints: ConstraintsDataset = /* load datasets/toy_facade_v1/constraints.json */;
+
+const directives = generateDirectives(nominal, asBuilt, constraints, {
+  inputPaths: {
+    nominal: "datasets/toy_facade_v1/nominal.json",
+    asBuilt: "datasets/toy_facade_v1/as_built.json",
+    constraints: "datasets/toy_facade_v1/constraints.json"
+  },
+  engineVersion: "directive-engine/0.1.0"
+});
+```
+
+## Fixture datasets
+All fixture data lives under `datasets/`:
+- `datasets/toy_facade_v1/` — primary v0.1 reference fixtures.
+- `datasets/toy_v0_1/` — additional v0.1 variants for regression checks.
 
 ## Quickstart (high-level)
 1. Start by validating the dataset schemas:
@@ -39,6 +71,14 @@ When reality capture shows deviations, teams still need **field-executable instr
    - show directive card
    - visualize correction gizmo
    - simulate apply + show before/after metric
+
+## Commands
+```bash
+npm install
+npm test
+npm run dev
+npm run build
+```
 
 ## License
 Add MIT or Apache-2.0 (or your preference) once you’re ready to publish widely.
