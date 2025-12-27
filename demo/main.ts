@@ -4,17 +4,22 @@ import type {
   ConstraintsDataset,
   DirectivesOutput,
   NominalPosesDataset,
-  Status,
-  Step
+  Status
 } from "../src/types.js";
+import {
+  describeAction,
+  deriveOverallStatus,
+  extractPartSummaries,
+  formatResidual,
+  statusPriority,
+  type PartSummary
+} from "./summary.js";
 
 type DatasetPaths = {
   nominal: string;
   asBuilt: string;
   constraints: string;
 };
-
-const statusPriority: Status[] = ["blocked", "needs_review", "clamped", "pending", "ok"];
 const statusClasses = new Set(statusPriority);
 
 const runButton = document.querySelector<HTMLButtonElement>(".run-button");
@@ -29,11 +34,12 @@ const errorBanner = document.querySelector<HTMLDivElement>("#error-banner");
 let cachedDirectives: DirectivesOutput | null = null;
 let cachedNominal: NominalPosesDataset | null = null;
 let cachedAsBuilt: AsBuiltPosesDataset | null = null;
+let cachedParts: PartSummary[] = [];
 let selectedPartId: string | null = null;
 
-function formatVec(vec?: [number, number, number], digits = 2): string {
+function formatVec(vec?: [number, number, number]): string {
   if (!vec) return "n/a";
-  return `[${vec.map((value) => value.toFixed(digits)).join(", ")}]`;
+  return `[${vec.map((value) => formatResidual(value)).join(", ")}]`;
 }
 
 function formatStatusLabel(status: string): string {
@@ -66,16 +72,6 @@ async function fetchJson<T>(path: string): Promise<T> {
     throw new Error(`Failed to load ${path}: ${response.status} ${response.statusText}`);
   }
   return response.json() as Promise<T>;
-}
-
-function deriveOverallStatus(directives: DirectivesOutput): Status {
-  const counts = directives.summary?.counts_by_status;
-  if (counts) {
-    for (const status of statusPriority) {
-      if (counts[status] > 0) return status;
-    }
-  }
-  return "ok";
 }
 
 async function runGenerateDirectives(
@@ -111,28 +107,28 @@ async function runGenerateDirectives(
   }
 }
 
-function renderParts(steps: Step[], partNames: Map<string, string>) {
+function renderParts(parts: PartSummary[], partNames: Map<string, string>) {
   if (!partList) return;
 
-  if (steps.length === 0) {
+  if (parts.length === 0) {
     partList.innerHTML = `<p class="placeholder">No parts available.</p>`;
     return;
   }
 
   partList.innerHTML = `
     <ul class="part-list">
-      ${steps
-        .map((step) => {
-          const name = partNames.get(step.part_id) ?? step.part_id;
-          const isSelected = step.part_id === selectedPartId;
+      ${parts
+        .map((part) => {
+          const name = partNames.get(part.id) ?? part.id;
+          const isSelected = part.id === selectedPartId;
           return `
             <li>
-              <button class="part-button ${isSelected ? "is-selected" : ""}" type="button" data-part-id="${step.part_id}">
+              <button class="part-button ${isSelected ? "is-selected" : ""}" type="button" data-part-id="${part.id}">
                 <span class="part-meta">
                   <strong>${name}</strong>
-                  <span>Part ${step.part_id}</span>
+                  <span>Part ${part.id}</span>
                 </span>
-                <span class="badge ${step.status}">${formatStatusLabel(step.status)}</span>
+                <span class="badge ${part.status}">${formatStatusLabel(part.status)}</span>
               </button>
             </li>
           `;
@@ -144,8 +140,8 @@ function renderParts(steps: Step[], partNames: Map<string, string>) {
   partList.querySelectorAll<HTMLButtonElement>(".part-button").forEach((button) => {
     button.addEventListener("click", () => {
       selectedPartId = button.dataset.partId ?? null;
-      renderSelection();
-      renderParts(steps, partNames);
+      renderSelection(parts);
+      renderParts(parts, partNames);
     });
   });
 }
@@ -171,36 +167,32 @@ function renderStatus(directives: DirectivesOutput, asBuilt: AsBuiltPosesDataset
   `;
 }
 
-function renderSelection() {
+function renderSelection(parts: PartSummary[]) {
   if (!cachedDirectives || !cachedNominal) return;
-  const steps = cachedDirectives.steps;
   if (!actionList || !verificationResidual) return;
 
-  const selectedStep = selectedPartId
-    ? steps.find((step) => step.part_id === selectedPartId)
-    : steps[0];
+  const selectedPart = selectedPartId
+    ? parts.find((part) => part.id === selectedPartId)
+    : parts[0];
 
-  if (!selectedStep) {
+  if (!selectedPart) {
     actionList.innerHTML = `<p class="placeholder">Select a part to see actions.</p>`;
     verificationResidual.innerHTML = `<p class="placeholder">Select a part to see expected residual.</p>`;
     return;
   }
 
-  selectedPartId = selectedStep.part_id;
+  selectedPartId = selectedPart.id;
 
-  if (selectedStep.actions.length === 0) {
+  if (selectedPart.actions.length === 0) {
     actionList.innerHTML = `<p class="placeholder">No actions for this part.</p>`;
   } else {
     actionList.innerHTML = `
       <div class="action-list">
-        ${selectedStep.actions
+        ${selectedPart.actions
           .map((action) => {
-            const delta = action.delta?.translation_mm;
             return `
               <div class="action-card">
-                <h3>${action.type}</h3>
-                <p>${action.description}</p>
-                ${delta ? `<p><strong>Δt:</strong> ${formatVec(delta)} mm</p>` : ""}
+                <h3>${describeAction(action)}</h3>
               </div>
             `;
           })
@@ -209,12 +201,12 @@ function renderSelection() {
     `;
   }
 
-  const expected = selectedStep.verification?.[0]?.expected_residual;
+  const expected = selectedPart.expectedResidual;
   verificationResidual.innerHTML = `
     <div class="residual-grid">
       <div><strong>Translation:</strong> ${formatVec(expected?.translation_mm_vec)} mm</div>
-      <div><strong>Rotation:</strong> ${expected?.rotation_deg?.toFixed(2) ?? "n/a"}°</div>
-      <div><strong>Expected result:</strong> ${selectedStep.verification?.[0]?.expected_result ?? "n/a"}</div>
+      <div><strong>Rotation:</strong> ${formatResidual(expected?.rotation_deg)}°</div>
+      <div><strong>Expected result:</strong> n/a</div>
     </div>
   `;
 }
@@ -251,12 +243,13 @@ async function runDemo(): Promise<void> {
 
     const partNames = new Map(nominal.parts.map((part) => [part.part_id, part.part_name]));
 
-    const overallStatus = deriveOverallStatus(directives);
+    cachedParts = extractPartSummaries(directives);
+    const overallStatus = deriveOverallStatus(cachedParts, directives);
     setStatusBadge(formatStatusLabel(overallStatus), overallStatus);
 
     renderStatus(directives, asBuilt);
-    renderParts(directives.steps, partNames);
-    renderSelection();
+    renderParts(cachedParts, partNames);
+    renderSelection(cachedParts);
     renderRawJson({ nominal, asBuilt, constraints, directives });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
