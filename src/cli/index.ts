@@ -40,12 +40,12 @@ async function main() {
   const asBuilt = await readJson<AsBuiltPosesDataset>(asBuiltPath);
   const constraints = await readJson<ConstraintsDataset>(constraintsPath);
 
-  const directives = generateDirectives(
+  const directives = generateDirectives({
     nominal,
     asBuilt,
     constraints,
-    { inputPaths: { nominal: nominalPath, asBuilt: asBuiltPath, constraints: constraintsPath } }
-  );
+    options: { inputPaths: { nominal: nominalPath, asBuilt: asBuiltPath, constraints: constraintsPath } }
+  });
 
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, JSON.stringify(directives, null, 2) + "\n", "utf8");

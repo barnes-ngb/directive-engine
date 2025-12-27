@@ -83,11 +83,16 @@ async function renderDirectives(): Promise<void> {
     fetchJson<ConstraintsDataset>(`${datasetBase}/toy_constraints.json`)
   ]);
 
-  const directives = generateDirectives(nominal, asBuilt, constraints, {
-    inputPaths: {
-      nominal: `${datasetBase}/toy_nominal_poses.json`,
-      asBuilt: `${datasetBase}/toy_asbuilt_poses.json`,
-      constraints: `${datasetBase}/toy_constraints.json`
+  const directives = generateDirectives({
+    nominal,
+    asBuilt,
+    constraints,
+    options: {
+      inputPaths: {
+        nominal: `${datasetBase}/toy_nominal_poses.json`,
+        asBuilt: `${datasetBase}/toy_asbuilt_poses.json`,
+        constraints: `${datasetBase}/toy_constraints.json`
+      }
     }
   });
 
