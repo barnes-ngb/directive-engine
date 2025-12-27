@@ -202,6 +202,24 @@ main {
   color: #334155;
 }
 
+.action-list {
+  margin: 0;
+  padding: 0 0 0 16px;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.action-list li strong {
+  display: block;
+  color: #0f172a;
+}
+
+.action-list li div {
+  margin-top: 4px;
+}
+
 .error {
   padding: 16px;
   background: #fee2e2;
