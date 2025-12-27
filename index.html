@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Directive Engine Web</title>
+  </head>
+  <body>
+    <div id="app">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Directive Engine</p>
+          <h1>Directive Cards</h1>
+          <p class="subhead">Generated directives with actions and verification details.</p>
+        </div>
+        <div class="dataset-card">
+          <p class="label">Dataset</p>
+          <p class="value" id="dataset-name">Loading…</p>
+          <p class="meta" id="dataset-meta">Waiting for fixtures</p>
+        </div>
+      </section>
+
+      <main>
+        <section class="summary">
+          <div>
+            <h2>Summary</h2>
+            <p class="subhead" id="summary-caption">Generating directives…</p>
+          </div>
+          <div class="summary-grid" id="summary-counts"></div>
+        </section>
+
+        <section>
+          <h2>Directive Cards</h2>
+          <div class="cards" id="cards"></div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/src/web/index.ts"></script>
+  </body>
+</html>

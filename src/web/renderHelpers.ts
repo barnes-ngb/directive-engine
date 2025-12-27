@@ -46,6 +46,17 @@ export function formatStatusLabel(status: Status): string {
   }
 }
 
+export function formatExpectedResult(result?: "expected_pass" | "expected_fail" | "unknown"): string {
+  switch (result) {
+    case "expected_pass":
+      return "Expected pass";
+    case "expected_fail":
+      return "Expected fail";
+    default:
+      return "Unknown";
+  }
+}
+
 export function getPrimaryAction(step: Step): Action | undefined {
   if (!step.actions || step.actions.length === 0) return undefined;
   return step.actions.find((action) => action.type !== "noop") ?? step.actions[0];

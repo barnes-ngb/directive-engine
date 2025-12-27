@@ -4,6 +4,7 @@ import {
   formatActionSummary,
   formatConfidence,
   formatErrorSummary,
+  formatExpectedResult,
   formatStatusLabel,
   formatVec3,
   getPrimaryAction,
@@ -12,7 +13,7 @@ import {
 } from "./renderHelpers.js";
 import "./styles.css";
 
-const datasetBase = `${import.meta.env.BASE_URL}datasets/toy_v0_1`;
+const datasetBase = `${import.meta.env.BASE_URL}toy_v0_1`;
 
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(path);
@@ -53,6 +54,12 @@ function renderCards(directives: DirectivesOutput, partNames: Map<string, string
     const actionSummary = formatActionSummary(getPrimaryAction(step));
     const reasonChips = step.reason_codes.map((code) => `<li>${code}</li>`).join("");
     const expectedResidual = formatVec3(step.verification?.[0]?.expected_residual?.translation_mm_vec, 1);
+    const expectedResult = formatExpectedResult(step.verification?.[0]?.expected_result);
+    const actions = step.actions.length
+      ? step.actions
+        .map((action) => `<li><strong>${formatActionSummary(action)}</strong><div>${action.description}</div></li>`)
+        .join("")
+      : "<li>No actions.</li>";
 
     return `\
       <article class="card">
@@ -67,10 +74,14 @@ function renderCards(directives: DirectivesOutput, partNames: Map<string, string
           <div>Pose confidence<span>${confidence}</span></div>
           <div>Errors (t / r)<span>${errors}</span></div>
           <div>Expected residual<span>${expectedResidual} mm</span></div>
-          <div>Action<span>${actionSummary}</span></div>
+          <div>Expected result<span>${expectedResult}</span></div>
         </div>
         <ul class="reason-list">${reasonChips}</ul>
-        <div class="action">${getPrimaryAction(step)?.description ?? "No action description provided."}</div>
+        <div class="action">
+          <strong>Primary action:</strong> ${actionSummary}
+          <div>${getPrimaryAction(step)?.description ?? "No action description provided."}</div>
+        </div>
+        <ul class="action-list">${actions}</ul>
       </article>
     `;
   }).join("");

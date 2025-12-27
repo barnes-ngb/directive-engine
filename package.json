@@ -5,10 +5,9 @@
   "type": "module",
   "scripts": {
     "gen": "tsx src/cli/index.ts --nominal data/toy_nominal_poses.json --asbuilt data/toy_asbuilt_poses.json --constraints data/toy_constraints.json --out out/directives.json",
-    "demo:sync-data": "node --input-type=module -e \"import fs from 'fs'; const source = 'public/datasets'; const destination = 'demo/public/datasets'; if (fs.existsSync(source)) { fs.mkdirSync(destination, { recursive: true }); fs.cpSync(source, destination, { recursive: true }); }\"",
-    "dev": "npm run demo:sync-data && vite",
-    "build": "npm run demo:sync-data && vite build",
-    "preview": "npm run demo:sync-data && vite preview",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "vitest && npm run test:legacy",
     "test:legacy": "tsx src/test/renderHelpers.ts && tsx src/test/golden.ts"
   },
