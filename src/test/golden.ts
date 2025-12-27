@@ -42,7 +42,8 @@ async function main() {
     constraints,
     {
       inputPaths: { nominal: expected.inputs.nominal_poses, asBuilt: expected.inputs.as_built_poses, constraints: expected.inputs.constraints },
-      engineVersion: expected.engine_version
+      engineVersion: expected.engine_version,
+      generatedAt: expected.generated_at
     }
   );
 
@@ -51,8 +52,7 @@ async function main() {
   assert.equal(actual.dataset_id, expected.dataset_id);
   assert.equal(actual.engine_version, expected.engine_version);
 
-  // generated_at is deterministic in our engine, but don't make the test brittle.
-  assert.ok(typeof actual.generated_at === "string" && actual.generated_at.length > 0);
+  assert.equal(actual.generated_at, expected.generated_at);
 
   // Summary counts
   assert.deepEqual(actual.summary.counts_by_status, expected.summary.counts_by_status);
