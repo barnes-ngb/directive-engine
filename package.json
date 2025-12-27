@@ -1,0 +1,14 @@
+{
+  "name": "directive-engine-v0.1-impl",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "gen": "tsx src/cli.ts --nominal data/toy_nominal_poses.json --asbuilt data/toy_asbuilt_poses.json --constraints data/toy_constraints.json --out out/directives.json",
+    "test": "tsx src/test/golden.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

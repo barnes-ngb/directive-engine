@@ -1,112 +1,150 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/constraints.schema.json",
-  "title": "ConstraintsDataset",
+  "$id": "https://directive-engine.example/schemas/constraints.schema.json",
+  "title": "Directive Engine - Constraints v0.1",
   "type": "object",
-  "required": [
-    "jobId",
-    "defaults",
-    "parts"
-  ],
+  "additionalProperties": false,
+  "required": ["schema_version", "dataset_id", "engine_config", "parts"],
   "properties": {
-    "jobId": {
-      "type": "string"
-    },
-    "defaults": {
+    "schema_version": { "type": "string", "const": "v0.1" },
+    "dataset_id": { "type": "string", "minLength": 1 },
+    "engine_config": {
       "type": "object",
+      "additionalProperties": false,
+      "required": ["confidence_threshold"],
       "properties": {
-        "toleranceMm": {
+        "confidence_threshold": {
           "type": "number",
-          "minimum": 0
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "If pose_confidence < threshold, output status=needs_review."
         },
-        "confidenceThreshold": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 1
+        "translation_clamp_policy": {
+          "type": "string",
+          "enum": ["none", "per_axis_max_abs", "vector_norm_max"],
+          "default": "per_axis_max_abs"
         }
       }
     },
     "parts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/PartConstraint" }
+    }
+  },
+  "$defs": {
+    "AxisMask": {
       "type": "object",
-      "additionalProperties": {
-        "type": "object",
-        "properties": {
-          "allowedTranslations": {
-            "type": "object",
-            "properties": {
-              "axes": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "enum": [
-                    "x",
-                    "y",
-                    "z"
-                  ]
-                }
-              },
-              "maxMm": {
-                "type": "number",
-                "minimum": 0
-              }
-            }
-          },
-          "allowedRotation": {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "none",
-                  "continuous",
-                  "index"
-                ]
-              },
-              "axis": {
-                "type": "string",
-                "enum": [
-                  "x",
-                  "y",
-                  "z"
-                ]
-              },
-              "maxDegrees": {
-                "type": "number",
-                "minimum": 0
-              },
-              "stepDegrees": {
-                "type": "number",
-                "minimum": 0
-              },
-              "allowedIndices": {
-                "type": "array",
-                "items": {
-                  "type": "integer"
-                }
-              }
-            }
-          },
-          "tolerances": {
-            "type": "object",
-            "properties": {
-              "translationMm": {
-                "type": "number",
-                "minimum": 0
-              },
-              "rotationDeg": {
-                "type": "number",
-                "minimum": 0
-              }
-            }
-          },
-          "notes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "boolean" },
+        "y": { "type": "boolean" },
+        "z": { "type": "boolean" }
+      }
+    },
+    "RotationMode": {
+      "type": "string",
+      "enum": ["fixed", "free", "index"],
+      "description": "fixed=no rotation allowed, free=continuous rotation allowed, index=discrete index positions allowed."
+    },
+    "PerAxisLimitMm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0.0 },
+        "y": { "type": "number", "minimum": 0.0 },
+        "z": { "type": "number", "minimum": 0.0 }
+      },
+      "description": "Max absolute translation correction along each axis (mm)."
+    },
+    "PerAxisLimitDeg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": { "type": "number", "minimum": 0.0 },
+        "y": { "type": "number", "minimum": 0.0 },
+        "z": { "type": "number", "minimum": 0.0 }
+      },
+      "description": "Max absolute rotation correction about each axis (deg)."
+    },
+    "IndexRotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["axis", "increment_deg", "allowed_indices", "nominal_index"],
+      "properties": {
+        "axis": { "type": "string", "enum": ["x", "y", "z"] },
+        "increment_deg": { "type": "number", "exclusiveMinimum": 0.0 },
+        "allowed_indices": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "integer" },
+          "description": "Discrete allowed index positions (integers)."
+        },
+        "nominal_index": {
+          "type": "integer",
+          "description": "Which index corresponds to nominal orientation."
+        }
+      }
+    },
+    "Tolerances": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["translation_mm", "rotation_deg"],
+      "properties": {
+        "translation_mm": { "type": "number", "minimum": 0.0 },
+        "rotation_deg": { "type": "number", "minimum": 0.0 }
+      }
+    },
+    "PartConstraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "part_id",
+        "allowed_translation_axes",
+        "rotation_mode",
+        "allowed_rotation_axes",
+        "tolerances"
+      ],
+      "properties": {
+        "part_id": { "type": "string", "minLength": 1 },
+        "allowed_translation_axes": { "$ref": "#/$defs/AxisMask" },
+        "rotation_mode": { "$ref": "#/$defs/RotationMode" },
+        "allowed_rotation_axes": { "$ref": "#/$defs/AxisMask" },
+        "translation_max_abs_mm": {
+          "$ref": "#/$defs/PerAxisLimitMm",
+          "description": "Per-axis clamp/limit for translation corrections."
+        },
+        "translation_max_norm_mm": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Max Euclidean norm of translation correction (mm). If violated => blocked."
+        },
+        "rotation_max_abs_deg": {
+          "$ref": "#/$defs/PerAxisLimitDeg",
+          "description": "Per-axis limit for rotation corrections (deg)."
+        },
+        "index_rotation": {
+          "$ref": "#/$defs/IndexRotation",
+          "description": "Required when rotation_mode='index'."
+        },
+        "tolerances": { "$ref": "#/$defs/Tolerances" },
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method"],
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": ["measure_pose", "re_scan", "manual_inspection"]
+            },
+            "notes": { "type": "string" }
           }
         }
       }
     }
   }
 }
+

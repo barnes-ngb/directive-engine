@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://directive-engine.example/schemas/pose_nominal.schema.json",
+  "title": "Directive Engine - Nominal Poses v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "dataset_id", "frame_id", "units", "parts"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "v0.1" },
+    "dataset_id": { "type": "string", "minLength": 1 },
+    "frame_id": { "type": "string", "const": "world" },
+    "units": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["length", "rotation"],
+      "properties": {
+        "length": { "type": "string", "const": "mm" },
+        "rotation": { "type": "string", "const": "quaternion_xyzw" }
+      }
+    },
+    "parts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/NominalPartPose" }
+    }
+  },
+  "$defs": {
+    "Vec3mm": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "number" },
+      "description": "3D vector in millimeters: [x, y, z]."
+    },
+    "QuatXYWZ": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "type": "number", "minimum": -1.0, "maximum": 1.0 },
+      "description": "Quaternion [x, y, z, w] representing part-frame orientation in world (right-hand rule)."
+    },
+    "Transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["translation_mm", "rotation_quat_xyzw"],
+      "properties": {
+        "translation_mm": { "$ref": "#/$defs/Vec3mm" },
+        "rotation_quat_xyzw": { "$ref": "#/$defs/QuatXYWZ" }
+      }
+    },
+    "NominalPartPose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["part_id", "part_name", "part_type", "T_world_part_nominal"],
+      "properties": {
+        "part_id": { "type": "string", "minLength": 1 },
+        "part_name": { "type": "string", "minLength": 1 },
+        "part_type": { "type": "string", "minLength": 1 },
+        "T_world_part_nominal": { "$ref": "#/$defs/Transform" }
+      }
+    }
+  }
+}
+

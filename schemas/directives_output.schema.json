@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://directive-engine.example/schemas/directives_output.schema.json",
+  "title": "Directive Engine - Directives Output v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "engine_version",
+    "generated_at",
+    "inputs",
+    "summary",
+    "steps"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "v0.1" },
+    "dataset_id": { "type": "string", "minLength": 1 },
+    "engine_version": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["nominal_poses", "as_built_poses", "constraints", "confidence_threshold"],
+      "properties": {
+        "nominal_poses": { "type": "string", "minLength": 1 },
+        "as_built_poses": { "type": "string", "minLength": 1 },
+        "constraints": { "type": "string", "minLength": 1 },
+        "confidence_threshold": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["counts_by_status"],
+      "properties": {
+        "counts_by_status": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ok", "pending", "clamped", "blocked", "needs_review"],
+          "properties": {
+            "ok": { "type": "integer", "minimum": 0 },
+            "pending": { "type": "integer", "minimum": 0 },
+            "clamped": { "type": "integer", "minimum": 0 },
+            "blocked": { "type": "integer", "minimum": 0 },
+            "needs_review": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/Step" }
+    }
+  },
+  "$defs": {
+    "Vec3mm": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "number" }
+    },
+    "QuatXYWZ": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": { "type": "number", "minimum": -1.0, "maximum": 1.0 }
+    },
+    "TransformDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["translation_mm", "rotation_quat_xyzw"],
+      "properties": {
+        "translation_mm": { "$ref": "#/$defs/Vec3mm" },
+        "rotation_quat_xyzw": { "$ref": "#/$defs/QuatXYWZ" }
+      },
+      "description": "Correction delta to apply to the as-built pose to move toward nominal."
+    },
+    "Status": {
+      "type": "string",
+      "enum": ["ok", "pending", "clamped", "blocked", "needs_review"]
+    },
+    "ActionType": {
+      "type": "string",
+      "enum": ["translate", "rotate", "rotate_to_index", "noop"]
+    },
+    "Action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_id", "type", "description"],
+      "properties": {
+        "action_id": { "type": "string", "minLength": 1 },
+        "type": { "$ref": "#/$defs/ActionType" },
+        "description": { "type": "string", "minLength": 1 },
+        "delta": { "$ref": "#/$defs/TransformDelta" },
+        "clamp_applied": { "type": "boolean" },
+        "original_delta": { "$ref": "#/$defs/TransformDelta" },
+        "axis": { "type": "string", "enum": ["x", "y", "z"] },
+        "target_index": { "type": "integer" }
+      }
+    },
+    "Verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verification_id", "type", "acceptance", "expected_result"],
+      "properties": {
+        "verification_id": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "enum": ["measure_pose", "re_scan", "manual_inspection"] },
+        "acceptance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["translation_mm", "rotation_deg"],
+          "properties": {
+            "translation_mm": { "type": "number", "minimum": 0.0 },
+            "rotation_deg": { "type": "number", "minimum": 0.0 }
+          }
+        },
+        "expected_residual": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["translation_mm_vec", "rotation_deg"],
+          "properties": {
+            "translation_mm_vec": { "$ref": "#/$defs/Vec3mm" },
+            "rotation_deg": { "type": "number", "minimum": 0.0 }
+          }
+        },
+        "expected_result": { "type": "string", "enum": ["expected_pass", "expected_fail", "unknown"] },
+        "notes": { "type": "string" }
+      }
+    },
+    "Errors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["translation_error_mm_vec", "translation_error_norm_mm", "rotation_error_deg"],
+      "properties": {
+        "translation_error_mm_vec": { "$ref": "#/$defs/Vec3mm" },
+        "translation_error_norm_mm": { "type": "number", "minimum": 0.0 },
+        "rotation_error_deg": { "type": "number", "minimum": 0.0 }
+      }
+    },
+    "Step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step_id", "part_id", "status", "reason_codes", "computed_errors", "actions", "verification"],
+      "properties": {
+        "step_id": { "type": "string", "minLength": 1 },
+        "part_id": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/Status" },
+        "reason_codes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Machine-readable reason codes (e.g. within_tolerance, clamped_to_limits, outside_limits_blocked, low_confidence)."
+        },
+        "pose_confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "computed_errors": { "$ref": "#/$defs/Errors" },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Action" }
+        },
+        "verification": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Verification" }
+        }
+      }
+    }
+  }
+}
+
