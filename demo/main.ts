@@ -7,6 +7,7 @@ import type {
   Status,
   Step
 } from "../src/types.js";
+import { deriveOverallStatus, STATUS_PRIORITY } from "./summary.js";
 
 type DatasetPaths = {
   nominal: string;
@@ -14,7 +15,7 @@ type DatasetPaths = {
   constraints: string;
 };
 
-const statusPriority: Status[] = ["blocked", "needs_review", "clamped", "pending", "ok"];
+const statusPriority: Status[] = STATUS_PRIORITY;
 const statusClasses = new Set(statusPriority);
 
 const runButton = document.querySelector<HTMLButtonElement>(".run-button");
@@ -66,16 +67,6 @@ async function fetchJson<T>(path: string): Promise<T> {
     throw new Error(`Failed to load ${path}: ${response.status} ${response.statusText}`);
   }
   return response.json() as Promise<T>;
-}
-
-function deriveOverallStatus(directives: DirectivesOutput): Status {
-  const counts = directives.summary?.counts_by_status;
-  if (counts) {
-    for (const status of statusPriority) {
-      if (counts[status] > 0) return status;
-    }
-  }
-  return "ok";
 }
 
 async function runGenerateDirectives(
