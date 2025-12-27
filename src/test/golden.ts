@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
-import { generateDirectives } from "../engine/generateDirectives.js";
+import { generateDirectives } from "../core/index.js";
 import type { AsBuiltPosesDataset, ConstraintsDataset, DirectivesOutput, NominalPosesDataset, Vec3 } from "../types.js";
 
 const EPS = 1e-6;
@@ -36,13 +36,15 @@ async function main() {
   const constraints = await readJson<ConstraintsDataset>(constraintsPath);
   const expected = await readJson<DirectivesOutput>(expectedPath);
 
-  const actual = generateDirectives({
+  const actual = generateDirectives(
     nominal,
     asBuilt,
     constraints,
-    inputPaths: { nominal: expected.inputs.nominal_poses, asBuilt: expected.inputs.as_built_poses, constraints: expected.inputs.constraints },
-    engineVersion: expected.engine_version
-  });
+    {
+      inputPaths: { nominal: expected.inputs.nominal_poses, asBuilt: expected.inputs.as_built_poses, constraints: expected.inputs.constraints },
+      engineVersion: expected.engine_version
+    }
+  );
 
   // Top-level invariants
   assert.equal(actual.schema_version, expected.schema_version);

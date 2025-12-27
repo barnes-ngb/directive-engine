@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
-import { generateDirectives } from "./engine/generateDirectives.js";
+import { generateDirectives } from "./core/index.js";
 import type { NominalPosesDataset, AsBuiltPosesDataset, ConstraintsDataset } from "./types.js";
 
 function parseArgs(argv: string[]): Record<string,string> {
@@ -40,12 +40,12 @@ async function main() {
   const asBuilt = await readJson<AsBuiltPosesDataset>(asBuiltPath);
   const constraints = await readJson<ConstraintsDataset>(constraintsPath);
 
-  const directives = generateDirectives({
+  const directives = generateDirectives(
     nominal,
     asBuilt,
     constraints,
-    inputPaths: { nominal: nominalPath, asBuilt: asBuiltPath, constraints: constraintsPath }
-  });
+    { inputPaths: { nominal: nominalPath, asBuilt: asBuiltPath, constraints: constraintsPath } }
+  );
 
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, JSON.stringify(directives, null, 2) + "\n", "utf8");
