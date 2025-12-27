@@ -5,10 +5,14 @@
   "type": "module",
   "scripts": {
     "gen": "tsx src/cli/index.ts --nominal data/toy_nominal_poses.json --asbuilt data/toy_asbuilt_poses.json --constraints data/toy_constraints.json --out out/directives.json",
-    "test": "tsx src/test/golden.ts"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "tsx src/test/renderHelpers.ts && tsx src/test/golden.ts"
   },
   "devDependencies": {
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vite": "^5.4.10"
   }
 }

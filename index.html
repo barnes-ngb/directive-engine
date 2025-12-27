@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Directive Engine — Browser Demo</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Directive Engine · v0.1</p>
+          <h1>Installer Directive Center</h1>
+          <p class="subhead">Load nominal + as-built data, compute correction directives, and verify closure.</p>
+        </div>
+        <div class="dataset-card">
+          <p class="label">Dataset</p>
+          <p id="dataset-name" class="value">Loading…</p>
+          <p id="dataset-meta" class="meta">&nbsp;</p>
+        </div>
+      </header>
+
+      <main>
+        <section class="summary">
+          <div>
+            <h2>Summary</h2>
+            <p id="summary-caption">Computing directive output…</p>
+          </div>
+          <div id="summary-counts" class="summary-grid"></div>
+        </section>
+
+        <section>
+          <h2>Directive Cards</h2>
+          <div id="cards" class="cards"></div>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/web/index.ts"></script>
+  </body>
+</html>

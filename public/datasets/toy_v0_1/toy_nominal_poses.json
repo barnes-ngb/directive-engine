@@ -1,0 +1,75 @@
+{
+  "schema_version": "v0.1",
+  "dataset_id": "toy_v0_1",
+  "frame_id": "world",
+  "units": {
+    "length": "mm",
+    "rotation": "quaternion_xyzw"
+  },
+  "parts": [
+    {
+      "part_id": "P1",
+      "part_name": "base_plate",
+      "part_type": "fixture",
+      "T_world_part_nominal": {
+        "translation_mm": [0, 0, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      }
+    },
+    {
+      "part_id": "P2",
+      "part_name": "guide_rail",
+      "part_type": "linear_component",
+      "T_world_part_nominal": {
+        "translation_mm": [100, 0, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      }
+    },
+    {
+      "part_id": "P3",
+      "part_name": "sensor_bracket",
+      "part_type": "bracket",
+      "T_world_part_nominal": {
+        "translation_mm": [50, 50, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      }
+    },
+    {
+      "part_id": "P4",
+      "part_name": "dial_knob",
+      "part_type": "indexed_rotary",
+      "T_world_part_nominal": {
+        "translation_mm": [0, 0, 40],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      }
+    },
+    {
+      "part_id": "P5",
+      "part_name": "cover_panel",
+      "part_type": "panel",
+      "T_world_part_nominal": {
+        "translation_mm": [0, 100, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      }
+    },
+    {
+      "part_id": "P6",
+      "part_name": "cable_clip",
+      "part_type": "clip",
+      "T_world_part_nominal": {
+        "translation_mm": [-20, 10, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      }
+    },
+    {
+      "part_id": "P7",
+      "part_name": "latch",
+      "part_type": "hinge_latch",
+      "T_world_part_nominal": {
+        "translation_mm": [80, 20, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      }
+    }
+  ]
+}
+
