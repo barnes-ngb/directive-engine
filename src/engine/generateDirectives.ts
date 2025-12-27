@@ -36,9 +36,16 @@ function pickRotationAxis(mask: {x:boolean;y:boolean;z:boolean}): "x"|"y"|"z"|un
   return undefined;
 }
 
-function addSecondsIso(iso: string, seconds: number): string {
+function assertValidIso(iso: string, label: string): void {
   const t = Date.parse(iso);
-  if (Number.isNaN(t)) return new Date().toISOString();
+  if (Number.isNaN(t)) {
+    throw new Error(`Invalid ISO timestamp for ${label}: ${iso}`);
+  }
+}
+
+function addSecondsIso(iso: string, seconds: number): string {
+  assertValidIso(iso, "asBuilt.measured_at");
+  const t = Date.parse(iso);
   return new Date(t + seconds*1000).toISOString();
 }
 
@@ -79,10 +86,15 @@ export function generateDirectives(params: {
   constraints: ConstraintsDataset;
   inputPaths: { nominal: string; asBuilt: string; constraints: string };
   engineVersion?: string;
+  options?: { generatedAt?: string };
 }): DirectivesOutput {
 
   const { nominal, asBuilt, constraints, inputPaths } = params;
   const engineVersion = params.engineVersion ?? "directive-engine/0.1.0";
+  const generatedAtOverride = params.options?.generatedAt;
+  if (generatedAtOverride) {
+    assertValidIso(generatedAtOverride, "options.generatedAt");
+  }
 
   const confidenceThreshold = constraints.engine_config.confidence_threshold;
 
@@ -365,7 +377,7 @@ export function generateDirectives(params: {
     schema_version: "v0.1",
     dataset_id: nominal.dataset_id,
     engine_version: engineVersion,
-    generated_at: addSecondsIso(asBuilt.measured_at, 1),
+    generated_at: generatedAtOverride ?? addSecondsIso(asBuilt.measured_at, 1),
     inputs: {
       nominal_poses: inputPaths.nominal,
       as_built_poses: inputPaths.asBuilt,
