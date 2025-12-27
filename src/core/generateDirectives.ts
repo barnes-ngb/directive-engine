@@ -38,7 +38,9 @@ function pickRotationAxis(mask: {x:boolean;y:boolean;z:boolean}): "x"|"y"|"z"|un
 
 function addSecondsIso(iso: string, seconds: number): string {
   const t = Date.parse(iso);
-  if (Number.isNaN(t)) return new Date().toISOString();
+  if (Number.isNaN(t)) {
+    throw new Error(`Invalid ISO timestamp: "${iso}"`);
+  }
   return new Date(t + seconds*1000).toISOString();
 }
 
@@ -76,6 +78,7 @@ function expectedResultForStatus(status: Status): Verification["expected_result"
 export interface GenerateDirectivesOptions {
   inputPaths?: { nominal: string; asBuilt: string; constraints: string };
   engineVersion?: string;
+  generatedAt?: string;
 }
 
 export function generateDirectives(
@@ -369,7 +372,7 @@ export function generateDirectives(
     schema_version: "v0.1",
     dataset_id: nominal.dataset_id,
     engine_version: engineVersion,
-    generated_at: addSecondsIso(asBuilt.measured_at, 1),
+    generated_at: options.generatedAt ?? addSecondsIso(asBuilt.measured_at, 1),
     inputs: {
       nominal_poses: inputPaths.nominal,
       as_built_poses: inputPaths.asBuilt,
