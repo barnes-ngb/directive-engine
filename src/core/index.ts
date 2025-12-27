@@ -1,3 +1,4 @@
+export { generateDirectives } from "./generateDirectives.js";
 export type {
   Action,
   ActionType,
@@ -23,4 +24,4 @@ export type {
   TransformDelta,
   Vec3,
   Verification
-} from "./core/types.js";
+} from "./types.js";

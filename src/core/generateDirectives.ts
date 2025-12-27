@@ -10,10 +10,10 @@ import type {
   TransformDelta,
   Vec3,
   Verification
-} from "../types.js";
+} from "./types.js";
 
-import { sub, norm, clampVecPerAxis } from "../math/vec.js";
-import { inverse as qInv, multiply as qMul, angleDeg as qAngleDeg, identity as qIdent, normalize as qNorm } from "../math/quat.js";
+import { sub, norm, clampVecPerAxis } from "./math/vec.js";
+import { inverse as qInv, multiply as qMul, angleDeg as qAngleDeg, identity as qIdent, normalize as qNorm } from "./math/quat.js";
 
 const EPS = 1e-9;
 
@@ -73,16 +73,20 @@ function expectedResultForStatus(status: Status): Verification["expected_result"
   return "expected_pass";
 }
 
-export function generateDirectives(params: {
-  nominal: NominalPosesDataset;
-  asBuilt: AsBuiltPosesDataset;
-  constraints: ConstraintsDataset;
-  inputPaths: { nominal: string; asBuilt: string; constraints: string };
+export interface GenerateDirectivesOptions {
+  inputPaths?: { nominal: string; asBuilt: string; constraints: string };
   engineVersion?: string;
-}): DirectivesOutput {
+}
 
-  const { nominal, asBuilt, constraints, inputPaths } = params;
-  const engineVersion = params.engineVersion ?? "directive-engine/0.1.0";
+export function generateDirectives(
+  nominal: NominalPosesDataset,
+  asBuilt: AsBuiltPosesDataset,
+  constraints: ConstraintsDataset,
+  options: GenerateDirectivesOptions = {}
+): DirectivesOutput {
+
+  const inputPaths = options.inputPaths ?? { nominal: "unknown", asBuilt: "unknown", constraints: "unknown" };
+  const engineVersion = options.engineVersion ?? "directive-engine/0.1.0";
 
   const confidenceThreshold = constraints.engine_config.confidence_threshold;
 
