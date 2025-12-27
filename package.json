@@ -6,7 +6,7 @@
   "scripts": {
     "gen": "tsx src/cli/index.ts --nominal data/toy_nominal_poses.json --asbuilt data/toy_asbuilt_poses.json --constraints data/toy_constraints.json --out out/directives.json",
     "dev": "vite",
-    "copy:demo-data": "cp datasets/toy_v0_1/toy_* demo/public/",
+    "copy:demo-data": "node scripts/copy-demo-data.mjs",
     "build": "vite build",
     "prebuild": "npm run copy:demo-data",
     "preview": "vite preview",
