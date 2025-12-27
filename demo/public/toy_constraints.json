@@ -1,0 +1,80 @@
+{
+  "schema_version": "v0.1",
+  "dataset_id": "toy_v0_1",
+  "engine_config": {
+    "confidence_threshold": 0.7,
+    "translation_clamp_policy": "per_axis_max_abs"
+  },
+  "parts": [
+    {
+      "part_id": "P1",
+      "allowed_translation_axes": { "x": false, "y": false, "z": false },
+      "rotation_mode": "fixed",
+      "allowed_rotation_axes": { "x": false, "y": false, "z": false },
+      "tolerances": { "translation_mm": 0.5, "rotation_deg": 1.0 },
+      "verification": { "method": "measure_pose", "notes": "Base reference; verify stable mount." }
+    },
+    {
+      "part_id": "P2",
+      "allowed_translation_axes": { "x": true, "y": true, "z": false },
+      "rotation_mode": "fixed",
+      "allowed_rotation_axes": { "x": false, "y": false, "z": false },
+      "translation_max_abs_mm": { "x": 10, "y": 10, "z": 0 },
+      "tolerances": { "translation_mm": 1.0, "rotation_deg": 1.0 },
+      "verification": { "method": "measure_pose", "notes": "Translate-only alignment; rotation should remain unchanged." }
+    },
+    {
+      "part_id": "P3",
+      "allowed_translation_axes": { "x": true, "y": true, "z": false },
+      "rotation_mode": "fixed",
+      "allowed_rotation_axes": { "x": false, "y": false, "z": false },
+      "translation_max_abs_mm": { "x": 5, "y": 5, "z": 0 },
+      "tolerances": { "translation_mm": 5.0, "rotation_deg": 2.0 },
+      "verification": { "method": "measure_pose", "notes": "Clamped adjustment permitted; boundary is acceptable." }
+    },
+    {
+      "part_id": "P4",
+      "allowed_translation_axes": { "x": false, "y": false, "z": false },
+      "rotation_mode": "index",
+      "allowed_rotation_axes": { "x": false, "y": false, "z": true },
+      "rotation_max_abs_deg": { "x": 0, "y": 0, "z": 180 },
+      "index_rotation": {
+        "axis": "z",
+        "increment_deg": 90,
+        "allowed_indices": [0, 1, 2, 3],
+        "nominal_index": 0
+      },
+      "tolerances": { "translation_mm": 1.0, "rotation_deg": 2.0 },
+      "verification": { "method": "manual_inspection", "notes": "Confirm detent at target index." }
+    },
+    {
+      "part_id": "P5",
+      "allowed_translation_axes": { "x": true, "y": true, "z": false },
+      "rotation_mode": "fixed",
+      "allowed_rotation_axes": { "x": false, "y": false, "z": false },
+      "translation_max_norm_mm": 20,
+      "translation_max_abs_mm": { "x": 20, "y": 20, "z": 0 },
+      "tolerances": { "translation_mm": 2.0, "rotation_deg": 1.0 },
+      "verification": { "method": "manual_inspection", "notes": "If outside limits, stop and escalate." }
+    },
+    {
+      "part_id": "P6",
+      "allowed_translation_axes": { "x": true, "y": true, "z": false },
+      "rotation_mode": "fixed",
+      "allowed_rotation_axes": { "x": false, "y": false, "z": false },
+      "translation_max_abs_mm": { "x": 5, "y": 5, "z": 0 },
+      "tolerances": { "translation_mm": 1.5, "rotation_deg": 2.0 },
+      "verification": { "method": "re_scan", "notes": "Low confidence likely; re-scan before any move." }
+    },
+    {
+      "part_id": "P7",
+      "allowed_translation_axes": { "x": false, "y": false, "z": false },
+      "rotation_mode": "free",
+      "allowed_rotation_axes": { "x": true, "y": false, "z": false },
+      "rotation_max_abs_deg": { "x": 10, "y": 0, "z": 0 },
+      "tolerances": { "translation_mm": 1.0, "rotation_deg": 1.0 },
+      "verification": { "method": "measure_pose", "notes": "Rotate latch about hinge axis only." }
+    }
+  ]
+}
+

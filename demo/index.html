@@ -15,6 +15,8 @@
       <button class="run-button" type="button">Run</button>
     </header>
 
+    <div class="error-banner" id="error-banner" role="alert" hidden></div>
+
     <main class="page-content">
       <section class="panel" aria-labelledby="parts-title">
         <h2 id="parts-title">Part List</h2>
@@ -34,16 +36,26 @@
       </section>
 
       <section class="panel" aria-labelledby="actions-title">
-        <h2 id="actions-title">Action List</h2>
+        <h2 id="actions-title">Selected Part Actions</h2>
         <div class="panel-body" id="action-list">
           <p class="placeholder">Actions will appear here.</p>
         </div>
       </section>
 
       <section class="panel" aria-labelledby="verification-title">
-        <h2 id="verification-title">Verification Expected Residual</h2>
+        <h2 id="verification-title">Expected Residual</h2>
         <div class="panel-body" id="verification-residual">
           <p class="placeholder">Expected residual output will appear here.</p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="raw-json-title">
+        <h2 id="raw-json-title">Raw JSON</h2>
+        <div class="panel-body">
+          <details class="raw-json">
+            <summary>Toggle raw payloads</summary>
+            <pre id="raw-json"></pre>
+          </details>
         </div>
       </section>
     </main>
