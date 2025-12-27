@@ -4,10 +4,15 @@ import type {
   ConstraintsDataset,
   DirectivesOutput,
   NominalPosesDataset,
-  Status,
-  Step
+  Status
 } from "../src/types.js";
-import { deriveOverallStatus, STATUS_PRIORITY } from "./summary.js";
+import {
+  describeAction,
+  deriveOverallStatus,
+  extractPartSummaries,
+  formatResidual,
+  STATUS_PRIORITY
+} from "./summary.js";
 
 type DatasetPaths = {
   nominal: string;
@@ -30,11 +35,12 @@ const errorBanner = document.querySelector<HTMLDivElement>("#error-banner");
 let cachedDirectives: DirectivesOutput | null = null;
 let cachedNominal: NominalPosesDataset | null = null;
 let cachedAsBuilt: AsBuiltPosesDataset | null = null;
+let cachedSummaries: ReturnType<typeof extractPartSummaries> | null = null;
 let selectedPartId: string | null = null;
 
 function formatVec(vec?: [number, number, number], digits = 2): string {
   if (!vec) return "n/a";
-  return `[${vec.map((value) => value.toFixed(digits)).join(", ")}]`;
+  return `[${vec.map((value) => formatResidual(value, digits)).join(", ")}]`;
 }
 
 function formatStatusLabel(status: string): string {
@@ -102,28 +108,31 @@ async function runGenerateDirectives(
   }
 }
 
-function renderParts(steps: Step[], partNames: Map<string, string>) {
+function renderParts(
+  parts: ReturnType<typeof extractPartSummaries>,
+  partNames: Map<string, string>
+) {
   if (!partList) return;
 
-  if (steps.length === 0) {
+  if (parts.length === 0) {
     partList.innerHTML = `<p class="placeholder">No parts available.</p>`;
     return;
   }
 
   partList.innerHTML = `
     <ul class="part-list">
-      ${steps
-        .map((step) => {
-          const name = partNames.get(step.part_id) ?? step.part_id;
-          const isSelected = step.part_id === selectedPartId;
+      ${parts
+        .map((part) => {
+          const name = partNames.get(part.id) ?? part.id;
+          const isSelected = part.id === selectedPartId;
           return `
             <li>
-              <button class="part-button ${isSelected ? "is-selected" : ""}" type="button" data-part-id="${step.part_id}">
+              <button class="part-button ${isSelected ? "is-selected" : ""}" type="button" data-part-id="${part.id}">
                 <span class="part-meta">
                   <strong>${name}</strong>
-                  <span>Part ${step.part_id}</span>
+                  <span>Part ${part.id}</span>
                 </span>
-                <span class="badge ${step.status}">${formatStatusLabel(step.status)}</span>
+                <span class="badge ${part.status}">${formatStatusLabel(part.status)}</span>
               </button>
             </li>
           `;
@@ -163,35 +172,33 @@ function renderStatus(directives: DirectivesOutput, asBuilt: AsBuiltPosesDataset
 }
 
 function renderSelection() {
-  if (!cachedDirectives || !cachedNominal) return;
+  if (!cachedDirectives || !cachedNominal || !cachedSummaries) return;
   const steps = cachedDirectives.steps;
   if (!actionList || !verificationResidual) return;
 
-  const selectedStep = selectedPartId
-    ? steps.find((step) => step.part_id === selectedPartId)
-    : steps[0];
+  const selectedSummary = selectedPartId
+    ? cachedSummaries.find((summary) => summary.id === selectedPartId)
+    : cachedSummaries[0];
 
-  if (!selectedStep) {
+  if (!selectedSummary) {
     actionList.innerHTML = `<p class="placeholder">Select a part to see actions.</p>`;
     verificationResidual.innerHTML = `<p class="placeholder">Select a part to see expected residual.</p>`;
     return;
   }
 
-  selectedPartId = selectedStep.part_id;
+  selectedPartId = selectedSummary.id;
 
-  if (selectedStep.actions.length === 0) {
+  if (selectedSummary.actions.length === 0) {
     actionList.innerHTML = `<p class="placeholder">No actions for this part.</p>`;
   } else {
     actionList.innerHTML = `
       <div class="action-list">
-        ${selectedStep.actions
+        ${selectedSummary.actions
           .map((action) => {
-            const delta = action.delta?.translation_mm;
             return `
               <div class="action-card">
                 <h3>${action.type}</h3>
-                <p>${action.description}</p>
-                ${delta ? `<p><strong>Δt:</strong> ${formatVec(delta)} mm</p>` : ""}
+                <p>${describeAction(action)}</p>
               </div>
             `;
           })
@@ -200,12 +207,13 @@ function renderSelection() {
     `;
   }
 
-  const expected = selectedStep.verification?.[0]?.expected_residual;
+  const expected = selectedSummary.expectedResidual;
+  const selectedStep = steps.find((step) => step.part_id === selectedSummary.id);
   verificationResidual.innerHTML = `
     <div class="residual-grid">
       <div><strong>Translation:</strong> ${formatVec(expected?.translation_mm_vec)} mm</div>
-      <div><strong>Rotation:</strong> ${expected?.rotation_deg?.toFixed(2) ?? "n/a"}°</div>
-      <div><strong>Expected result:</strong> ${selectedStep.verification?.[0]?.expected_result ?? "n/a"}</div>
+      <div><strong>Rotation:</strong> ${formatResidual(expected?.rotation_deg ?? null)}°</div>
+      <div><strong>Expected result:</strong> ${selectedStep?.verification?.[0]?.expected_result ?? "n/a"}</div>
     </div>
   `;
 }
@@ -242,11 +250,13 @@ async function runDemo(): Promise<void> {
 
     const partNames = new Map(nominal.parts.map((part) => [part.part_id, part.part_name]));
 
-    const overallStatus = deriveOverallStatus(directives);
+    const partSummaries = extractPartSummaries(directives);
+    const overallStatus = deriveOverallStatus(partSummaries, directives);
     setStatusBadge(formatStatusLabel(overallStatus), overallStatus);
 
     renderStatus(directives, asBuilt);
-    renderParts(directives.steps, partNames);
+    cachedSummaries = partSummaries;
+    renderParts(partSummaries, partNames);
     renderSelection();
     renderRawJson({ nominal, asBuilt, constraints, directives });
   } catch (error) {
