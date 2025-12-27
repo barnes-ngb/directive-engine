@@ -12,7 +12,7 @@ import {
 } from "./renderHelpers.js";
 import "./styles.css";
 
-const datasetBase = `${import.meta.env.BASE_URL}datasets/toy_v0_1`;
+const datasetBase = `${import.meta.env.BASE_URL}toy_v0_1`;
 
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(path);
