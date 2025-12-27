@@ -6,11 +6,19 @@ Input (nominal + as-built + constraints) → directives (actions + status) → v
 Runs in browser so it can be deployed to any device as a static web app.
 
 ## Repo structure (current)
-- data/            # toy dataset + expected directives (candidate)
-- datasets/        # additional datasets (candidate)
+- datasets/        # datasets used by tests + demo
 - schemas/         # JSON schemas
 - src/             # engine + web demo code
 - site/            # (optional) docs/marketing; keep minimal
+
+## Canonical fixtures
+Use these fixtures for tests and the browser demo (v0.1):
+- Nominal poses: `datasets/toy_v0_1/toy_nominal_poses.json`
+- As-built poses: `datasets/toy_v0_1/toy_asbuilt_poses.json`
+- Constraints: `datasets/toy_v0_1/toy_constraints.json`
+- Expected directives: `datasets/toy_v0_1/expected_directives.json`
+
+Note: There is no `data/` directory in this repo; use `datasets/` instead.
 
 ## Canonical contract (v0.1)
 - Units: mm
