@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "gen": "tsx src/cli.ts --nominal data/toy_nominal_poses.json --asbuilt data/toy_asbuilt_poses.json --constraints data/toy_constraints.json --out out/directives.json",
+    "gen": "tsx src/cli/index.ts --nominal data/toy_nominal_poses.json --asbuilt data/toy_asbuilt_poses.json --constraints data/toy_constraints.json --out out/directives.json",
     "test": "tsx src/test/golden.ts"
   },
   "devDependencies": {

@@ -1,7 +1,7 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
-import { generateDirectives } from "./core/index.js";
-import type { NominalPosesDataset, AsBuiltPosesDataset, ConstraintsDataset } from "./types.js";
+import { generateDirectives } from "../core/index.js";
+import type { NominalPosesDataset, AsBuiltPosesDataset, ConstraintsDataset } from "../types.js";
 
 function parseArgs(argv: string[]): Record<string,string> {
   const out: Record<string,string> = {};
@@ -32,7 +32,7 @@ async function main() {
   const outPath = args["out"] ?? "out/directives.json";
 
   if (!nominalPath || !asBuiltPath || !constraintsPath) {
-    console.error("Usage: tsx src/cli.ts --nominal <path> --asbuilt <path> --constraints <path> [--out <path>]");
+    console.error("Usage: tsx src/cli/index.ts --nominal <path> --asbuilt <path> --constraints <path> [--out <path>]");
     process.exit(1);
   }
 
