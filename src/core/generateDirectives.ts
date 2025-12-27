@@ -81,13 +81,19 @@ export interface GenerateDirectivesOptions {
   generatedAt?: string;
 }
 
-export function generateDirectives(
-  nominal: NominalPosesDataset,
-  asBuilt: AsBuiltPosesDataset,
-  constraints: ConstraintsDataset,
-  options: GenerateDirectivesOptions = {}
-): DirectivesOutput {
+export interface GenerateDirectivesInput {
+  nominal: NominalPosesDataset;
+  asBuilt: AsBuiltPosesDataset;
+  constraints: ConstraintsDataset;
+  options?: GenerateDirectivesOptions;
+}
 
+export function generateDirectives({
+  nominal,
+  asBuilt,
+  constraints,
+  options = {}
+}: GenerateDirectivesInput): DirectivesOutput {
   const inputPaths = options.inputPaths ?? { nominal: "unknown", asBuilt: "unknown", constraints: "unknown" };
   const engineVersion = options.engineVersion ?? "directive-engine/0.1.0";
 
