@@ -4,10 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "demo:sync-data": "node scripts/sync-demo-data.mjs",
+    "dev": "npm run demo:sync-data && vite",
+    "build": "npm run demo:sync-data && vite build",
+    "preview": "vite preview",
     "gen": "tsx src/cli/index.ts --nominal data/toy_nominal_poses.json --asbuilt data/toy_asbuilt_poses.json --constraints data/toy_constraints.json --out out/directives.json",
-    "test": "tsx src/test/golden.ts"
+    "test": "vitest",
+    "test:golden": "tsx src/test/golden.ts"
   },
   "devDependencies": {
+    "vite": "^6.3.3",
+    "vitest": "^3.2.4",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
