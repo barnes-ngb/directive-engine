@@ -1,5 +1,5 @@
 import { generateDirectives } from "../core/index.js";
-import type { AsBuiltPosesDataset, ConstraintsDataset, DirectivesOutput, NominalPosesDataset } from "../types.js";
+import type { AsBuiltPosesDataset, ConstraintsDataset, DirectivesOutput, NominalPartPose, NominalPosesDataset } from "../types.js";
 import {
   formatActionSummary,
   formatConfidence,
@@ -12,7 +12,7 @@ import {
 } from "./renderHelpers.js";
 import "./styles.css";
 
-const datasetBase = `${import.meta.env.BASE_URL}datasets/toy_v0_1`;
+const datasetBase = `${import.meta.env.BASE_URL}toy_v0_1`;
 
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(path);
@@ -42,17 +42,35 @@ function renderSummary(directives: DirectivesOutput) {
   }
 }
 
-function renderCards(directives: DirectivesOutput, partNames: Map<string, string>) {
+function formatExpectedResult(value?: string): { label: string; className: string } {
+  switch (value) {
+    case "expected_pass":
+      return { label: "Expected pass", className: "verification pass" };
+    case "expected_fail":
+      return { label: "Expected fail", className: "verification fail" };
+    default:
+      return { label: "Outcome unknown", className: "verification unknown" };
+  }
+}
+
+function renderCards(directives: DirectivesOutput, partMap: Map<string, NominalPartPose>) {
   const cards = document.querySelector<HTMLDivElement>("#cards");
   if (!cards) return;
 
   cards.innerHTML = directives.steps.map((step) => {
-    const partName = partNames.get(step.part_id) ?? "Unknown part";
+    const part = partMap.get(step.part_id);
+    const partName = part?.part_name ?? "Unknown part";
+    const partType = part?.part_type ?? "Unknown type";
     const confidence = formatConfidence(step.pose_confidence);
     const errors = formatErrorSummary(step);
     const actionSummary = formatActionSummary(getPrimaryAction(step));
     const reasonChips = step.reason_codes.map((code) => `<li>${code}</li>`).join("");
-    const expectedResidual = formatVec3(step.verification?.[0]?.expected_residual?.translation_mm_vec, 1);
+    const verification = step.verification?.[0];
+    const expectedResidual = formatVec3(verification?.expected_residual?.translation_mm_vec, 1);
+    const verificationResult = formatExpectedResult(verification?.expected_result);
+    const actionList = step.actions
+      .map((action) => `<li>${formatActionSummary(action)} · ${action.description}</li>`)
+      .join("");
 
     return `\
       <article class="card">
@@ -63,11 +81,28 @@ function renderCards(directives: DirectivesOutput, partNames: Map<string, string
           </div>
           <span class="badge ${step.status}">${formatStatusLabel(step.status)}</span>
         </div>
+        <div class="section">
+          <p class="section-title">Part list</p>
+          <ul class="part-list">
+            <li>${partName} · ${partType} · ${step.part_id}</li>
+          </ul>
+        </div>
         <div class="meta-grid">
           <div>Pose confidence<span>${confidence}</span></div>
           <div>Errors (t / r)<span>${errors}</span></div>
           <div>Expected residual<span>${expectedResidual} mm</span></div>
           <div>Action<span>${actionSummary}</span></div>
+        </div>
+        <div class="section">
+          <p class="section-title">Actions</p>
+          <ul class="action-list">${actionList || "<li>No actions required.</li>"}</ul>
+        </div>
+        <div class="verification-row">
+          <div>
+            <p class="section-title">Verification</p>
+            <p class="verification-detail">Expected residual: ${expectedResidual} mm</p>
+          </div>
+          <span class="${verificationResult.className}">${verificationResult.label}</span>
         </div>
         <ul class="reason-list">${reasonChips}</ul>
         <div class="action">${getPrimaryAction(step)?.description ?? "No action description provided."}</div>
@@ -96,7 +131,7 @@ async function renderDirectives(): Promise<void> {
     }
   });
 
-  const partNames = new Map(nominal.parts.map((part) => [part.part_id, part.part_name]));
+  const partMap = new Map(nominal.parts.map((part) => [part.part_id, part]));
 
   const datasetName = document.querySelector<HTMLParagraphElement>("#dataset-name");
   if (datasetName) datasetName.textContent = nominal.dataset_id;
@@ -107,7 +142,7 @@ async function renderDirectives(): Promise<void> {
   }
 
   renderSummary(directives);
-  renderCards(directives, partNames);
+  renderCards(directives, partMap);
 }
 
 function renderError(error: Error) {
