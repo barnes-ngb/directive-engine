@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
-import { generateDirectives } from "../engine/generateDirectives.js";
+import { generateDirectives } from "../core.js";
 import type { AsBuiltPosesDataset, ConstraintsDataset, DirectivesOutput, NominalPosesDataset, Vec3 } from "../types.js";
 
 const EPS = 1e-6;
@@ -26,10 +26,10 @@ function sameStringArrayAsSet(a: string[], b: string[]) {
 }
 
 async function main() {
-  const nominalPath = "data/toy_nominal_poses.json";
-  const asBuiltPath = "data/toy_asbuilt_poses.json";
-  const constraintsPath = "data/toy_constraints.json";
-  const expectedPath = "data/expected_directives.json";
+  const nominalPath = "datasets/toy_v0_1/toy_nominal_poses.json";
+  const asBuiltPath = "datasets/toy_v0_1/toy_asbuilt_poses.json";
+  const constraintsPath = "datasets/toy_v0_1/toy_constraints.json";
+  const expectedPath = "datasets/toy_v0_1/expected_directives.json";
 
   const nominal = await readJson<NominalPosesDataset>(nominalPath);
   const asBuilt = await readJson<AsBuiltPosesDataset>(asBuiltPath);
