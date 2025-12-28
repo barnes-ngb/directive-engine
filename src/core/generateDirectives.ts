@@ -13,7 +13,7 @@ import type {
 } from "./types.js";
 
 import { sub, norm, clampVecPerAxis } from "./math/vec.js";
-import { inverse as qInv, multiply as qMul, angleDeg as qAngleDeg, identity as qIdent, normalize as qNorm } from "./math/quat.js";
+import { deltaQuat, identity as qIdent, toAxisAngle } from "./math/quat.js";
 
 const EPS = 1e-9;
 
@@ -48,9 +48,19 @@ function computeErrors(nominalT: {translation_mm: Vec3; rotation_quat_xyzw: [num
                        asBuiltT: {translation_mm: Vec3; rotation_quat_xyzw: [number,number,number,number]}) {
   const tErr = sub(nominalT.translation_mm, asBuiltT.translation_mm);
   const tErrNorm = norm(tErr);
-  const qErr = qNorm(qMul(nominalT.rotation_quat_xyzw, qInv(asBuiltT.rotation_quat_xyzw)));
-  const rErrDeg = qAngleDeg(qErr);
-  return { tErr, tErrNorm, qErr, rErrDeg };
+  const qErr = deltaQuat(nominalT.rotation_quat_xyzw, asBuiltT.rotation_quat_xyzw);
+  const { axis: rAxis, angleDeg: rErrDeg } = toAxisAngle(qErr);
+  return { tErr, tErrNorm, qErr, rErrDeg, rAxis };
+}
+
+function dominantAxis(allowed: {x:boolean;y:boolean;z:boolean}, axis: Vec3): "x"|"y"|"z"|undefined {
+  const candidates: Array<["x"|"y"|"z", number]> = [];
+  if (allowed.x) candidates.push(["x", Math.abs(axis[0])]);
+  if (allowed.y) candidates.push(["y", Math.abs(axis[1])]);
+  if (allowed.z) candidates.push(["z", Math.abs(axis[2])]);
+  if (candidates.length === 0) return undefined;
+  candidates.sort((a, b) => b[1] - a[1]);
+  return candidates[0][0];
 }
 
 function withinTol(tNorm: number, rDeg: number, tol: {translation_mm:number; rotation_deg:number}): boolean {
@@ -145,7 +155,7 @@ export function generateDirectives({
       continue;
     }
 
-    const { tErr, tErrNorm, qErr, rErrDeg } = computeErrors(n.T_world_part_nominal, a.T_world_part_asBuilt);
+    const { tErr, tErrNorm, qErr, rErrDeg, rAxis } = computeErrors(n.T_world_part_nominal, a.T_world_part_asBuilt);
 
     const computed_errors = {
       translation_error_mm_vec: tErr,
@@ -320,7 +330,7 @@ export function generateDirectives({
         reason_codes.push("index_rotation");
         residualRotationDeg = 0;
       } else if (c.rotation_mode === "free") {
-        const axis = pickRotationAxis(c.allowed_rotation_axes) ?? "x";
+        const axis = dominantAxis(c.allowed_rotation_axes, rAxis) ?? pickRotationAxis(c.allowed_rotation_axes) ?? "x";
         actions.push({
           action_id: `A${actionCounter++}`,
           type: "rotate",
