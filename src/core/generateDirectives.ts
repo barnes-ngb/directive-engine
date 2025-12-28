@@ -12,7 +12,7 @@ import type {
   Verification
 } from "./types.js";
 
-import { sub, norm, clampVecPerAxis } from "./math/vec.js";
+import { sub, norm, scale, clampVecPerAxis, clampScalar, roundVec } from "./math/vec.js";
 import { inverse as qInv, multiply as qMul, angleDeg as qAngleDeg, identity as qIdent, normalize as qNorm } from "./math/quat.js";
 
 const EPS = 1e-9;
@@ -277,6 +277,20 @@ export function generateDirectives({
         }
       }
 
+      if (typeof c.translation_max_norm_mm === "number"
+        && (constraints.engine_config.translation_clamp_policy ?? "per_axis_max_abs") === "vector_norm_max") {
+        const maxNorm = Math.abs(c.translation_max_norm_mm);
+        const maskedNorm = norm(masked);
+        if (maskedNorm > maxNorm + EPS) {
+          const scaleFactor = clampScalar(maxNorm / maskedNorm, 0, 1);
+          deltaT = scale(masked, scaleFactor);
+          clampApplied = true;
+          originalDelta = makeDelta(masked, qIdent());
+        }
+      }
+
+      deltaT = roundVec(deltaT, EPS);
+
       appliedTranslation = deltaT;
 
       const desc = clampApplied
@@ -346,7 +360,7 @@ export function generateDirectives({
       status = "pending";
     }
 
-    const residualT = computeExpectedResidual(tErr, appliedTranslation);
+    const residualT = roundVec(computeExpectedResidual(tErr, appliedTranslation), EPS);
 
     const verification: Verification[] = [{
       verification_id: `V${verificationCounter++}`,

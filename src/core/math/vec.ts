@@ -16,6 +16,23 @@ export function norm(v: Vec3): number {
   return Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
+export function clampScalar(value: number, min: number, max: number): number {
+  if (min > max) {
+    [min, max] = [max, min];
+  }
+  return Math.min(Math.max(value, min), max);
+}
+
+export function roundVec(v: Vec3, precision = 1e-9): Vec3 {
+  if (precision <= 0) return [v[0], v[1], v[2]];
+  const roundScalar = (value: number): number => {
+    if (!Number.isFinite(value)) return value;
+    const rounded = Math.round(value / precision) * precision;
+    return Object.is(rounded, -0) ? 0 : rounded;
+  };
+  return [roundScalar(v[0]), roundScalar(v[1]), roundScalar(v[2])];
+}
+
 export function clampVecPerAxis(v: Vec3, maxAbs: Vec3): { clamped: Vec3; changed: boolean } {
   let changed = false;
   const out: Vec3 = [v[0], v[1], v[2]];
