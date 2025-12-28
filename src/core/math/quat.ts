@@ -1,4 +1,5 @@
 import type { Quat } from "../types.js";
+import { roundScalar } from "./vec.js";
 
 export function normalize(q: Quat): Quat {
   const [x,y,z,w] = q;
@@ -40,4 +41,13 @@ export function angleDeg(q: Quat): number {
 
 export function identity(): Quat {
   return [0,0,0,1];
+}
+
+export function roundQuat(q: Quat, decimals: number): Quat {
+  return [
+    roundScalar(q[0], decimals),
+    roundScalar(q[1], decimals),
+    roundScalar(q[2], decimals),
+    roundScalar(q[3], decimals)
+  ];
 }

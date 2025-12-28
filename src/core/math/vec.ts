@@ -1,5 +1,20 @@
 import type { Vec3 } from "../types.js";
 
+export function roundScalar(value: number, decimals: number): number {
+  if (!Number.isFinite(value)) return value;
+  const factor = 10 ** decimals;
+  const rounded = Math.round((value + Math.sign(value) * Number.EPSILON) * factor) / factor;
+  return Object.is(rounded, -0) ? 0 : rounded;
+}
+
+export function roundVec(v: Vec3, decimals: number): Vec3 {
+  return [
+    roundScalar(v[0], decimals),
+    roundScalar(v[1], decimals),
+    roundScalar(v[2], decimals)
+  ];
+}
+
 export function sub(a: Vec3, b: Vec3): Vec3 {
   return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 }

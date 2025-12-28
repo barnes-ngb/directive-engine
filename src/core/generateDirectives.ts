@@ -12,10 +12,11 @@ import type {
   Verification
 } from "./types.js";
 
-import { sub, norm, clampVecPerAxis } from "./math/vec.js";
-import { inverse as qInv, multiply as qMul, angleDeg as qAngleDeg, identity as qIdent, normalize as qNorm } from "./math/quat.js";
+import { sub, norm, clampVecPerAxis, roundVec, roundScalar } from "./math/vec.js";
+import { inverse as qInv, multiply as qMul, angleDeg as qAngleDeg, identity as qIdent, normalize as qNorm, roundQuat } from "./math/quat.js";
 
 const EPS = 1e-9;
+const OUTPUT_DECIMALS = 10;
 
 function zeros(): Vec3 {
   return [0,0,0];
@@ -57,8 +58,20 @@ function withinTol(tNorm: number, rDeg: number, tol: {translation_mm:number; rot
   return tNorm <= tol.translation_mm + 1e-12 && rDeg <= tol.rotation_deg + 1e-12;
 }
 
+function roundVecOut(v: Vec3): Vec3 {
+  return roundVec(v, OUTPUT_DECIMALS);
+}
+
+function roundQuatOut(q: [number,number,number,number]): [number,number,number,number] {
+  return roundQuat(q, OUTPUT_DECIMALS);
+}
+
+function roundScalarOut(value: number): number {
+  return roundScalar(value, OUTPUT_DECIMALS);
+}
+
 function makeDelta(translation_mm: Vec3, rotation_quat_xyzw: [number,number,number,number]): TransformDelta {
-  return { translation_mm, rotation_quat_xyzw };
+  return { translation_mm: roundVecOut(translation_mm), rotation_quat_xyzw: roundQuatOut(rotation_quat_xyzw) };
 }
 
 function computeExpectedResidual(originalTErr: Vec3, appliedTranslation: Vec3): Vec3 {
@@ -116,9 +129,9 @@ export function generateDirectives({
     if (!a || !c) {
       // Missing data: treat as needs_review for MVP.
       const computed_errors = {
-        translation_error_mm_vec: [0,0,0] as Vec3,
-        translation_error_norm_mm: 0,
-        rotation_error_deg: 0
+        translation_error_mm_vec: roundVecOut([0,0,0] as Vec3),
+        translation_error_norm_mm: roundScalarOut(0),
+        rotation_error_deg: roundScalarOut(0)
       };
       const status: Status = "needs_review";
       steps.push({
@@ -137,7 +150,7 @@ export function generateDirectives({
           verification_id: `V${verificationCounter++}`,
           type: "re_scan",
           acceptance: { translation_mm: 0, rotation_deg: 0 },
-          expected_residual: { translation_mm_vec: [0,0,0], rotation_deg: 0 },
+          expected_residual: { translation_mm_vec: roundVecOut([0,0,0]), rotation_deg: roundScalarOut(0) },
           expected_result: "unknown",
           notes: "Resolve missing inputs."
         }]
@@ -148,9 +161,9 @@ export function generateDirectives({
     const { tErr, tErrNorm, qErr, rErrDeg } = computeErrors(n.T_world_part_nominal, a.T_world_part_asBuilt);
 
     const computed_errors = {
-      translation_error_mm_vec: tErr,
-      translation_error_norm_mm: tErrNorm,
-      rotation_error_deg: rErrDeg
+      translation_error_mm_vec: roundVecOut(tErr),
+      translation_error_norm_mm: roundScalarOut(tErrNorm),
+      rotation_error_deg: roundScalarOut(rErrDeg)
     };
 
     // Default step skeleton
@@ -174,7 +187,7 @@ export function generateDirectives({
         verification_id: `V${verificationCounter++}`,
         type: vType === "measure_pose" ? "re_scan" : vType, // nudge toward re_scan in needs_review
         acceptance: { translation_mm: c.tolerances.translation_mm, rotation_deg: c.tolerances.rotation_deg },
-        expected_residual: { translation_mm_vec: tErr, rotation_deg: rErrDeg },
+        expected_residual: { translation_mm_vec: roundVecOut(tErr), rotation_deg: roundScalarOut(rErrDeg) },
         expected_result: expectedResultForStatus(status),
         notes: c.verification?.notes ?? "Re-scan to improve confidence before issuing motion directives."
       }];
@@ -207,7 +220,7 @@ export function generateDirectives({
         verification_id: `V${verificationCounter++}`,
         type: verificationTypeForConstraint(c),
         acceptance: { translation_mm: c.tolerances.translation_mm, rotation_deg: c.tolerances.rotation_deg },
-        expected_residual: { translation_mm_vec: zeros(), rotation_deg: 0 },
+        expected_residual: { translation_mm_vec: roundVecOut(zeros()), rotation_deg: roundScalarOut(0) },
         expected_result: expectedResultForStatus(status),
         notes: c.verification?.notes
       }];
@@ -235,7 +248,7 @@ export function generateDirectives({
           verification_id: `V${verificationCounter++}`,
           type: verificationTypeForConstraint(c),
           acceptance: { translation_mm: c.tolerances.translation_mm, rotation_deg: c.tolerances.rotation_deg },
-          expected_residual: { translation_mm_vec: tErr, rotation_deg: rErrDeg },
+          expected_residual: { translation_mm_vec: roundVecOut(tErr), rotation_deg: roundScalarOut(rErrDeg) },
           expected_result: expectedResultForStatus(status),
           notes: c.verification?.notes ?? `Required translation exceeds translation_max_norm_mm=${c.translation_max_norm_mm}; do not attempt correction; escalate.`
         }];
@@ -352,7 +365,7 @@ export function generateDirectives({
       verification_id: `V${verificationCounter++}`,
       type: verificationTypeForConstraint(c),
       acceptance: { translation_mm: c.tolerances.translation_mm, rotation_deg: c.tolerances.rotation_deg },
-      expected_residual: { translation_mm_vec: residualT, rotation_deg: residualRotationDeg },
+      expected_residual: { translation_mm_vec: roundVecOut(residualT), rotation_deg: roundScalarOut(residualRotationDeg) },
       expected_result: expectedResultForStatus(status),
       notes: c.verification?.notes
     }];
