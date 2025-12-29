@@ -1,10 +1,5 @@
-import {
-  applyTransformToLine,
-  applyTransformToPoint,
-  computeRigidTransform
-} from "../src/core/index.js";
+import { applyTransformToLine, applyTransformToPoint } from "../src/core/index.js";
 import type { Line3 } from "../src/core/align/apply.js";
-import type { RigidTransformResult } from "../src/core/align/rigid.js";
 import type {
   AsBuiltPosesDataset,
   ConstraintsDataset,
@@ -59,8 +54,6 @@ export type MuseumRawDataset = {
   nominal_poses?: { parts: MuseumRawPart[] };
   as_built_poses?: { parts: MuseumRawPart[] };
 };
-
-export type AlignmentResult = RigidTransformResult;
 
 type MuseumLine = {
   p0: Vec3;
@@ -188,22 +181,6 @@ function midpoint(a: Vec3, b: Vec3): Vec3 {
 
 function toLine3(line: MuseumLine): Line3 {
   return { start_mm: line.p0, end_mm: line.p1 };
-}
-
-// Computes the SE(3) transform T_model_scan that best maps scan-frame anchor points
-// to model-frame anchor points. All coordinates are assumed to be in millimeters.
-export function computeAlignmentFromAnchors(anchors: MuseumAnchor[]): AlignmentResult {
-  const scanPts = anchors.map((anchor) => ({
-    anchor_id: anchor.id,
-    point_mm: anchor.scan_mm
-  }));
-  const modelPts = anchors.map((anchor) => ({
-    anchor_id: anchor.id,
-    point_mm: anchor.model_mm
-  }));
-  const result = computeRigidTransform(scanPts, modelPts);
-  result.residuals_mm.sort((a, b) => b.residual_mm - a.residual_mm);
-  return result;
 }
 
 function selectParts<T extends { part_id: string }>(
