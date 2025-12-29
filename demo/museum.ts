@@ -6,7 +6,7 @@ import type {
   Quat,
   Transform,
   Vec3
-} from "../src/core/index.js";
+} from "../src/types.js";
 
 export type MuseumAnchor = {
   id: string;

@@ -1,4 +1,4 @@
-import { generateDirectives } from "../core/index.js";
+import { generateDirectives } from "../core/generateDirectives.js";
 import type { AsBuiltPosesDataset, ConstraintsDataset, DirectivesOutput, NominalPosesDataset } from "../types.js";
 import {
   formatActionSummary,

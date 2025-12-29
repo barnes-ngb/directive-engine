@@ -1,14 +1,14 @@
 import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { generateDirectives } from "../core";
+import { generateDirectives } from "../core/generateDirectives.js";
 import type {
   AsBuiltPosesDataset,
   ConstraintsDataset,
   DirectivesOutput,
   NominalPosesDataset,
   Vec3
-} from "../core/index.js";
+} from "../types.js";
 
 const EPS = 1e-6;
 

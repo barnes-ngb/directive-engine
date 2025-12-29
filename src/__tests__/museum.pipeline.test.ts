@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { normalizeMuseumAnchors } from "../../demo/museum";
-import type { ConstraintsDataset } from "../core/index.js";
+import type { ConstraintsDataset } from "../types.js";
 import type { MuseumRawDataset } from "../../demo/museum";
 
 async function readJson<T>(path: string): Promise<T> {
