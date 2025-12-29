@@ -12,7 +12,16 @@
         <h1>Directive Engine Demo</h1>
         <p class="subtitle">Minimal shell for browser-based runs</p>
       </div>
-      <button class="run-button" type="button">Run</button>
+      <div class="header-controls">
+        <div class="dataset-control">
+          <label for="dataset-select">Dataset</label>
+          <select id="dataset-select" name="dataset">
+            <option value="toy" selected>Toy</option>
+            <option value="museum">Museum</option>
+          </select>
+        </div>
+        <button class="run-button" type="button">Run</button>
+      </div>
     </header>
 
     <div class="error-banner" id="error-banner" role="alert" hidden></div>

@@ -1,0 +1,71 @@
+{
+  "schema_version": "v0.1",
+  "dataset_id": "museum_v0_1",
+  "frame_id": "world",
+  "units": {
+    "length": "mm",
+    "rotation": "quaternion_xyzw"
+  },
+  "measured_at": "2026-03-18T09:30:00Z",
+  "parts": [
+    {
+      "part_id": "P1",
+      "T_world_part_asBuilt": {
+        "translation_mm": [0, 0, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      },
+      "pose_confidence": 0.95
+    },
+    {
+      "part_id": "P2",
+      "T_world_part_asBuilt": {
+        "translation_mm": [102.5, -1.0, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      },
+      "pose_confidence": 0.9
+    },
+    {
+      "part_id": "P3",
+      "T_world_part_asBuilt": {
+        "translation_mm": [60, 45, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      },
+      "pose_confidence": 0.88
+    },
+    {
+      "part_id": "P4",
+      "T_world_part_asBuilt": {
+        "translation_mm": [0, 0, 40],
+        "rotation_quat_xyzw": [0, 0, 0.2588190451, 0.9659258263]
+      },
+      "pose_confidence": 0.92,
+      "confidence_notes": "Good view; small reflective glare on knob surface."
+    },
+    {
+      "part_id": "P5",
+      "T_world_part_asBuilt": {
+        "translation_mm": [30, 160, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      },
+      "pose_confidence": 0.85
+    },
+    {
+      "part_id": "P6",
+      "T_world_part_asBuilt": {
+        "translation_mm": [-18, 11, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      },
+      "pose_confidence": 0.45,
+      "confidence_notes": "Partial occlusion; clip edges not fully visible."
+    },
+    {
+      "part_id": "P7",
+      "T_world_part_asBuilt": {
+        "translation_mm": [80, 20, 0],
+        "rotation_quat_xyzw": [0.0436193874, 0, 0, 0.9990482216]
+      },
+      "pose_confidence": 0.9
+    }
+  ]
+}
+

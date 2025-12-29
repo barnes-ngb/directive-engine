@@ -20,10 +20,14 @@ type DatasetPaths = {
   constraints: string;
 };
 
+type DatasetKey = "toy" | "museum";
+
 const statusPriority: Status[] = STATUS_PRIORITY;
 const statusClasses = new Set(statusPriority);
+const datasetKeys: DatasetKey[] = ["toy", "museum"];
 
 const runButton = document.querySelector<HTMLButtonElement>(".run-button");
+const datasetSelect = document.querySelector<HTMLSelectElement>("#dataset-select");
 const statusBadge = document.querySelector<HTMLSpanElement>("#status-badge");
 const statusDetails = document.querySelector<HTMLDivElement>("#status-details");
 const partList = document.querySelector<HTMLDivElement>("#part-list");
@@ -32,6 +36,7 @@ const verificationResidual = document.querySelector<HTMLDivElement>("#verificati
 const rawJson = document.querySelector<HTMLPreElement>("#raw-json");
 const errorBanner = document.querySelector<HTMLDivElement>("#error-banner");
 
+let selectedDataset: DatasetKey = datasetSelect?.value === "museum" ? "museum" : "toy";
 let cachedDirectives: DirectivesOutput | null = null;
 let cachedNominal: NominalPosesDataset | null = null;
 let cachedAsBuilt: AsBuiltPosesDataset | null = null;
@@ -64,6 +69,44 @@ function setStatusBadge(status: string, statusClass?: Status) {
   statusBadge.classList.remove(...Array.from(statusClasses));
   if (statusClass) {
     statusBadge.classList.add(statusClass);
+  }
+}
+
+function resolveDataset(value: string | null): DatasetKey {
+  return value === "museum" ? "museum" : "toy";
+}
+
+function getDatasetPaths(dataset: DatasetKey, baseUrl: string): DatasetPaths {
+  const filenamePrefix = dataset === "museum" ? "museum" : "toy";
+  return {
+    nominal: `${baseUrl}${filenamePrefix}_nominal_poses.json`,
+    asBuilt: `${baseUrl}${filenamePrefix}_asbuilt_poses.json`,
+    constraints: `${baseUrl}${filenamePrefix}_constraints.json`
+  };
+}
+
+function clearResults() {
+  cachedDirectives = null;
+  cachedNominal = null;
+  cachedAsBuilt = null;
+  cachedSummaries = null;
+  selectedPartId = null;
+  setError(null);
+  setStatusBadge("Idle");
+  if (statusDetails) {
+    statusDetails.innerHTML = `<p class="placeholder">Status details will appear here.</p>`;
+  }
+  if (partList) {
+    partList.innerHTML = `<p class="placeholder">Parts will appear here.</p>`;
+  }
+  if (actionList) {
+    actionList.innerHTML = `<p class="placeholder">Actions will appear here.</p>`;
+  }
+  if (verificationResidual) {
+    verificationResidual.innerHTML = `<p class="placeholder">Expected residual output will appear here.</p>`;
+  }
+  if (rawJson) {
+    rawJson.textContent = "";
   }
 }
 
@@ -223,18 +266,14 @@ function renderRawJson(payload: unknown) {
   rawJson.textContent = JSON.stringify(payload, null, 2);
 }
 
-async function runDemo(): Promise<void> {
+async function runDemo(dataset: DatasetKey = selectedDataset): Promise<void> {
   if (runButton) runButton.disabled = true;
   setError(null);
   setStatusBadge("Running", "pending");
 
   try {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
-    const paths: DatasetPaths = {
-      nominal: `${baseUrl}toy_nominal_poses.json`,
-      asBuilt: `${baseUrl}toy_asbuilt_poses.json`,
-      constraints: `${baseUrl}toy_constraints.json`
-    };
+    const paths = getDatasetPaths(dataset, baseUrl);
 
     const [nominal, asBuilt, constraints] = await Promise.all([
       fetchJson<NominalPosesDataset>(paths.nominal),
@@ -280,10 +319,22 @@ async function runDemo(): Promise<void> {
   }
 }
 
-if (runButton) {
-  runButton.addEventListener("click", () => {
-    runDemo().catch(() => undefined);
+if (datasetSelect) {
+  datasetSelect.addEventListener("change", () => {
+    selectedDataset = resolveDataset(datasetSelect.value);
+    clearResults();
+    runDemo(selectedDataset).catch(() => undefined);
   });
 }
 
-runDemo().catch(() => undefined);
+if (runButton) {
+  runButton.addEventListener("click", () => {
+    runDemo(selectedDataset).catch(() => undefined);
+  });
+}
+
+if (!datasetKeys.includes(selectedDataset)) {
+  selectedDataset = "toy";
+}
+
+runDemo(selectedDataset).catch(() => undefined);
