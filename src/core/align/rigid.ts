@@ -50,16 +50,16 @@ function covarianceEnergy(values: number[]): number {
   return Math.sqrt(values.reduce((acc, value) => acc + value * value, 0));
 }
 
-function computeHornTransform(modelPoints: Vec3[], scanPoints: Vec3[]): Transform {
-  if (modelPoints.length !== scanPoints.length) {
-    throw new Error("Model and scan point lists must have the same length.");
+function computeHornTransform(sourcePoints: Vec3[], targetPoints: Vec3[]): Transform {
+  if (sourcePoints.length !== targetPoints.length) {
+    throw new Error("Source and target point lists must have the same length.");
   }
-  if (modelPoints.length === 0) {
+  if (sourcePoints.length === 0) {
     return { translation_mm: [0, 0, 0], rotation_quat_xyzw: [0, 0, 0, 1] };
   }
 
-  const modelCentroid = centroid(modelPoints);
-  const scanCentroid = centroid(scanPoints);
+  const sourceCentroid = centroid(sourcePoints);
+  const targetCentroid = centroid(targetPoints);
 
   let sxx = 0;
   let sxy = 0;
@@ -71,19 +71,19 @@ function computeHornTransform(modelPoints: Vec3[], scanPoints: Vec3[]): Transfor
   let szy = 0;
   let szz = 0;
 
-  for (let i = 0; i < modelPoints.length; i++) {
-    const [mx, my, mz] = sub(modelPoints[i], modelCentroid);
-    const [sx, sy, sz] = sub(scanPoints[i], scanCentroid);
+  for (let i = 0; i < sourcePoints.length; i++) {
+    const [sx, sy, sz] = sub(sourcePoints[i], sourceCentroid);
+    const [tx, ty, tz] = sub(targetPoints[i], targetCentroid);
 
-    sxx += mx * sx;
-    sxy += mx * sy;
-    sxz += mx * sz;
-    syx += my * sx;
-    syy += my * sy;
-    syz += my * sz;
-    szx += mz * sx;
-    szy += mz * sy;
-    szz += mz * sz;
+    sxx += sx * tx;
+    sxy += sx * ty;
+    sxz += sx * tz;
+    syx += sy * tx;
+    syy += sy * ty;
+    syz += sy * tz;
+    szx += sz * tx;
+    szy += sz * ty;
+    szz += sz * tz;
   }
 
   const covarianceNorm = covarianceEnergy([sxx, sxy, sxz, syx, syy, syz, szx, szy, szz]);
@@ -105,8 +105,8 @@ function computeHornTransform(modelPoints: Vec3[], scanPoints: Vec3[]): Transfor
 
   const [qw, qx, qy, qz] = quatVector;
   const rotation_quat_xyzw: Quat = normalize([qx, qy, qz, qw]);
-  const rotatedModel = rotateVec3ByQuat(modelCentroid, rotation_quat_xyzw);
-  const translation_mm = sub(scanCentroid, rotatedModel);
+  const rotatedSource = rotateVec3ByQuat(sourceCentroid, rotation_quat_xyzw);
+  const translation_mm = sub(targetCentroid, rotatedSource);
 
   return { translation_mm, rotation_quat_xyzw };
 }
