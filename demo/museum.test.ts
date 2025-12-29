@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { applyTransformToPoint, invertTransform } from "../src/core/index.js";
+import { applyTransformToPoint } from "../src/core/index.js";
 import type { MuseumRawDataset } from "./museum.js";
 import {
   computeAlignmentFromAnchors,
@@ -50,10 +50,9 @@ describe("convertMuseumRawToPoseDatasets", () => {
 
     const scanLine = rawPart?.scan_line_mm as MuseumLine | undefined;
     expect(scanLine).toBeTruthy();
-    const scanToModel = invertTransform(alignment.T_model_scan);
     const scanMidpoint = midpoint(
-      applyTransformToPoint(scanToModel, scanLine!.p0),
-      applyTransformToPoint(scanToModel, scanLine!.p1)
+      applyTransformToPoint(alignment.T_model_scan, scanLine!.p0),
+      applyTransformToPoint(alignment.T_model_scan, scanLine!.p1)
     );
     const asBuiltPart = asBuilt.parts.find((part) => part.part_id === partId);
     expect(asBuiltPart?.T_world_part_asBuilt.rotation_quat_xyzw).toEqual([0, 0, 0, 1]);

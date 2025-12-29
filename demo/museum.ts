@@ -245,9 +245,9 @@ function getNominalTranslation(part: MuseumRawPart): Vec3 {
   return fallback.translation_mm;
 }
 
-function getAsBuiltTranslation(part: MuseumRawPart, scanToModel: Transform): Vec3 {
+function getAsBuiltTranslation(part: MuseumRawPart, T_model_scan: Transform): Vec3 {
   if (part.scan_line_mm) {
-    const transformed = applyTransformToLine(scanToModel, part.scan_line_mm);
+    const transformed = applyTransformToLine(T_model_scan, part.scan_line_mm);
     return midpoint(transformed.p0, transformed.p1);
   }
   const worldFallback = pickTransformOptional(part as Record<string, unknown>, [
@@ -262,7 +262,7 @@ function getAsBuiltTranslation(part: MuseumRawPart, scanToModel: Transform): Vec
     ["T_scan_part_asBuilt", "T_scan_part", "pose"],
     `as-built part ${part.part_id}`
   );
-  return applyTransformToPoint(scanToModel, scanFallback.translation_mm);
+  return applyTransformToPoint(T_model_scan, scanFallback.translation_mm);
 }
 
 export function normalizeMuseumAnchors(raw: MuseumRawDataset): MuseumAnchor[] {
@@ -299,7 +299,7 @@ export function convertMuseumRawToPoseDatasets(
     })
   } satisfies NominalPosesDataset;
 
-  const scanToModel = alignment;
+  const T_model_scan = alignment;
   const asBuilt = {
     schema_version: "v0.1",
     dataset_id: raw.dataset_id,
@@ -307,7 +307,7 @@ export function convertMuseumRawToPoseDatasets(
     units: { length: "mm", rotation: "quaternion_xyzw" },
     measured_at: requireMeasuredAt(raw.measured_at),
     parts: asBuiltParts.map((part) => {
-      const midpoint = getAsBuiltTranslation(part, scanToModel);
+      const midpoint = getAsBuiltTranslation(part, T_model_scan);
       const transformed: Transform = {
         translation_mm: midpoint,
         rotation_quat_xyzw: identityQuat
