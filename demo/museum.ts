@@ -115,8 +115,9 @@ export async function loadMuseumDataset(): Promise<{
   raw: MuseumRawDataset;
   constraints: ConstraintsDataset;
 }> {
-  const museumRawPath = "/museum_raw.json";
-  const museumConstraintsPath = "/museum_constraints.json";
+  const baseUrl = import.meta.env.BASE_URL ?? "/";
+  const museumRawPath = `${baseUrl}museum_raw.json`;
+  const museumConstraintsPath = `${baseUrl}museum_constraints.json`;
   const [raw, constraints] = await Promise.all([
     fetchJsonWithDiagnostics<MuseumRawDataset>(museumRawPath),
     fetchJsonWithDiagnostics<ConstraintsDataset>(museumConstraintsPath)
