@@ -125,7 +125,8 @@ Synthetic known transform recovery
 
 Generate 4+ non-coplanar model points.
 
-Apply known T_true to get model points.
+Define a known T_model_scan (scan → model), then derive scan points via its inverse
+T_scan_model (model → scan), e.g. p_scan = apply(T_scan_model, p_model).
 
 Run computeRigidTransform(scan, model)
 
@@ -145,7 +146,8 @@ Run computeRigidTransform.
 
 Independently recompute:
 
-residual vectors from returned T_model_scan (scan → model)
+residual vectors in the model frame from returned T_model_scan (scan → model):
+p_model - apply(T_model_scan, p_scan)
 
 residual magnitudes
 
