@@ -45,11 +45,12 @@ residuals_mm: { anchor_id; residual_mm; residual_vec_mm }[]
 }
 
 Frame convention:
-p_scan ≈ R(model→scan) * p_model + t(model→scan)
+T_model_scan maps scan → model:
+p_model ≈ R(scan→model) * p_scan + t(scan→model)
 
 Residual convention:
 
-residual_vec_mm = scan_point - (R*model_point + t)
+residual_vec_mm = p_model - apply(T_model_scan, p_scan)
 
 residual_mm = ||residual_vec_mm||
 
@@ -86,7 +87,7 @@ Extract principal eigenvector → quaternion
 
 Convert quaternion to rotation matrix
 
-Compute translation t = c_scan - R*c_model
+Compute translation t = c_model - R*c_scan
 
 Compute per-anchor residuals and RMS.
 
@@ -124,13 +125,13 @@ Synthetic known transform recovery
 
 Generate 4+ non-coplanar model points.
 
-Apply known T_true to get scan points.
+Apply known T_true to get model points.
 
 Run computeRigidTransform(scan, model)
 
 Verify:
 
-predicted scan points match within epsilon
+predicted model points match within epsilon
 
 rms_mm near 0
 
@@ -144,7 +145,7 @@ Run computeRigidTransform.
 
 Independently recompute:
 
-residual vectors from returned T_model_scan
+residual vectors from returned T_model_scan (scan → model)
 
 residual magnitudes
 
@@ -154,7 +155,7 @@ Assert that returned residuals_mm and rms_mm match those recomputed values (with
 
 Acceptance criteria checklist
 
- computeRigidTransform produces correct T_model_scan mapping model→scan
+ computeRigidTransform produces correct T_model_scan mapping scan→model
 
  Quaternion output is normalized (or close enough within numeric tolerance)
 
