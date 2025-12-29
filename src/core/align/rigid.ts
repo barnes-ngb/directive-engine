@@ -1,7 +1,8 @@
-import type { Transform, Vec3 } from "../types.js";
+import type { Quat, Transform, Vec3 } from "../types.js";
 
 import { norm, sub } from "../math/vec.js";
 import { normalize } from "../math/quat.js";
+import { rotateVec3ByQuat } from "./applyTransform.js";
 import { applyTransformToPoint } from "./apply.js";
 
 export interface AnchorPoint {
@@ -41,21 +42,25 @@ function multiplyMatrixVector(matrix: number[][], vector: number[]): number[] {
 function normalizeVector(vector: number[]): number[] {
   const magnitude = Math.sqrt(vector.reduce((acc, value) => acc + value * value, 0));
   if (magnitude === 0) {
-    return vector.map(() => 0);
+    throw new Error("Degenerate geometry: unable to normalize eigenvector.");
   }
   return vector.map((value) => value / magnitude);
 }
 
-function computeKabschTransform(sourcePoints: Vec3[], targetPoints: Vec3[]): Transform {
-  if (sourcePoints.length !== targetPoints.length) {
-    throw new Error("Source and target point lists must have the same length.");
+function covarianceEnergy(values: number[]): number {
+  return Math.sqrt(values.reduce((acc, value) => acc + value * value, 0));
+}
+
+function computeHornTransform(modelPoints: Vec3[], scanPoints: Vec3[]): Transform {
+  if (modelPoints.length !== scanPoints.length) {
+    throw new Error("Model and scan point lists must have the same length.");
   }
-  if (sourcePoints.length === 0) {
+  if (modelPoints.length === 0) {
     return { translation_mm: [0, 0, 0], rotation_quat_xyzw: [0, 0, 0, 1] };
   }
 
-  const sourceCentroid = centroid(sourcePoints);
-  const targetCentroid = centroid(targetPoints);
+  const modelCentroid = centroid(modelPoints);
+  const scanCentroid = centroid(scanPoints);
 
   let sxx = 0;
   let sxy = 0;
@@ -67,19 +72,24 @@ function computeKabschTransform(sourcePoints: Vec3[], targetPoints: Vec3[]): Tra
   let szy = 0;
   let szz = 0;
 
-  for (let i = 0; i < sourcePoints.length; i++) {
-    const [px, py, pz] = sub(sourcePoints[i], sourceCentroid);
-    const [qx, qy, qz] = sub(targetPoints[i], targetCentroid);
+  for (let i = 0; i < modelPoints.length; i++) {
+    const [mx, my, mz] = sub(modelPoints[i], modelCentroid);
+    const [sx, sy, sz] = sub(scanPoints[i], scanCentroid);
 
-    sxx += px * qx;
-    sxy += px * qy;
-    sxz += px * qz;
-    syx += py * qx;
-    syy += py * qy;
-    syz += py * qz;
-    szx += pz * qx;
-    szy += pz * qy;
-    szz += pz * qz;
+    sxx += mx * sx;
+    sxy += mx * sy;
+    sxz += mx * sz;
+    syx += my * sx;
+    syy += my * sy;
+    syz += my * sz;
+    szx += mz * sx;
+    szy += mz * sy;
+    szz += mz * sz;
+  }
+
+  const covarianceNorm = covarianceEnergy([sxx, sxy, sxz, syx, syy, syz, szx, szy, szz]);
+  if (covarianceNorm === 0) {
+    throw new Error("Degenerate geometry: covariance matrix is zero.");
   }
 
   const nMatrix = [
@@ -90,17 +100,14 @@ function computeKabschTransform(sourcePoints: Vec3[], targetPoints: Vec3[]): Tra
   ];
 
   let quatVector = [1, 0, 0, 0];
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 200; i++) {
     quatVector = normalizeVector(multiplyMatrixVector(nMatrix, quatVector));
   }
 
   const [qw, qx, qy, qz] = quatVector;
-  const rotation_quat_xyzw = normalize([qx, qy, qz, qw]);
-  const rotatedSource = applyTransformToPoint(sourceCentroid, {
-    translation_mm: [0, 0, 0],
-    rotation_quat_xyzw
-  });
-  const translation_mm = sub(targetCentroid, rotatedSource);
+  const rotation_quat_xyzw: Quat = normalize([qx, qy, qz, qw]);
+  const rotatedModel = rotateVec3ByQuat(modelCentroid, rotation_quat_xyzw);
+  const translation_mm = sub(scanCentroid, rotatedModel);
 
   return { translation_mm, rotation_quat_xyzw };
 }
@@ -109,10 +116,6 @@ export function computeRigidTransform(
   scanPts: AnchorPoint[],
   modelPts: AnchorPoint[]
 ): RigidTransformResult {
-  if (scanPts.length !== modelPts.length) {
-    throw new Error("Scan and model anchor lists must have the same length.");
-  }
-
   const modelById = new Map<string, Vec3>();
   for (const { anchor_id, point_mm } of modelPts) {
     if (modelById.has(anchor_id)) {
@@ -121,23 +124,34 @@ export function computeRigidTransform(
     modelById.set(anchor_id, point_mm);
   }
 
-  const scanPoints: Vec3[] = [];
-  const modelPoints: Vec3[] = [];
+  const scanById = new Map<string, Vec3>();
   for (const { anchor_id, point_mm } of scanPts) {
-    const modelPoint = modelById.get(anchor_id);
-    if (!modelPoint) {
-      throw new Error(`Missing model anchor for id: ${anchor_id}`);
+    if (scanById.has(anchor_id)) {
+      throw new Error(`Duplicate scan anchor id: ${anchor_id}`);
     }
-    scanPoints.push(point_mm);
-    modelPoints.push(modelPoint);
+    scanById.set(anchor_id, point_mm);
   }
 
-  const T_model_scan = computeKabschTransform(scanPoints, modelPoints);
+  const matched: { anchor_id: string; scanPoint: Vec3; modelPoint: Vec3 }[] = [];
+  for (const [anchor_id, scanPoint] of scanById.entries()) {
+    const modelPoint = modelById.get(anchor_id);
+    if (!modelPoint) {
+      continue;
+    }
+    matched.push({ anchor_id, scanPoint, modelPoint });
+  }
 
-  const residuals_mm: AnchorResidual[] = scanPts.map(({ anchor_id, point_mm }) => {
-    const modelPoint = modelById.get(anchor_id) as Vec3;
-    const predicted = applyTransformToPoint(point_mm, T_model_scan);
-    const residual_vec_mm = sub(modelPoint, predicted);
+  if (matched.length < 3) {
+    throw new Error(`Rigid alignment requires at least 3 correspondences; found ${matched.length}.`);
+  }
+
+  const scanPoints = matched.map((entry) => entry.scanPoint);
+  const modelPoints = matched.map((entry) => entry.modelPoint);
+  const T_model_scan = computeHornTransform(modelPoints, scanPoints);
+
+  const residuals_mm: AnchorResidual[] = matched.map(({ anchor_id, scanPoint, modelPoint }) => {
+    const predicted = applyTransformToPoint(T_model_scan, modelPoint);
+    const residual_vec_mm = sub(scanPoint, predicted);
     return {
       anchor_id,
       residual_mm: norm(residual_vec_mm),
