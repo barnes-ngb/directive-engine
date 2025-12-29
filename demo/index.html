@@ -58,6 +58,36 @@
         </div>
       </section>
 
+      <section class="panel" id="alignment-panel" aria-labelledby="alignment-title" hidden>
+        <h2 id="alignment-title">Alignment Quality</h2>
+        <div class="panel-body alignment-quality">
+          <div class="alignment-summary">
+            <div class="alignment-rms">
+              <span class="alignment-label">RMS (mm)</span>
+              <strong class="alignment-rms-value" id="alignment-rms">—</strong>
+            </div>
+          </div>
+          <div class="alignment-table-wrapper">
+            <table class="alignment-table">
+              <thead>
+                <tr>
+                  <th>Anchor</th>
+                  <th class="numeric">Residual (mm)</th>
+                  <th class="numeric">dx (mm)</th>
+                  <th class="numeric">dy (mm)</th>
+                  <th class="numeric">dz (mm)</th>
+                </tr>
+              </thead>
+              <tbody id="alignment-residuals">
+                <tr>
+                  <td class="placeholder-cell" colspan="5">Residuals will appear here.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="raw-json-title">
         <h2 id="raw-json-title">Raw JSON</h2>
         <div class="panel-body">

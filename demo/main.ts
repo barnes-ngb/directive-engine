@@ -9,6 +9,7 @@ import type {
 import {
   describeAction,
   deriveOverallStatus,
+  computeResidualsMm,
   extractPartSummaries,
   formatResidual,
   STATUS_PRIORITY
@@ -65,6 +66,9 @@ const statusDetails = document.querySelector<HTMLDivElement>("#status-details");
 const partList = document.querySelector<HTMLDivElement>("#part-list");
 const actionList = document.querySelector<HTMLDivElement>("#action-list");
 const verificationResidual = document.querySelector<HTMLDivElement>("#verification-residual");
+const alignmentPanel = document.querySelector<HTMLElement>("#alignment-panel");
+const alignmentRms = document.querySelector<HTMLSpanElement>("#alignment-rms");
+const alignmentResiduals = document.querySelector<HTMLTableSectionElement>("#alignment-residuals");
 const rawJson = document.querySelector<HTMLPreElement>("#raw-json");
 const errorBanner = document.querySelector<HTMLDivElement>("#error-banner");
 
@@ -294,6 +298,65 @@ function renderRawJson(payload: unknown) {
   rawJson.textContent = JSON.stringify(payload, null, 2);
 }
 
+function renderAlignmentQuality(dataset: DemoDataset, directives?: DirectivesOutput | null) {
+  if (!alignmentPanel) return;
+
+  if (dataset !== "museum") {
+    alignmentPanel.hidden = true;
+    if (alignmentRms) alignmentRms.textContent = "—";
+    if (alignmentResiduals) {
+      alignmentResiduals.innerHTML = `
+        <tr>
+          <td class="placeholder-cell" colspan="5">Residuals will appear here.</td>
+        </tr>
+      `;
+    }
+    return;
+  }
+
+  alignmentPanel.hidden = false;
+
+  if (!directives) {
+    if (alignmentRms) alignmentRms.textContent = "n/a";
+    if (alignmentResiduals) {
+      alignmentResiduals.innerHTML = `
+        <tr>
+          <td class="placeholder-cell" colspan="5">Residuals unavailable.</td>
+        </tr>
+      `;
+    }
+    return;
+  }
+
+  const { rms, residuals } = computeResidualsMm(directives);
+  if (alignmentRms) alignmentRms.textContent = rms === null ? "n/a" : formatResidual(rms);
+
+  if (!alignmentResiduals) return;
+  if (residuals.length === 0) {
+    alignmentResiduals.innerHTML = `
+      <tr>
+        <td class="placeholder-cell" colspan="5">No residuals available.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  alignmentResiduals.innerHTML = residuals
+    .map((entry) => {
+      const [dx, dy, dz] = entry.translation ?? [null, null, null];
+      return `
+        <tr>
+          <td>${entry.id}</td>
+          <td class="numeric">${formatResidual(entry.magnitude)}</td>
+          <td class="numeric">${formatResidual(dx)}</td>
+          <td class="numeric">${formatResidual(dy)}</td>
+          <td class="numeric">${formatResidual(dz)}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
 function formatDatasetError(error: DatasetFetchError): string {
   const statusLabel =
     error.status !== undefined ? ` (status ${error.status}${error.statusText ? ` ${error.statusText}` : ""})` : "";
@@ -366,6 +429,7 @@ async function runDemo(): Promise<void> {
     cachedSummaries = partSummaries;
     renderParts(partSummaries, partNames);
     renderSelection();
+    renderAlignmentQuality(dataset, directives);
     renderRawJson({ nominal, asBuilt, constraints, directives });
   } catch (error) {
     const dataset = getDatasetSelection();
@@ -389,6 +453,7 @@ async function runDemo(): Promise<void> {
     if (verificationResidual) {
       verificationResidual.innerHTML = `<p class="placeholder">Unable to load expected residual.</p>`;
     }
+    renderAlignmentQuality(dataset, null);
   } finally {
     if (runButton) runButton.disabled = false;
   }
