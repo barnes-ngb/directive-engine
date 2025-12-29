@@ -146,11 +146,11 @@ export function computeRigidTransform(
 
   const scanPoints = matched.map((entry) => entry.scanPoint);
   const modelPoints = matched.map((entry) => entry.modelPoint);
-  const T_model_scan = computeHornTransform(modelPoints, scanPoints);
+  const T_model_scan = computeHornTransform(scanPoints, modelPoints);
 
   const residuals_mm: AnchorResidual[] = matched.map(({ anchor_id, scanPoint, modelPoint }) => {
-    const predicted = applyTransformToPoint(T_model_scan, modelPoint);
-    const residual_vec_mm = sub(scanPoint, predicted);
+    const predicted = applyTransformToPoint(T_model_scan, scanPoint);
+    const residual_vec_mm = sub(modelPoint, predicted);
     return {
       anchor_id,
       residual_mm: norm(residual_vec_mm),

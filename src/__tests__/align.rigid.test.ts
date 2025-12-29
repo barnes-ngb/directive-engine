@@ -50,8 +50,8 @@ describe("computeRigidTransform", () => {
     const result = computeRigidTransform(scanPts, modelPts);
 
     for (let i = 0; i < scanPts.length; i++) {
-      const predicted = applyTransformToPoint(result.T_model_scan, modelPts[i].point_mm);
-      closeVec(predicted, scanPts[i].point_mm, 2e-4);
+      const predicted = applyTransformToPoint(result.T_model_scan, scanPts[i].point_mm);
+      closeVec(predicted, modelPts[i].point_mm, 2e-4);
     }
 
     close(result.rms_mm, 0, 2e-4);
@@ -81,8 +81,8 @@ describe("computeRigidTransform", () => {
       const scanPoint = scanPts.find((pt) => pt.anchor_id === residual.anchor_id);
       const modelPoint = modelPts.find((pt) => pt.anchor_id === residual.anchor_id);
       assert.ok(scanPoint && modelPoint, "Expected matching anchors");
-      const predicted = applyTransformToPoint(result.T_model_scan, modelPoint.point_mm);
-      const expectedVec = residualVec(scanPoint.point_mm, predicted);
+      const predicted = applyTransformToPoint(result.T_model_scan, scanPoint.point_mm);
+      const expectedVec = residualVec(modelPoint.point_mm, predicted);
       closeVec(residual.residual_vec_mm, expectedVec, 1e-6);
       const expectedMag = Math.sqrt(expectedVec[0] ** 2 + expectedVec[1] ** 2 + expectedVec[2] ** 2);
       close(residual.residual_mm, expectedMag, 1e-6);

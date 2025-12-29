@@ -353,8 +353,8 @@ async function runDemo(): Promise<void> {
 
     if (dataset === "museum") {
       const { raw, constraints: rawConstraints } = await loadMuseumDataset();
-      // Kabsch/Horn alignment from anchor correspondences (mm). T_model_scan maps model -> scan.
-      // We apply its inverse so as-built scan-frame poses are transformed into the model/world frame.
+      // Kabsch/Horn alignment from anchor correspondences (mm). T_model_scan maps scan -> model.
+      // Apply it so as-built scan-frame poses are transformed into the model/world frame.
       const anchors = normalizeMuseumAnchors(raw);
       const alignment = computeAlignmentFromAnchors(anchors);
       const converted = convertMuseumRawToPoseDatasets(raw, alignment);
