@@ -2,8 +2,7 @@ import type { Quat, Transform, Vec3 } from "../types.js";
 
 import { norm, sub } from "../math/vec.js";
 import { normalize } from "../math/quat.js";
-import { rotateVec3ByQuat } from "./applyTransform.js";
-import { applyTransformToPoint } from "./apply.js";
+import { applyTransformToPoint, rotateVec3ByQuat } from "./apply.js";
 
 export interface AnchorPoint {
   anchor_id: string;
