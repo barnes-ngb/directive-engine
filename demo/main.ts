@@ -1,4 +1,4 @@
-import { generateDirectives } from "../src/core/generateDirectives.js";
+import { computeRigidTransform, generateDirectives } from "../src/core/index.js";
 import type {
   AsBuiltPosesDataset,
   ConstraintsDataset,
@@ -15,7 +15,6 @@ import {
 } from "./summary.js";
 import {
   DatasetFetchError,
-  computeAlignmentFromAnchors,
   convertMuseumRawToPoseDatasets,
   loadMuseumDataset,
   normalizeMuseumAnchors
@@ -49,7 +48,7 @@ const errorBanner = document.querySelector<HTMLDivElement>("#error-banner");
 let cachedDirectives: DirectivesOutput | null = null;
 let cachedNominal: NominalPosesDataset | null = null;
 let cachedAsBuilt: AsBuiltPosesDataset | null = null;
-let cachedAlignment: ReturnType<typeof computeAlignmentFromAnchors> | null = null;
+let cachedAlignment: ReturnType<typeof computeRigidTransform> | null = null;
 let cachedSummaries: ReturnType<typeof extractPartSummaries> | null = null;
 let selectedPartId: string | null = null;
 let selectedDataset: DemoDataset = datasetSelect?.value === "museum" ? "museum" : "toy";
@@ -356,7 +355,15 @@ async function runDemo(): Promise<void> {
       // Kabsch/Horn alignment from anchor correspondences (mm). T_model_scan maps scan -> model.
       // Apply it so as-built scan-frame poses are transformed into the model/world frame.
       const anchors = normalizeMuseumAnchors(raw);
-      const alignment = computeAlignmentFromAnchors(anchors);
+      const scanPts = anchors.map((anchor) => ({
+        anchor_id: anchor.id,
+        point_mm: anchor.scan_mm
+      }));
+      const modelPts = anchors.map((anchor) => ({
+        anchor_id: anchor.id,
+        point_mm: anchor.model_mm
+      }));
+      const alignment = computeRigidTransform(scanPts, modelPts);
       const converted = convertMuseumRawToPoseDatasets(raw, alignment.T_model_scan);
       nominal = converted.nominal;
       asBuilt = converted.asBuilt;

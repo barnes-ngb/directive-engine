@@ -1,14 +1,10 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { applyTransformToLine } from "../src/core/index.js";
+import { applyTransformToLine, computeRigidTransform } from "../src/core/index.js";
 import type { Line3 } from "../src/core/align/apply.js";
 import type { MuseumRawDataset } from "./museum.js";
-import {
-  computeAlignmentFromAnchors,
-  convertMuseumRawToPoseDatasets,
-  normalizeMuseumAnchors
-} from "./museum.js";
+import { convertMuseumRawToPoseDatasets, normalizeMuseumAnchors } from "./museum.js";
 
 type Vec3 = [number, number, number];
 
@@ -38,7 +34,15 @@ describe("convertMuseumRawToPoseDatasets", () => {
     raw.measured_at ??= "2024-01-01T00:00:00Z";
 
     const anchors = normalizeMuseumAnchors(raw);
-    const alignment = computeAlignmentFromAnchors(anchors);
+    const scanPts = anchors.map((anchor) => ({
+      anchor_id: anchor.id,
+      point_mm: anchor.scan_mm
+    }));
+    const modelPts = anchors.map((anchor) => ({
+      anchor_id: anchor.id,
+      point_mm: anchor.model_mm
+    }));
+    const alignment = computeRigidTransform(scanPts, modelPts);
     const { nominal, asBuilt } = convertMuseumRawToPoseDatasets(raw, alignment.T_model_scan);
 
     const partId = "MULLION_0001";
