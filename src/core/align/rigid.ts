@@ -161,8 +161,10 @@ export function computeRigidTransform(
   const rms_mm = residuals_mm.length === 0
     ? 0
     : Math.sqrt(
-        residuals_mm.reduce((sum, residual) => sum + residual.residual_mm * residual.residual_mm, 0)
-          / residuals_mm.length
+        residuals_mm.reduce(
+          (sum, residual) => sum + Math.pow(norm(residual.residual_vec_mm), 2),
+          0
+        ) / residuals_mm.length
       );
 
   return { T_model_scan, rms_mm, residuals_mm };
