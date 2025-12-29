@@ -364,9 +364,9 @@ async function runDemo(): Promise<void> {
       cachedAlignment = alignment;
       cachedAnchors = converted.anchors;
       paths = {
-        nominal: "/museum_raw.json",
-        asBuilt: "/museum_raw.json",
-        constraints: "/museum_constraints.json"
+        nominal: `${baseUrl}museum_raw.json`,
+        asBuilt: `${baseUrl}museum_raw.json`,
+        constraints: `${baseUrl}museum_constraints.json`
       };
     } else {
       cachedAlignment = null;
