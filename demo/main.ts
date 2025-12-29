@@ -4,6 +4,7 @@ import type {
   ConstraintsDataset,
   DirectivesOutput,
   NominalPosesDataset,
+  Step,
   Status
 } from "../src/types.js";
 import {
@@ -29,6 +30,9 @@ const statusDetails = document.querySelector<HTMLDivElement>("#status-details");
 const partList = document.querySelector<HTMLDivElement>("#part-list");
 const actionList = document.querySelector<HTMLDivElement>("#action-list");
 const verificationResidual = document.querySelector<HTMLDivElement>("#verification-residual");
+const alignmentPanel = document.querySelector<HTMLElement>("#alignment-panel");
+const alignmentRms = document.querySelector<HTMLSpanElement>("#alignment-rms");
+const alignmentResiduals = document.querySelector<HTMLTableSectionElement>("#alignment-residuals");
 const rawJson = document.querySelector<HTMLPreElement>("#raw-json");
 const errorBanner = document.querySelector<HTMLDivElement>("#error-banner");
 
@@ -37,6 +41,14 @@ let cachedNominal: NominalPosesDataset | null = null;
 let cachedAsBuilt: AsBuiltPosesDataset | null = null;
 let cachedSummaries: ReturnType<typeof extractPartSummaries> | null = null;
 let selectedPartId: string | null = null;
+
+type AlignmentResidual = {
+  anchorId: string;
+  magnitudeMm: number | null;
+  dxMm: number | null;
+  dyMm: number | null;
+  dzMm: number | null;
+};
 
 function formatVec(vec?: [number, number, number], digits = 2): string {
   if (!vec) return "n/a";
@@ -65,6 +77,73 @@ function setStatusBadge(status: string, statusClass?: Status) {
   if (statusClass) {
     statusBadge.classList.add(statusClass);
   }
+}
+
+function isMuseumDataset(datasetId: string): boolean {
+  return datasetId.trim().toLowerCase() === "museum";
+}
+
+function computeResidualsMm(steps: Step[]): { rmsMm: number | null; residuals: AlignmentResidual[] } {
+  const residuals = steps.map((step) => {
+    const vec = step.computed_errors?.translation_error_mm_vec ?? null;
+    const magnitude =
+      step.computed_errors?.translation_error_norm_mm ??
+      (vec ? Math.hypot(vec[0], vec[1], vec[2]) : null);
+    return {
+      anchorId: step.part_id,
+      magnitudeMm: Number.isFinite(magnitude) ? magnitude : null,
+      dxMm: vec?.[0] ?? null,
+      dyMm: vec?.[1] ?? null,
+      dzMm: vec?.[2] ?? null
+    };
+  });
+
+  const magnitudes = residuals
+    .map((entry) => entry.magnitudeMm)
+    .filter((value): value is number => value !== null && Number.isFinite(value));
+  const rmsMm =
+    magnitudes.length > 0
+      ? Math.sqrt(magnitudes.reduce((acc, value) => acc + value ** 2, 0) / magnitudes.length)
+      : null;
+  return { rmsMm, residuals };
+}
+
+function renderAlignmentQuality(directives: DirectivesOutput | null) {
+  if (!alignmentPanel || !alignmentRms || !alignmentResiduals) return;
+
+  if (!directives || !isMuseumDataset(directives.dataset_id)) {
+    alignmentPanel.hidden = true;
+    alignmentRms.textContent = "n/a";
+    alignmentResiduals.innerHTML = "";
+    return;
+  }
+
+  alignmentPanel.hidden = false;
+  const { rmsMm, residuals } = computeResidualsMm(directives.steps);
+  alignmentRms.textContent = formatResidual(rmsMm, 2);
+
+  if (residuals.length === 0) {
+    alignmentResiduals.innerHTML = `
+      <tr>
+        <td class="placeholder" colspan="5">No residuals available.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  alignmentResiduals.innerHTML = residuals
+    .map((entry) => {
+      return `
+        <tr>
+          <td>${entry.anchorId}</td>
+          <td>${formatResidual(entry.magnitudeMm, 2)}</td>
+          <td>${formatResidual(entry.dxMm, 2)}</td>
+          <td>${formatResidual(entry.dyMm, 2)}</td>
+          <td>${formatResidual(entry.dzMm, 2)}</td>
+        </tr>
+      `;
+    })
+    .join("");
 }
 
 async function fetchJson<T>(path: string): Promise<T> {
@@ -258,6 +337,7 @@ async function runDemo(): Promise<void> {
     cachedSummaries = partSummaries;
     renderParts(partSummaries, partNames);
     renderSelection();
+    renderAlignmentQuality(directives);
     renderRawJson({ nominal, asBuilt, constraints, directives });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -275,6 +355,7 @@ async function runDemo(): Promise<void> {
     if (verificationResidual) {
       verificationResidual.innerHTML = `<p class="placeholder">Unable to load expected residual.</p>`;
     }
+    renderAlignmentQuality(null);
   } finally {
     if (runButton) runButton.disabled = false;
   }
