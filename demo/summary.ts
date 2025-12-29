@@ -16,12 +16,6 @@ export type PartSummary = {
   expectedResidual: Verification["expected_residual"] | null;
 };
 
-export type ResidualEntry = {
-  id: string;
-  magnitude: number;
-  translation?: Vec3;
-};
-
 type DirectivesLike = Omit<DirectivesOutput, "steps" | "summary"> & {
   steps: Step[] | Record<string, Step>;
   summary?: DirectivesOutput["summary"];
@@ -42,12 +36,6 @@ function normalizeSteps(steps: Step[] | Record<string, Step>): Step[] {
   return Object.values(steps).sort((a, b) => a.part_id.localeCompare(b.part_id));
 }
 
-function vecMagnitude(vec?: Vec3): number | null {
-  if (!vec || vec.length !== 3) return null;
-  if (!vec.every((component) => Number.isFinite(component))) return null;
-  return Math.sqrt(vec.reduce((acc, component) => acc + component * component, 0));
-}
-
 export function extractPartSummaries(directives: DirectivesLike): PartSummary[] {
   return normalizeSteps(directives.steps).map((step) => ({
     id: step.part_id,
@@ -55,32 +43,6 @@ export function extractPartSummaries(directives: DirectivesLike): PartSummary[] 
     actions: step.actions ?? [],
     expectedResidual: step.verification?.[0]?.expected_residual ?? null
   }));
-}
-
-export function computeResidualsMm(
-  directives: Pick<DirectivesLike, "steps">
-): { rms: number | null; residuals: ResidualEntry[] } {
-  const residuals = normalizeSteps(directives.steps)
-    .map((step) => {
-      const translation = step.computed_errors?.translation_error_mm_vec;
-      const norm = step.computed_errors?.translation_error_norm_mm;
-      const magnitude =
-        typeof norm === "number" && Number.isFinite(norm) ? norm : vecMagnitude(translation ?? undefined);
-      if (magnitude === null) return null;
-      return {
-        id: step.part_id,
-        magnitude,
-        translation: translation ?? undefined
-      };
-    })
-    .filter((value): value is ResidualEntry => value !== null);
-
-  if (residuals.length === 0) {
-    return { rms: null, residuals };
-  }
-
-  const rms = Math.sqrt(residuals.reduce((acc, entry) => acc + entry.magnitude ** 2, 0) / residuals.length);
-  return { rms, residuals };
 }
 
 export function deriveOverallStatus(
