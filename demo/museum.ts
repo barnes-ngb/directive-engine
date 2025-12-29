@@ -380,6 +380,7 @@ export function computeResidualsMm(
   });
 
   const rms = Math.sqrt(residuals.reduce((acc, entry) => acc + entry.magnitude ** 2, 0) / residuals.length);
+  residuals.sort((a, b) => b.magnitude - a.magnitude);
   return { rms, residuals };
 }
 
