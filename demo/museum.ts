@@ -407,6 +407,7 @@ export function computeResidualsMm(
   });
 
   const rms = Math.sqrt(residuals.reduce((acc, entry) => acc + entry.magnitude ** 2, 0) / residuals.length);
+  // Sort by magnitude descending so the largest residuals appear first in the table.
   residuals.sort((a, b) => b.magnitude - a.magnitude);
   return { rms, residuals };
 }
