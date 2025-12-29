@@ -9,11 +9,18 @@ import type {
 import {
   describeAction,
   deriveOverallStatus,
-  computeResidualsMm,
   extractPartSummaries,
   formatResidual,
   STATUS_PRIORITY
 } from "./summary.js";
+import {
+  DatasetFetchError,
+  computeAlignmentFromAnchors,
+  computeResidualsMm as computeAnchorResidualsMm,
+  convertMuseumRawToPoseDatasets,
+  loadMuseumDataset,
+  normalizeMuseumAnchors
+} from "./museum.js";
 
 type DatasetPaths = {
   nominal: string;
@@ -23,38 +30,6 @@ type DatasetPaths = {
 
 type DemoDataset = "toy" | "museum";
 
-type MuseumRawPayload =
-  | {
-      nominal: NominalPosesDataset;
-      asBuilt: AsBuiltPosesDataset;
-    }
-  | {
-      nominal_poses: NominalPosesDataset;
-      as_built_poses: AsBuiltPosesDataset;
-    };
-
-type FetchFailureKind = "http" | "parse" | "network";
-
-class DatasetFetchError extends Error {
-  readonly kind: FetchFailureKind;
-  readonly path: string;
-  readonly status?: number;
-  readonly statusText?: string;
-
-  constructor(
-    kind: FetchFailureKind,
-    path: string,
-    status?: number,
-    statusText?: string,
-    message?: string
-  ) {
-    super(message ?? `Failed to load ${path}`);
-    this.kind = kind;
-    this.path = path;
-    this.status = status;
-    this.statusText = statusText;
-  }
-}
 
 const statusPriority: Status[] = STATUS_PRIORITY;
 const statusClasses = new Set(statusPriority);
@@ -75,6 +50,8 @@ const errorBanner = document.querySelector<HTMLDivElement>("#error-banner");
 let cachedDirectives: DirectivesOutput | null = null;
 let cachedNominal: NominalPosesDataset | null = null;
 let cachedAsBuilt: AsBuiltPosesDataset | null = null;
+let cachedAlignment: ReturnType<typeof computeAlignmentFromAnchors> | null = null;
+let cachedAnchors: ReturnType<typeof convertMuseumRawToPoseDatasets>["anchors"] = [];
 let cachedSummaries: ReturnType<typeof extractPartSummaries> | null = null;
 let selectedPartId: string | null = null;
 let selectedDataset: DemoDataset = datasetSelect?.value === "museum" ? "museum" : "toy";
@@ -108,47 +85,12 @@ function setStatusBadge(status: string, statusClass?: Status) {
   }
 }
 
-function normalizeMuseumRaw(payload: MuseumRawPayload): {
-  nominal: NominalPosesDataset;
-  asBuilt: AsBuiltPosesDataset;
-} {
-  if (!payload || typeof payload !== "object") {
-    throw new Error("Museum raw data is missing nominal or as-built poses.");
-  }
-  if ("nominal" in payload && "asBuilt" in payload) {
-    return { nominal: payload.nominal, asBuilt: payload.asBuilt };
-  }
-  if ("nominal_poses" in payload && "as_built_poses" in payload) {
-    return { nominal: payload.nominal_poses, asBuilt: payload.as_built_poses };
-  }
-  throw new Error("Museum raw data is missing nominal or as-built poses.");
-}
-
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(path);
   if (!response.ok) {
     throw new Error(`Failed to load ${path}: ${response.status} ${response.statusText}`);
   }
   return response.json() as Promise<T>;
-}
-
-async function fetchJsonWithDiagnostics<T>(path: string): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(path);
-  } catch (error) {
-    throw new DatasetFetchError("network", path, undefined, undefined, String(error));
-  }
-
-  if (!response.ok) {
-    throw new DatasetFetchError("http", path, response.status, response.statusText);
-  }
-
-  try {
-    return (await response.json()) as T;
-  } catch (error) {
-    throw new DatasetFetchError("parse", path, response.status, response.statusText, String(error));
-  }
 }
 
 async function runGenerateDirectives(
@@ -299,7 +241,7 @@ function renderRawJson(payload: unknown) {
   rawJson.textContent = JSON.stringify(payload, null, 2);
 }
 
-function renderAlignmentQuality(dataset: DemoDataset, directives?: DirectivesOutput | null) {
+function renderAlignmentQuality(dataset: DemoDataset) {
   if (!alignmentPanel) return;
 
   if (dataset !== "museum") {
@@ -317,7 +259,7 @@ function renderAlignmentQuality(dataset: DemoDataset, directives?: DirectivesOut
 
   alignmentPanel.hidden = false;
 
-  if (!directives) {
+  if (!cachedAlignment) {
     if (alignmentRms) alignmentRms.textContent = "n/a";
     if (alignmentResiduals) {
       alignmentResiduals.innerHTML = `
@@ -329,7 +271,7 @@ function renderAlignmentQuality(dataset: DemoDataset, directives?: DirectivesOut
     return;
   }
 
-  const { rms, residuals } = computeResidualsMm(directives);
+  const { rms, residuals } = computeAnchorResidualsMm(cachedAnchors, cachedAlignment);
   if (alignmentRms) alignmentRms.textContent = rms === null ? "n/a" : formatResidual(rms);
 
   if (!alignmentResiduals) return;
@@ -410,22 +352,25 @@ async function runDemo(): Promise<void> {
     let paths: DatasetPaths;
 
     if (dataset === "museum") {
-      const museumRawPath = "/museum_raw.json";
-      const museumConstraintsPath = "/museum_constraints.json";
-      const [rawPayload, constraintsPayload] = await Promise.all([
-        fetchJsonWithDiagnostics<MuseumRawPayload>(museumRawPath),
-        fetchJsonWithDiagnostics<ConstraintsDataset>(museumConstraintsPath)
-      ]);
-      const normalized = normalizeMuseumRaw(rawPayload);
-      nominal = normalized.nominal;
-      asBuilt = normalized.asBuilt;
-      constraints = constraintsPayload;
+      const { raw, constraints: rawConstraints } = await loadMuseumDataset();
+      // Kabsch/Horn alignment from anchor correspondences (mm). T_model_scan maps model -> scan.
+      // We apply its inverse so as-built scan-frame poses are transformed into the model/world frame.
+      const anchors = normalizeMuseumAnchors(raw);
+      const alignment = computeAlignmentFromAnchors(anchors);
+      const converted = convertMuseumRawToPoseDatasets(raw, alignment);
+      nominal = converted.nominal;
+      asBuilt = converted.asBuilt;
+      constraints = rawConstraints;
+      cachedAlignment = alignment;
+      cachedAnchors = converted.anchors;
       paths = {
-        nominal: museumRawPath,
-        asBuilt: museumRawPath,
-        constraints: museumConstraintsPath
+        nominal: "/museum_raw.json",
+        asBuilt: "/museum_raw.json",
+        constraints: "/museum_constraints.json"
       };
     } else {
+      cachedAlignment = null;
+      cachedAnchors = [];
       paths = {
         nominal: `${baseUrl}toy_nominal_poses.json`,
         asBuilt: `${baseUrl}toy_asbuilt_poses.json`,
@@ -455,7 +400,7 @@ async function runDemo(): Promise<void> {
     cachedSummaries = partSummaries;
     renderParts(partSummaries, partNames);
     renderSelection();
-    renderAlignmentQuality(dataset, directives);
+    renderAlignmentQuality(dataset);
     renderRawJson({ nominal, asBuilt, constraints, directives });
   } catch (error) {
     const dataset = selectedDataset;
@@ -467,6 +412,8 @@ async function runDemo(): Promise<void> {
           : "Unknown error";
     setError(`Failed to run directives: ${message}`);
     setStatusBadge("Error");
+    cachedAlignment = null;
+    cachedAnchors = [];
     if (statusDetails) {
       statusDetails.innerHTML = `<p class="placeholder">${message}</p>`;
     }
@@ -479,7 +426,7 @@ async function runDemo(): Promise<void> {
     if (verificationResidual) {
       verificationResidual.innerHTML = `<p class="placeholder">Unable to load expected residual.</p>`;
     }
-    renderAlignmentQuality(dataset, null);
+    renderAlignmentQuality(dataset);
   } finally {
     if (runButton) runButton.disabled = false;
   }
