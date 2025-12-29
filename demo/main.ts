@@ -7,6 +7,12 @@ import type {
   Status
 } from "../src/types.js";
 import {
+  computeAlignmentFromAnchors,
+  computeResidualsMm,
+  convertMuseumRawToPoseDatasets,
+  loadMuseumDataset
+} from "./museum.js";
+import {
   describeAction,
   deriveOverallStatus,
   extractPartSummaries,
@@ -65,14 +71,6 @@ function setStatusBadge(status: string, statusClass?: Status) {
   if (statusClass) {
     statusBadge.classList.add(statusClass);
   }
-}
-
-async function fetchJson<T>(path: string): Promise<T> {
-  const response = await fetch(path);
-  if (!response.ok) {
-    throw new Error(`Failed to load ${path}: ${response.status} ${response.statusText}`);
-  }
-  return response.json() as Promise<T>;
 }
 
 async function runGenerateDirectives(
@@ -230,17 +228,15 @@ async function runDemo(): Promise<void> {
 
   try {
     const baseUrl = import.meta.env.BASE_URL ?? "/";
+    const { raw, constraints, paths: museumPaths } = await loadMuseumDataset(baseUrl);
+    const alignment = computeAlignmentFromAnchors(raw.anchors);
+    const residuals = computeResidualsMm(raw.anchors, alignment);
+    const { nominal, asBuilt } = convertMuseumRawToPoseDatasets(raw, alignment);
     const paths: DatasetPaths = {
-      nominal: `${baseUrl}toy_nominal_poses.json`,
-      asBuilt: `${baseUrl}toy_asbuilt_poses.json`,
-      constraints: `${baseUrl}toy_constraints.json`
+      nominal: `${museumPaths.raw}#nominal`,
+      asBuilt: `${museumPaths.raw}#asBuilt`,
+      constraints: museumPaths.constraints
     };
-
-    const [nominal, asBuilt, constraints] = await Promise.all([
-      fetchJson<NominalPosesDataset>(paths.nominal),
-      fetchJson<AsBuiltPosesDataset>(paths.asBuilt),
-      fetchJson<ConstraintsDataset>(paths.constraints)
-    ]);
 
     const directives = await runGenerateDirectives(nominal, asBuilt, constraints, paths);
 
@@ -258,7 +254,15 @@ async function runDemo(): Promise<void> {
     cachedSummaries = partSummaries;
     renderParts(partSummaries, partNames);
     renderSelection();
-    renderRawJson({ nominal, asBuilt, constraints, directives });
+    renderRawJson({
+      raw,
+      alignment,
+      residuals,
+      nominal,
+      asBuilt,
+      constraints,
+      directives
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     setError(`Failed to run directives: ${message}`);

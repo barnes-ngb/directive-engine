@@ -1,0 +1,56 @@
+{
+  "schema_version": "v0.1",
+  "dataset_id": "museum_demo_v0_1",
+  "engine_config": {
+    "confidence_threshold": 0.75,
+    "translation_clamp_policy": "vector_norm_max"
+  },
+  "parts": [
+    {
+      "part_id": "M1",
+      "allowed_translation_axes": { "x": true, "y": true, "z": true },
+      "rotation_mode": "fixed",
+      "allowed_rotation_axes": { "x": false, "y": false, "z": false },
+      "translation_max_norm_mm": 3,
+      "tolerances": {
+        "translation_mm": 1,
+        "rotation_deg": 1
+      },
+      "verification": {
+        "method": "measure_pose",
+        "notes": "Confirm fixture offset with handheld metrology."
+      }
+    },
+    {
+      "part_id": "M2",
+      "allowed_translation_axes": { "x": true, "y": true, "z": true },
+      "rotation_mode": "free",
+      "allowed_rotation_axes": { "x": true, "y": true, "z": true },
+      "translation_max_norm_mm": 8,
+      "rotation_max_abs_deg": { "x": 3, "y": 3, "z": 3 },
+      "tolerances": {
+        "translation_mm": 2,
+        "rotation_deg": 2
+      },
+      "verification": {
+        "method": "re_scan",
+        "notes": "Re-scan if translation exceeds tolerance."
+      }
+    },
+    {
+      "part_id": "M3",
+      "allowed_translation_axes": { "x": true, "y": true, "z": true },
+      "rotation_mode": "fixed",
+      "allowed_rotation_axes": { "x": false, "y": false, "z": false },
+      "translation_max_norm_mm": 6,
+      "tolerances": {
+        "translation_mm": 1.5,
+        "rotation_deg": 1
+      },
+      "verification": {
+        "method": "manual_inspection",
+        "notes": "Check plaque alignment with mounting holes."
+      }
+    }
+  ]
+}

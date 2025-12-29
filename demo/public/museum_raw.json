@@ -1,0 +1,72 @@
+{
+  "schema_version": "museum_raw_v0.1",
+  "dataset_id": "museum_demo_v0_1",
+  "measured_at": "2024-06-15T12:00:00Z",
+  "units": {
+    "length": "mm",
+    "rotation": "quaternion_xyzw"
+  },
+  "anchors": [
+    {
+      "anchor_id": "A1",
+      "model_mm": [0, 0, 0],
+      "scan_mm": [20, -10, 5]
+    },
+    {
+      "anchor_id": "A2",
+      "model_mm": [200, 0, 0],
+      "scan_mm": [220, -10, 5]
+    },
+    {
+      "anchor_id": "A3",
+      "model_mm": [0, 150, 0],
+      "scan_mm": [20, 140, 5]
+    }
+  ],
+  "parts": [
+    {
+      "part_id": "M1",
+      "part_name": "plinth",
+      "part_type": "fixture",
+      "T_model_part_nominal": {
+        "translation_mm": [0, 0, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      },
+      "T_scan_part_asBuilt": {
+        "translation_mm": [21, -9, 5],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      },
+      "pose_confidence": 0.98,
+      "confidence_notes": "Stable scan coverage from three viewpoints."
+    },
+    {
+      "part_id": "M2",
+      "part_name": "statue",
+      "part_type": "monolith",
+      "T_model_part_nominal": {
+        "translation_mm": [100, 50, 0],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      },
+      "T_scan_part_asBuilt": {
+        "translation_mm": [122, 39, 6],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      },
+      "pose_confidence": 0.91
+    },
+    {
+      "part_id": "M3",
+      "part_name": "plaque",
+      "part_type": "panel",
+      "T_model_part_nominal": {
+        "translation_mm": [50, 120, 30],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      },
+      "T_scan_part_asBuilt": {
+        "translation_mm": [69, 112, 33],
+        "rotation_quat_xyzw": [0, 0, 0, 1]
+      },
+      "pose_confidence": 0.88,
+      "confidence_notes": "Surface reflection lowered confidence."
+    }
+  ]
+}
