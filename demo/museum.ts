@@ -1,3 +1,4 @@
+import { applyTransformToPoint, computeRigidTransform, invertTransform } from "../src/core/index.js";
 import type {
   AsBuiltPosesDataset,
   ConstraintsDataset,
@@ -5,7 +6,7 @@ import type {
   Quat,
   Transform,
   Vec3
-} from "../src/types.js";
+} from "../src/core/index.js";
 
 export type MuseumAnchor = {
   id: string;
@@ -176,15 +177,6 @@ function normalizeAnchors(rawAnchors: MuseumAnchorRaw[]): MuseumAnchor[] {
   });
 }
 
-function centroid(points: Vec3[]): Vec3 {
-  const count = points.length;
-  const sum = points.reduce(
-    (acc, vec) => [acc[0] + vec[0], acc[1] + vec[1], acc[2] + vec[2]] as Vec3,
-    [0, 0, 0]
-  );
-  return [sum[0] / count, sum[1] / count, sum[2] / count];
-}
-
 function subtract(a: Vec3, b: Vec3): Vec3 {
   return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 }
@@ -201,191 +193,19 @@ function midpoint(a: Vec3, b: Vec3): Vec3 {
   return scale(add(a, b), 0.5);
 }
 
-function multiplyMatrixVector(matrix: number[][], vec: Vec3): Vec3 {
-  return [
-    matrix[0][0] * vec[0] + matrix[0][1] * vec[1] + matrix[0][2] * vec[2],
-    matrix[1][0] * vec[0] + matrix[1][1] * vec[1] + matrix[1][2] * vec[2],
-    matrix[2][0] * vec[0] + matrix[2][1] * vec[1] + matrix[2][2] * vec[2]
-  ];
-}
-
-function multiplyMatrices(a: number[][], b: number[][]): number[][] {
-  return [
-    [
-      a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0],
-      a[0][0] * b[0][1] + a[0][1] * b[1][1] + a[0][2] * b[2][1],
-      a[0][0] * b[0][2] + a[0][1] * b[1][2] + a[0][2] * b[2][2]
-    ],
-    [
-      a[1][0] * b[0][0] + a[1][1] * b[1][0] + a[1][2] * b[2][0],
-      a[1][0] * b[0][1] + a[1][1] * b[1][1] + a[1][2] * b[2][1],
-      a[1][0] * b[0][2] + a[1][1] * b[1][2] + a[1][2] * b[2][2]
-    ],
-    [
-      a[2][0] * b[0][0] + a[2][1] * b[1][0] + a[2][2] * b[2][0],
-      a[2][0] * b[0][1] + a[2][1] * b[1][1] + a[2][2] * b[2][1],
-      a[2][0] * b[0][2] + a[2][1] * b[1][2] + a[2][2] * b[2][2]
-    ]
-  ];
-}
-
-function transpose(matrix: number[][]): number[][] {
-  return [
-    [matrix[0][0], matrix[1][0], matrix[2][0]],
-    [matrix[0][1], matrix[1][1], matrix[2][1]],
-    [matrix[0][2], matrix[1][2], matrix[2][2]]
-  ];
-}
-
-function normalizeVector(vec: number[]): number[] {
-  const norm = Math.sqrt(vec.reduce((sum, value) => sum + value * value, 0));
-  if (norm === 0) return vec;
-  return vec.map((value) => value / norm);
-}
-
-function powerIteration(matrix: number[][], iterations = 50): number[] {
-  let vec = [1, 0, 0, 0];
-  for (let i = 0; i < iterations; i += 1) {
-    const next = [
-      matrix[0][0] * vec[0] + matrix[0][1] * vec[1] + matrix[0][2] * vec[2] + matrix[0][3] * vec[3],
-      matrix[1][0] * vec[0] + matrix[1][1] * vec[1] + matrix[1][2] * vec[2] + matrix[1][3] * vec[3],
-      matrix[2][0] * vec[0] + matrix[2][1] * vec[1] + matrix[2][2] * vec[2] + matrix[2][3] * vec[3],
-      matrix[3][0] * vec[0] + matrix[3][1] * vec[1] + matrix[3][2] * vec[2] + matrix[3][3] * vec[3]
-    ];
-    vec = normalizeVector(next);
-  }
-  return vec;
-}
-
-function quatFromRotationMatrix(matrix: number[][]): Quat {
-  const m00 = matrix[0][0];
-  const m11 = matrix[1][1];
-  const m22 = matrix[2][2];
-  const trace = m00 + m11 + m22;
-
-  let x = 0;
-  let y = 0;
-  let z = 0;
-  let w = 1;
-
-  if (trace > 0) {
-    const s = Math.sqrt(trace + 1.0) * 2;
-    w = 0.25 * s;
-    x = (matrix[2][1] - matrix[1][2]) / s;
-    y = (matrix[0][2] - matrix[2][0]) / s;
-    z = (matrix[1][0] - matrix[0][1]) / s;
-  } else if (m00 > m11 && m00 > m22) {
-    const s = Math.sqrt(1.0 + m00 - m11 - m22) * 2;
-    w = (matrix[2][1] - matrix[1][2]) / s;
-    x = 0.25 * s;
-    y = (matrix[0][1] + matrix[1][0]) / s;
-    z = (matrix[0][2] + matrix[2][0]) / s;
-  } else if (m11 > m22) {
-    const s = Math.sqrt(1.0 + m11 - m00 - m22) * 2;
-    w = (matrix[0][2] - matrix[2][0]) / s;
-    x = (matrix[0][1] + matrix[1][0]) / s;
-    y = 0.25 * s;
-    z = (matrix[1][2] + matrix[2][1]) / s;
-  } else {
-    const s = Math.sqrt(1.0 + m22 - m00 - m11) * 2;
-    w = (matrix[1][0] - matrix[0][1]) / s;
-    x = (matrix[0][2] + matrix[2][0]) / s;
-    y = (matrix[1][2] + matrix[2][1]) / s;
-    z = 0.25 * s;
-  }
-
-  return [x, y, z, w];
-}
-
-function rotationMatrixFromQuat(quat: Quat): number[][] {
-  const [x, y, z, w] = quat;
-  const xx = x * x;
-  const yy = y * y;
-  const zz = z * z;
-  const xy = x * y;
-  const xz = x * z;
-  const yz = y * z;
-  const wx = w * x;
-  const wy = w * y;
-  const wz = w * z;
-  return [
-    [1 - 2 * (yy + zz), 2 * (xy - wz), 2 * (xz + wy)],
-    [2 * (xy + wz), 1 - 2 * (xx + zz), 2 * (yz - wx)],
-    [2 * (xz - wy), 2 * (yz + wx), 1 - 2 * (xx + yy)]
-  ];
-}
-
-function rotationFromCovariance(cov: number[][]): number[][] {
-  const sxx = cov[0][0];
-  const sxy = cov[0][1];
-  const sxz = cov[0][2];
-  const syx = cov[1][0];
-  const syy = cov[1][1];
-  const syz = cov[1][2];
-  const szx = cov[2][0];
-  const szy = cov[2][1];
-  const szz = cov[2][2];
-
-  const n = [
-    [sxx + syy + szz, syz - szy, szx - sxz, sxy - syx],
-    [syz - szy, sxx - syy - szz, sxy + syx, szx + sxz],
-    [szx - sxz, sxy + syx, -sxx + syy - szz, syz + szy],
-    [sxy - syx, szx + sxz, syz + szy, -sxx - syy + szz]
-  ];
-
-  const eigenvector = powerIteration(n);
-  const [w, x, y, z] = eigenvector;
-  return rotationMatrixFromQuat([x, y, z, w]);
-}
-
 // Computes the SE(3) transform T_model_scan that best maps model-frame anchor points
 // to scan-frame anchor points. All coordinates are assumed to be in millimeters.
 export function computeAlignmentFromAnchors(anchors: MuseumAnchor[]): Transform {
-  if (anchors.length < 3) {
-    throw new Error("At least three anchor correspondences are required for alignment.");
-  }
-
-  const modelPoints = anchors.map((anchor) => anchor.model_mm);
-  const scanPoints = anchors.map((anchor) => anchor.scan_mm);
-  const modelCentroid = centroid(modelPoints);
-  const scanCentroid = centroid(scanPoints);
-
-  let covariance = [
-    [0, 0, 0],
-    [0, 0, 0],
-    [0, 0, 0]
-  ];
-
-  for (let i = 0; i < anchors.length; i += 1) {
-    const modelOffset = subtract(modelPoints[i], modelCentroid);
-    const scanOffset = subtract(scanPoints[i], scanCentroid);
-    covariance = [
-      [
-        covariance[0][0] + modelOffset[0] * scanOffset[0],
-        covariance[0][1] + modelOffset[0] * scanOffset[1],
-        covariance[0][2] + modelOffset[0] * scanOffset[2]
-      ],
-      [
-        covariance[1][0] + modelOffset[1] * scanOffset[0],
-        covariance[1][1] + modelOffset[1] * scanOffset[1],
-        covariance[1][2] + modelOffset[1] * scanOffset[2]
-      ],
-      [
-        covariance[2][0] + modelOffset[2] * scanOffset[0],
-        covariance[2][1] + modelOffset[2] * scanOffset[1],
-        covariance[2][2] + modelOffset[2] * scanOffset[2]
-      ]
-    ];
-  }
-
-  const rotation = rotationFromCovariance(covariance);
-  const rotatedCentroid = multiplyMatrixVector(rotation, modelCentroid);
-  const translation = subtract(scanCentroid, rotatedCentroid);
-
-  return {
-    translation_mm: translation,
-    rotation_quat_xyzw: quatFromRotationMatrix(rotation)
-  };
+  const scanPts = anchors.map((anchor) => ({
+    anchor_id: anchor.id,
+    point_mm: anchor.scan_mm
+  }));
+  const modelPts = anchors.map((anchor) => ({
+    anchor_id: anchor.id,
+    point_mm: anchor.model_mm
+  }));
+  const { T_model_scan } = computeRigidTransform(scanPts, modelPts);
+  return T_model_scan;
 }
 
 export function computeResidualsMm(
@@ -396,10 +216,8 @@ export function computeResidualsMm(
     return { rms: null, residuals: [] };
   }
 
-  const rotation = rotationMatrixFromQuat(alignment.rotation_quat_xyzw);
-  const translation = alignment.translation_mm;
   const residuals = anchors.map((anchor) => {
-    const predicted = add(multiplyMatrixVector(rotation, anchor.model_mm), translation);
+    const predicted = applyTransformToPoint(alignment, anchor.model_mm);
     const residual = subtract(anchor.scan_mm, predicted);
     const magnitude = Math.sqrt(
       residual[0] * residual[0] + residual[1] * residual[1] + residual[2] * residual[2]
@@ -449,32 +267,6 @@ function pickTransform(source: Record<string, unknown>, keys: string[], label: s
   return transform;
 }
 
-function invertTransform(transform: Transform): Transform {
-  const rotation = rotationMatrixFromQuat(transform.rotation_quat_xyzw);
-  const rotationT = transpose(rotation);
-  const translation = scale(multiplyMatrixVector(rotationT, transform.translation_mm), -1);
-  return {
-    translation_mm: translation,
-    rotation_quat_xyzw: quatFromRotationMatrix(rotationT)
-  };
-}
-
-function composeTransforms(lhs: Transform, rhs: Transform): Transform {
-  const rotationL = rotationMatrixFromQuat(lhs.rotation_quat_xyzw);
-  const rotationR = rotationMatrixFromQuat(rhs.rotation_quat_xyzw);
-  const rotation = multiplyMatrices(rotationL, rotationR);
-  const translation = add(multiplyMatrixVector(rotationL, rhs.translation_mm), lhs.translation_mm);
-  return {
-    translation_mm: translation,
-    rotation_quat_xyzw: quatFromRotationMatrix(rotation)
-  };
-}
-
-function transformPoint(transform: Transform, point: Vec3): Vec3 {
-  const rotation = rotationMatrixFromQuat(transform.rotation_quat_xyzw);
-  return add(multiplyMatrixVector(rotation, point), transform.translation_mm);
-}
-
 function getNominalTranslation(part: MuseumRawPart): Vec3 {
   if (part.nominal_line_mm) {
     return requireLineMidpoint(part.nominal_line_mm, `nominal part ${part.part_id} nominal_line_mm`);
@@ -489,8 +281,8 @@ function getNominalTranslation(part: MuseumRawPart): Vec3 {
 
 function getAsBuiltTranslation(part: MuseumRawPart, scanToModel: Transform): Vec3 {
   if (part.scan_line_mm) {
-    const p0Model = transformPoint(scanToModel, part.scan_line_mm.p0);
-    const p1Model = transformPoint(scanToModel, part.scan_line_mm.p1);
+    const p0Model = applyTransformToPoint(scanToModel, part.scan_line_mm.p0);
+    const p1Model = applyTransformToPoint(scanToModel, part.scan_line_mm.p1);
     return midpoint(p0Model, p1Model);
   }
   const worldFallback = pickTransformOptional(part as Record<string, unknown>, [
@@ -505,7 +297,7 @@ function getAsBuiltTranslation(part: MuseumRawPart, scanToModel: Transform): Vec
     ["T_scan_part_asBuilt", "T_scan_part", "pose"],
     `as-built part ${part.part_id}`
   );
-  return transformPoint(scanToModel, scanFallback.translation_mm);
+  return applyTransformToPoint(scanToModel, scanFallback.translation_mm);
 }
 
 export function normalizeMuseumAnchors(raw: MuseumRawDataset): MuseumAnchor[] {
