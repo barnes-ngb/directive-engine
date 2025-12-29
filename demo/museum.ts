@@ -1,4 +1,4 @@
-import { applyTransformToPoint, computeRigidTransform, invertTransform } from "../src/core/index.js";
+import { applyTransformToPoint, computeRigidTransform } from "../src/core/index.js";
 import type {
   AsBuiltPosesDataset,
   ConstraintsDataset,
@@ -193,8 +193,8 @@ function midpoint(a: Vec3, b: Vec3): Vec3 {
   return scale(add(a, b), 0.5);
 }
 
-// Computes the SE(3) transform T_model_scan that best maps model-frame anchor points
-// to scan-frame anchor points. All coordinates are assumed to be in millimeters.
+// Computes the SE(3) transform T_model_scan that best maps scan-frame anchor points
+// to model-frame anchor points. All coordinates are assumed to be in millimeters.
 export function computeAlignmentFromAnchors(anchors: MuseumAnchor[]): Transform {
   const scanPts = anchors.map((anchor) => ({
     anchor_id: anchor.id,
@@ -217,8 +217,8 @@ export function computeResidualsMm(
   }
 
   const residuals = anchors.map((anchor) => {
-    const predicted = applyTransformToPoint(alignment, anchor.model_mm);
-    const residual = subtract(anchor.scan_mm, predicted);
+    const predicted = applyTransformToPoint(alignment, anchor.scan_mm);
+    const residual = subtract(anchor.model_mm, predicted);
     const magnitude = Math.sqrt(
       residual[0] * residual[0] + residual[1] * residual[1] + residual[2] * residual[2]
     );
@@ -334,7 +334,7 @@ export function convertMuseumRawToPoseDatasets(
     })
   } satisfies NominalPosesDataset;
 
-  const scanToModel = invertTransform(alignment);
+  const scanToModel = alignment;
   const asBuilt = {
     schema_version: "v0.1",
     dataset_id: raw.dataset_id,
