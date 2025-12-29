@@ -16,44 +16,41 @@ export type MuseumAnchor = {
 type MuseumAnchorRaw = {
   id?: string;
   anchor_id?: string;
+  model_xyz_mm?: Vec3;
+  scan_xyz_mm?: Vec3;
   model_mm?: Vec3;
   scan_mm?: Vec3;
   model?: Vec3;
   scan?: Vec3;
 };
 
-type MuseumRawNominalPart = {
+type MuseumRawPart = {
   part_id: string;
   part_name?: string;
   part_type?: string;
   nominal_line_mm?: MuseumLine;
+  scan_line_mm?: MuseumLine;
+  pose_confidence?: number;
+  confidence_notes?: string;
   T_model_part_nominal?: Transform;
   T_world_part_nominal?: Transform;
   T_model_part?: Transform;
   T_world_part?: Transform;
-  pose?: Transform;
-};
-
-type MuseumRawAsBuiltPart = {
-  part_id: string;
-  pose_confidence?: number;
-  confidence_notes?: string;
-  scan_line_mm?: MuseumLine;
   T_scan_part_asBuilt?: Transform;
   T_scan_part?: Transform;
   T_world_part_asBuilt?: Transform;
-  T_world_part?: Transform;
   pose?: Transform;
 };
 
 export type MuseumRawDataset = {
   dataset_id: string;
-  measured_at: string;
+  measured_at?: string;
   anchors: MuseumAnchorRaw[];
-  nominal_parts?: MuseumRawNominalPart[];
-  as_built_parts?: MuseumRawAsBuiltPart[];
-  nominal_poses?: { parts: MuseumRawNominalPart[] };
-  as_built_poses?: { parts: MuseumRawAsBuiltPart[] };
+  parts?: MuseumRawPart[];
+  nominal_parts?: MuseumRawPart[];
+  as_built_parts?: MuseumRawPart[];
+  nominal_poses?: { parts: MuseumRawPart[] };
+  as_built_poses?: { parts: MuseumRawPart[] };
 };
 
 export type AlignmentResidual = {
@@ -158,11 +155,18 @@ function requireLineMidpoint(value: unknown, label: string): Vec3 {
   return midpoint(value.p0, value.p1);
 }
 
+function requireMeasuredAt(value: string | undefined): string {
+  if (!value) {
+    throw new Error("Museum dataset measured_at is required for v0.1 datasets.");
+  }
+  return value;
+}
+
 function normalizeAnchors(rawAnchors: MuseumAnchorRaw[]): MuseumAnchor[] {
   return rawAnchors.map((anchor, index) => {
     const id = anchor.id ?? anchor.anchor_id ?? `anchor-${index + 1}`;
-    const model = anchor.model_mm ?? anchor.model;
-    const scan = anchor.scan_mm ?? anchor.scan;
+    const model = anchor.model_xyz_mm ?? anchor.model_mm ?? anchor.model;
+    const scan = anchor.scan_xyz_mm ?? anchor.scan_mm ?? anchor.scan;
     return {
       id,
       model_mm: requireVec3(model, `${id} model_mm`),
@@ -422,7 +426,7 @@ function selectParts<T extends { part_id: string }>(
   return [];
 }
 
-function pickTransform(source: Record<string, unknown>, keys: string[], label: string): Transform {
+function pickTransformOptional(source: Record<string, unknown>, keys: string[]): Transform | undefined {
   for (const key of keys) {
     const candidate = source[key];
     if (candidate && typeof candidate === "object") {
@@ -432,7 +436,15 @@ function pickTransform(source: Record<string, unknown>, keys: string[], label: s
       }
     }
   }
-  throw new Error(`Missing transform for ${label}.`);
+  return undefined;
+}
+
+function pickTransform(source: Record<string, unknown>, keys: string[], label: string): Transform {
+  const transform = pickTransformOptional(source, keys);
+  if (!transform) {
+    throw new Error(`Missing transform for ${label}.`);
+  }
+  return transform;
 }
 
 function invertTransform(transform: Transform): Transform {
@@ -461,6 +473,39 @@ function transformPoint(transform: Transform, point: Vec3): Vec3 {
   return add(multiplyMatrixVector(rotation, point), transform.translation_mm);
 }
 
+function getNominalTranslation(part: MuseumRawPart): Vec3 {
+  if (part.nominal_line_mm) {
+    return requireLineMidpoint(part.nominal_line_mm, `nominal part ${part.part_id} nominal_line_mm`);
+  }
+  const fallback = pickTransform(
+    part as Record<string, unknown>,
+    ["T_world_part_nominal", "T_world_part", "T_model_part_nominal", "T_model_part", "pose"],
+    `nominal part ${part.part_id}`
+  );
+  return fallback.translation_mm;
+}
+
+function getAsBuiltTranslation(part: MuseumRawPart, scanToModel: Transform): Vec3 {
+  if (part.scan_line_mm) {
+    const p0Model = transformPoint(scanToModel, part.scan_line_mm.p0);
+    const p1Model = transformPoint(scanToModel, part.scan_line_mm.p1);
+    return midpoint(p0Model, p1Model);
+  }
+  const worldFallback = pickTransformOptional(part as Record<string, unknown>, [
+    "T_world_part_asBuilt",
+    "T_world_part"
+  ]);
+  if (worldFallback) {
+    return worldFallback.translation_mm;
+  }
+  const scanFallback = pickTransform(
+    part as Record<string, unknown>,
+    ["T_scan_part_asBuilt", "T_scan_part", "pose"],
+    `as-built part ${part.part_id}`
+  );
+  return transformPoint(scanToModel, scanFallback.translation_mm);
+}
+
 export function normalizeMuseumAnchors(raw: MuseumRawDataset): MuseumAnchor[] {
   return normalizeAnchors(raw.anchors ?? []);
 }
@@ -470,8 +515,9 @@ export function convertMuseumRawToPoseDatasets(
   alignment: Transform
 ): { nominal: NominalPosesDataset; asBuilt: AsBuiltPosesDataset; anchors: MuseumAnchor[] } {
   const anchors = normalizeMuseumAnchors(raw);
-  const nominalParts = selectParts<MuseumRawNominalPart>(raw, "nominal_parts", "nominal_poses");
-  const asBuiltParts = selectParts<MuseumRawAsBuiltPart>(raw, "as_built_parts", "as_built_poses");
+  const mergedParts = raw.parts;
+  const nominalParts = mergedParts ?? selectParts<MuseumRawPart>(raw, "nominal_parts", "nominal_poses");
+  const asBuiltParts = mergedParts ?? selectParts<MuseumRawPart>(raw, "as_built_parts", "as_built_poses");
   const identityQuat: Quat = [0, 0, 0, 1];
 
   const nominal = {
@@ -480,10 +526,7 @@ export function convertMuseumRawToPoseDatasets(
     frame_id: "world",
     units: { length: "mm", rotation: "quaternion_xyzw" },
     parts: nominalParts.map((part) => {
-      const midpoint = requireLineMidpoint(
-        part.nominal_line_mm,
-        `nominal part ${part.part_id} nominal_line_mm`
-      );
+      const midpoint = getNominalTranslation(part);
       const transform: Transform = {
         translation_mm: midpoint,
         rotation_quat_xyzw: identityQuat
@@ -503,14 +546,11 @@ export function convertMuseumRawToPoseDatasets(
     dataset_id: raw.dataset_id,
     frame_id: "world",
     units: { length: "mm", rotation: "quaternion_xyzw" },
-    measured_at: raw.measured_at,
+    measured_at: requireMeasuredAt(raw.measured_at),
     parts: asBuiltParts.map((part) => {
-      const midpoint = requireLineMidpoint(
-        part.scan_line_mm,
-        `as-built part ${part.part_id} scan_line_mm`
-      );
+      const midpoint = getAsBuiltTranslation(part, scanToModel);
       const transformed: Transform = {
-        translation_mm: transformPoint(scanToModel, midpoint),
+        translation_mm: midpoint,
         rotation_quat_xyzw: identityQuat
       };
       return {
