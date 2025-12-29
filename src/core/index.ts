@@ -1,11 +1,12 @@
 export { generateDirectives } from "./generateDirectives.js";
-export { computeRigidTransform } from "./align/kabsch.js";
+export { computeRigidTransform } from "./align/rigid.js";
 export {
   applyTransform,
   composeTransforms,
   invertTransform,
   rotateVec3ByQuat
 } from "./align/applyTransform.js";
+export { applyTransformToLine, applyTransformToPoint } from "./align/apply.js";
 export type {
   Action,
   ActionType,
@@ -32,3 +33,5 @@ export type {
   Vec3,
   Verification
 } from "./types.js";
+export type { AnchorPoint, AnchorResidual, RigidTransformResult } from "./align/rigid.js";
+export type { Line3 } from "./align/apply.js";
