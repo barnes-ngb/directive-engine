@@ -18,6 +18,8 @@ type MuseumAnchorRaw = {
   anchor_id?: string;
   model_mm?: Vec3;
   scan_mm?: Vec3;
+  model_xyz_mm?: Vec3;
+  scan_xyz_mm?: Vec3;
   model?: Vec3;
   scan?: Vec3;
 };
@@ -161,8 +163,8 @@ function requireLineMidpoint(value: unknown, label: string): Vec3 {
 function normalizeAnchors(rawAnchors: MuseumAnchorRaw[]): MuseumAnchor[] {
   return rawAnchors.map((anchor, index) => {
     const id = anchor.id ?? anchor.anchor_id ?? `anchor-${index + 1}`;
-    const model = anchor.model_mm ?? anchor.model;
-    const scan = anchor.scan_mm ?? anchor.scan;
+    const model = anchor.model_mm ?? anchor.model_xyz_mm ?? anchor.model;
+    const scan = anchor.scan_mm ?? anchor.scan_xyz_mm ?? anchor.scan;
     return {
       id,
       model_mm: requireVec3(model, `${id} model_mm`),
