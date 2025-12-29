@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import {
   applyTransformToPoint,
-  computeRigidTransform
+  computeRigidTransform,
+  invertTransform
 } from "../core/index.js";
 import type { AnchorPoint } from "../core/align/rigid.js";
 import type { Vec3 } from "../types.js";
@@ -36,14 +37,15 @@ describe("computeRigidTransform", () => {
       { anchor_id: "D", point_mm: [0, 0, 1] }
     ];
 
-    const T_true = {
+    const T_model_scan = {
       translation_mm: [10, -5, 3] as Vec3,
       rotation_quat_xyzw: [0, 0, Math.SQRT1_2, Math.SQRT1_2] as [number, number, number, number]
     };
+    const T_scan_model = invertTransform(T_model_scan);
 
     const scanPts: AnchorPoint[] = modelPts.map(({ anchor_id, point_mm }) => ({
       anchor_id,
-      point_mm: applyTransformToPoint(T_true, point_mm)
+      point_mm: applyTransformToPoint(T_scan_model, point_mm)
     }));
 
     const result = computeRigidTransform(scanPts, modelPts);
@@ -117,13 +119,14 @@ describe("computeRigidTransform", () => {
       [0.1, 0.1, -0.05],
       [-0.2, 0.05, 0.0]
     ];
-    const T_true = {
+    const T_model_scan = {
       translation_mm: [5, -2, 1] as Vec3,
       rotation_quat_xyzw: [0, 0, 0, 1] as [number, number, number, number]
     };
+    const T_scan_model = invertTransform(T_model_scan);
 
     const anchors: MuseumAnchor[] = modelPoints.map((point, index) => {
-      const predicted = applyTransformToPoint(T_true, point);
+      const predicted = applyTransformToPoint(T_scan_model, point);
       const jitter = noise[index];
       return {
         id: `A${index + 1}`,
