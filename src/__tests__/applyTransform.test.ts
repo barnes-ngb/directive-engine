@@ -3,10 +3,8 @@ import { describe, it } from "vitest";
 import {
   applyTransformToLine,
   applyTransformToPoint,
-  type Line3,
-  type Transform,
-  type Vec3
 } from "../core/index.js";
+import type { Line3, Transform, Vec3 } from "../types.js";
 
 const EPS = 1e-6;
 

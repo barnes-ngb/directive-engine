@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import { generateDirectives } from "../core";
-import type { ConstraintsDataset } from "../core/index.js";
+import { generateDirectives } from "../core/generateDirectives.js";
+import type { ConstraintsDataset } from "../types.js";
 import {
   computeAlignmentFromAnchors,
   convertMuseumRawToPoseDatasets,

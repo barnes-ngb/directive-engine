@@ -5,7 +5,7 @@ import type {
   Step,
   Vec3,
   Verification
-} from "../src/core/types.js";
+} from "../src/types.js";
 
 export const STATUS_PRIORITY: Status[] = ["blocked", "needs_review", "clamped", "pending", "ok"];
 

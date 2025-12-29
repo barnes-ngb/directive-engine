@@ -1,4 +1,4 @@
-import { generateDirectives } from "../src/core/index.js";
+import { generateDirectives } from "../src/core/generateDirectives.js";
 import type {
   AsBuiltPosesDataset,
   ConstraintsDataset,

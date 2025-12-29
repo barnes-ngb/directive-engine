@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import {
   applyTransformToPoint,
-  computeRigidTransform,
-  type AnchorPoint,
-  type Vec3
+  computeRigidTransform
 } from "../core/index.js";
+import type { AnchorPoint } from "../core/align/rigid.js";
+import type { Vec3 } from "../types.js";
 import {
   computeAlignmentFromAnchors,
   computeResidualsMm,

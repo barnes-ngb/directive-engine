@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Action, DirectivesOutput, Step } from "../src/core/types.js";
+import type { Action, DirectivesOutput, Step } from "../src/types.js";
 import {
   describeAction,
   deriveOverallStatus,
