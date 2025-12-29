@@ -7,10 +7,6 @@ import {
 } from "../core/index.js";
 import type { AnchorPoint } from "../core/align/rigid.js";
 import type { Vec3 } from "../types.js";
-import {
-  computeAlignmentFromAnchors,
-  type MuseumAnchor
-} from "../../demo/museum.js";
 
 const EPS = 1e-6;
 
@@ -107,11 +103,11 @@ describe("computeRigidTransform", () => {
   });
 
   it("sorts residuals by magnitude when computing alignment quality", () => {
-    const modelPoints: Vec3[] = [
-      [0, 0, 0],
-      [2, 0, 0],
-      [0, 2, 0],
-      [0, 0, 2]
+    const modelPts: AnchorPoint[] = [
+      { anchor_id: "A1", point_mm: [0, 0, 0] },
+      { anchor_id: "A2", point_mm: [2, 0, 0] },
+      { anchor_id: "A3", point_mm: [0, 2, 0] },
+      { anchor_id: "A4", point_mm: [0, 0, 2] }
     ];
     const noise: Vec3[] = [
       [0.2, -0.1, 0.05],
@@ -125,26 +121,36 @@ describe("computeRigidTransform", () => {
     };
     const T_scan_model = invertTransform(T_model_scan);
 
-    const anchors: MuseumAnchor[] = modelPoints.map((point, index) => {
-      const predicted = applyTransformToPoint(T_scan_model, point);
+    const scanPts: AnchorPoint[] = modelPts.map(({ anchor_id, point_mm }, index) => {
+      const predicted = applyTransformToPoint(T_scan_model, point_mm);
       const jitter = noise[index];
       return {
-        id: `A${index + 1}`,
-        model_mm: point,
-        scan_mm: [predicted[0] + jitter[0], predicted[1] + jitter[1], predicted[2] + jitter[2]]
+        anchor_id,
+        point_mm: [predicted[0] + jitter[0], predicted[1] + jitter[1], predicted[2] + jitter[2]]
       };
     });
 
-    const alignment = computeAlignmentFromAnchors(anchors);
-    const residuals = alignment.residuals_mm;
-    const rms = alignment.rms_mm;
+    const result = computeRigidTransform(scanPts, modelPts);
 
-    for (let i = 0; i < residuals.length - 1; i += 1) {
+    for (const residual of result.residuals_mm) {
+      const scanPoint = scanPts.find((pt) => pt.anchor_id === residual.anchor_id);
+      const modelPoint = modelPts.find((pt) => pt.anchor_id === residual.anchor_id);
+      assert.ok(scanPoint && modelPoint, "Expected matching anchors");
+      const predicted = applyTransformToPoint(result.T_model_scan, scanPoint.point_mm);
+      closeVec(predicted, modelPoint.point_mm, 0.3);
+      const expectedVec = residualVec(modelPoint.point_mm, predicted);
+      closeVec(residual.residual_vec_mm, expectedVec, 1e-6);
+    }
+
+    const residualsSorted = [...result.residuals_mm].sort(
+      (a, b) => b.residual_mm - a.residual_mm
+    );
+    for (let i = 0; i < residualsSorted.length - 1; i += 1) {
       assert.ok(
-        residuals[i].residual_mm >= residuals[i + 1].residual_mm,
+        residualsSorted[i].residual_mm >= residualsSorted[i + 1].residual_mm,
         "Expected residuals to be sorted by descending magnitude."
       );
     }
-    assert.ok(Number.isFinite(rms));
+    assert.ok(Number.isFinite(result.rms_mm));
   });
 });
