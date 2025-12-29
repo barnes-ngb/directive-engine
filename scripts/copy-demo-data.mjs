@@ -2,6 +2,11 @@ import { readdir, mkdir, copyFile, stat } from "node:fs/promises";
 import path from "node:path";
 
 const SRC_DIR = path.resolve("datasets", "toy_v0_1");
+const MUSEUM_DIR = path.resolve(
+  "datasets",
+  "museum_facade_v0_1",
+  "directive_engine_export",
+);
 const DEST_DIR = path.resolve("demo", "public");
 
 async function exists(p) {
@@ -33,6 +38,17 @@ async function main() {
 
   console.log(`Copied ${toCopy.length} file(s) to ${DEST_DIR}:`);
   for (const f of toCopy) console.log(`  - ${f}`);
+
+  const museumFiles = ["museum_raw.json", "museum_constraints.json"];
+  for (const f of museumFiles) {
+    const srcPath = path.join(MUSEUM_DIR, f);
+    if (await exists(srcPath)) {
+      await copyFile(srcPath, path.join(DEST_DIR, f));
+      console.log(`  - ${f}`);
+    } else {
+      console.warn(`Warning: museum file missing, skipping: ${srcPath}`);
+    }
+  }
 }
 
 main().catch((err) => {
