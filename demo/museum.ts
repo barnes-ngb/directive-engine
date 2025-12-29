@@ -1,9 +1,15 @@
-import { applyTransformToPoint, computeRigidTransform, invertTransform } from "../src/core/index.js";
+import {
+  applyTransformToLine,
+  applyTransformToPoint,
+  computeRigidTransform,
+  invertTransform
+} from "../src/core/index.js";
 import type {
   AsBuiltPosesDataset,
   ConstraintsDataset,
   NominalPosesDataset,
   Quat,
+  RigidTransformResult,
   Transform,
   Vec3
 } from "../src/core/index.js";
@@ -52,17 +58,6 @@ export type MuseumRawDataset = {
   as_built_parts?: MuseumRawPart[];
   nominal_poses?: { parts: MuseumRawPart[] };
   as_built_poses?: { parts: MuseumRawPart[] };
-};
-
-export type AlignmentResidual = {
-  id: string;
-  magnitude: number;
-  translation: Vec3;
-};
-
-export type AlignmentQuality = {
-  rms: number | null;
-  residuals: AlignmentResidual[];
 };
 
 type MuseumLine = {
@@ -177,10 +172,6 @@ function normalizeAnchors(rawAnchors: MuseumAnchorRaw[]): MuseumAnchor[] {
   });
 }
 
-function subtract(a: Vec3, b: Vec3): Vec3 {
-  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-}
-
 function add(a: Vec3, b: Vec3): Vec3 {
   return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 }
@@ -195,7 +186,7 @@ function midpoint(a: Vec3, b: Vec3): Vec3 {
 
 // Computes the SE(3) transform T_model_scan that best maps model-frame anchor points
 // to scan-frame anchor points. All coordinates are assumed to be in millimeters.
-export function computeAlignmentFromAnchors(anchors: MuseumAnchor[]): Transform {
+export function computeAlignmentFromAnchors(anchors: MuseumAnchor[]): RigidTransformResult {
   const scanPts = anchors.map((anchor) => ({
     anchor_id: anchor.id,
     point_mm: anchor.scan_mm
@@ -204,35 +195,10 @@ export function computeAlignmentFromAnchors(anchors: MuseumAnchor[]): Transform 
     anchor_id: anchor.id,
     point_mm: anchor.model_mm
   }));
-  const { T_model_scan } = computeRigidTransform(scanPts, modelPts);
-  return T_model_scan;
-}
-
-export function computeResidualsMm(
-  anchors: MuseumAnchor[],
-  alignment: Transform
-): AlignmentQuality {
-  if (anchors.length === 0) {
-    return { rms: null, residuals: [] };
-  }
-
-  const residuals = anchors.map((anchor) => {
-    const predicted = applyTransformToPoint(alignment, anchor.model_mm);
-    const residual = subtract(anchor.scan_mm, predicted);
-    const magnitude = Math.sqrt(
-      residual[0] * residual[0] + residual[1] * residual[1] + residual[2] * residual[2]
-    );
-    return {
-      id: anchor.id,
-      magnitude,
-      translation: residual
-    };
-  });
-
-  const rms = Math.sqrt(residuals.reduce((acc, entry) => acc + entry.magnitude ** 2, 0) / residuals.length);
+  const result = computeRigidTransform(scanPts, modelPts);
   // Sort by magnitude descending so the largest residuals appear first in the table.
-  residuals.sort((a, b) => b.magnitude - a.magnitude);
-  return { rms, residuals };
+  result.residuals_mm.sort((a, b) => b.residual_mm - a.residual_mm);
+  return result;
 }
 
 function selectParts<T extends { part_id: string }>(
@@ -281,9 +247,11 @@ function getNominalTranslation(part: MuseumRawPart): Vec3 {
 
 function getAsBuiltTranslation(part: MuseumRawPart, scanToModel: Transform): Vec3 {
   if (part.scan_line_mm) {
-    const p0Model = applyTransformToPoint(scanToModel, part.scan_line_mm.p0);
-    const p1Model = applyTransformToPoint(scanToModel, part.scan_line_mm.p1);
-    return midpoint(p0Model, p1Model);
+    const lineModel = applyTransformToLine(scanToModel, {
+      start_mm: part.scan_line_mm.p0,
+      end_mm: part.scan_line_mm.p1
+    });
+    return midpoint(lineModel.start_mm, lineModel.end_mm);
   }
   const worldFallback = pickTransformOptional(part as Record<string, unknown>, [
     "T_world_part_asBuilt",

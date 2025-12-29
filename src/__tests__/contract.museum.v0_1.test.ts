@@ -35,7 +35,7 @@ describe("contract v0.1 museum dataset", () => {
 
     const anchors = normalizeMuseumAnchors(rawWithMeasuredAt);
     const alignment = computeAlignmentFromAnchors(anchors);
-    const { nominal, asBuilt } = convertMuseumRawToPoseDatasets(rawWithMeasuredAt, alignment);
+    const { nominal, asBuilt } = convertMuseumRawToPoseDatasets(rawWithMeasuredAt, alignment.T_model_scan);
 
     const actual = generateDirectives({ nominal, asBuilt, constraints });
 

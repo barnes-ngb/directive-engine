@@ -16,7 +16,6 @@ import {
 import {
   DatasetFetchError,
   computeAlignmentFromAnchors,
-  computeResidualsMm as computeAnchorResidualsMm,
   convertMuseumRawToPoseDatasets,
   loadMuseumDataset,
   normalizeMuseumAnchors
@@ -51,7 +50,6 @@ let cachedDirectives: DirectivesOutput | null = null;
 let cachedNominal: NominalPosesDataset | null = null;
 let cachedAsBuilt: AsBuiltPosesDataset | null = null;
 let cachedAlignment: ReturnType<typeof computeAlignmentFromAnchors> | null = null;
-let cachedAnchors: ReturnType<typeof convertMuseumRawToPoseDatasets>["anchors"] = [];
 let cachedSummaries: ReturnType<typeof extractPartSummaries> | null = null;
 let selectedPartId: string | null = null;
 let selectedDataset: DemoDataset = datasetSelect?.value === "museum" ? "museum" : "toy";
@@ -271,11 +269,10 @@ function renderAlignmentQuality(dataset: DemoDataset) {
     return;
   }
 
-  const { rms, residuals } = computeAnchorResidualsMm(cachedAnchors, cachedAlignment);
-  if (alignmentRms) alignmentRms.textContent = rms === null ? "n/a" : formatResidual(rms);
+  if (alignmentRms) alignmentRms.textContent = formatResidual(cachedAlignment.rms_mm);
 
   if (!alignmentResiduals) return;
-  if (residuals.length === 0) {
+  if (cachedAlignment.residuals_mm.length === 0) {
     alignmentResiduals.innerHTML = `
       <tr>
         <td class="placeholder-cell" colspan="5">No residuals available.</td>
@@ -284,13 +281,13 @@ function renderAlignmentQuality(dataset: DemoDataset) {
     return;
   }
 
-  alignmentResiduals.innerHTML = residuals
+  alignmentResiduals.innerHTML = cachedAlignment.residuals_mm
     .map((entry) => {
-      const [dx, dy, dz] = entry.translation ?? [null, null, null];
+      const [dx, dy, dz] = entry.residual_vec_mm ?? [null, null, null];
       return `
         <tr>
-          <td>${entry.id}</td>
-          <td class="numeric">${formatResidual(entry.magnitude)}</td>
+          <td>${entry.anchor_id}</td>
+          <td class="numeric">${formatResidual(entry.residual_mm)}</td>
           <td class="numeric">${formatResidual(dx)}</td>
           <td class="numeric">${formatResidual(dy)}</td>
           <td class="numeric">${formatResidual(dz)}</td>
@@ -357,12 +354,11 @@ async function runDemo(): Promise<void> {
       // We apply its inverse so as-built scan-frame poses are transformed into the model/world frame.
       const anchors = normalizeMuseumAnchors(raw);
       const alignment = computeAlignmentFromAnchors(anchors);
-      const converted = convertMuseumRawToPoseDatasets(raw, alignment);
+      const converted = convertMuseumRawToPoseDatasets(raw, alignment.T_model_scan);
       nominal = converted.nominal;
       asBuilt = converted.asBuilt;
       constraints = rawConstraints;
       cachedAlignment = alignment;
-      cachedAnchors = converted.anchors;
       paths = {
         nominal: `${baseUrl}museum_raw.json`,
         asBuilt: `${baseUrl}museum_raw.json`,
@@ -370,7 +366,6 @@ async function runDemo(): Promise<void> {
       };
     } else {
       cachedAlignment = null;
-      cachedAnchors = [];
       paths = {
         nominal: `${baseUrl}toy_nominal_poses.json`,
         asBuilt: `${baseUrl}toy_asbuilt_poses.json`,
@@ -413,7 +408,6 @@ async function runDemo(): Promise<void> {
     setError(`Failed to run directives: ${message}`);
     setStatusBadge("Error");
     cachedAlignment = null;
-    cachedAnchors = [];
     if (statusDetails) {
       statusDetails.innerHTML = `<p class="placeholder">${message}</p>`;
     }

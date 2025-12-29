@@ -8,7 +8,6 @@ import {
 } from "../core/index.js";
 import {
   computeAlignmentFromAnchors,
-  computeResidualsMm,
   type MuseumAnchor
 } from "../../demo/museum.js";
 
@@ -134,14 +133,14 @@ describe("computeRigidTransform", () => {
     });
 
     const alignment = computeAlignmentFromAnchors(anchors);
-    const { residuals, rms } = computeResidualsMm(anchors, alignment);
+    const { residuals_mm: residuals, rms_mm: rms } = alignment;
 
     for (let i = 0; i < residuals.length - 1; i += 1) {
       assert.ok(
-        residuals[i].magnitude >= residuals[i + 1].magnitude,
+        residuals[i].residual_mm >= residuals[i + 1].residual_mm,
         "Expected residuals to be sorted by descending magnitude."
       );
     }
-    assert.ok(rms !== null && Number.isFinite(rms));
+    assert.ok(Number.isFinite(rms));
   });
 });

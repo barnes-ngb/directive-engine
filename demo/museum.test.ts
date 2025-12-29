@@ -34,7 +34,7 @@ describe("convertMuseumRawToPoseDatasets", () => {
 
     const anchors = normalizeMuseumAnchors(raw);
     const alignment = computeAlignmentFromAnchors(anchors);
-    const { nominal, asBuilt } = convertMuseumRawToPoseDatasets(raw, alignment);
+    const { nominal, asBuilt } = convertMuseumRawToPoseDatasets(raw, alignment.T_model_scan);
 
     const partId = "MULLION_0001";
     const rawParts = raw.parts ?? raw.nominal_parts ?? raw.nominal_poses?.parts ?? [];
@@ -50,7 +50,7 @@ describe("convertMuseumRawToPoseDatasets", () => {
 
     const scanLine = rawPart?.scan_line_mm as MuseumLine | undefined;
     expect(scanLine).toBeTruthy();
-    const scanToModel = invertTransform(alignment);
+    const scanToModel = invertTransform(alignment.T_model_scan);
     const scanMidpoint = midpoint(
       applyTransformToPoint(scanToModel, scanLine!.p0),
       applyTransformToPoint(scanToModel, scanLine!.p1)
