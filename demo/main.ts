@@ -77,6 +77,7 @@ let cachedNominal: NominalPosesDataset | null = null;
 let cachedAsBuilt: AsBuiltPosesDataset | null = null;
 let cachedSummaries: ReturnType<typeof extractPartSummaries> | null = null;
 let selectedPartId: string | null = null;
+let selectedDataset: DemoDataset = datasetSelect?.value === "museum" ? "museum" : "toy";
 
 function formatVec(vec?: [number, number, number], digits = 2): string {
   if (!vec) return "n/a";
@@ -365,9 +366,34 @@ function formatDatasetError(error: DatasetFetchError): string {
   return `${prefix} ${error.path}${statusLabel}. ${hint}`;
 }
 
-function getDatasetSelection(): DemoDataset {
-  if (!datasetSelect) return "toy";
-  return datasetSelect.value === "museum" ? "museum" : "toy";
+function getDatasetLabel(dataset: DemoDataset): string {
+  return dataset === "museum" ? "Museum" : "Toy";
+}
+
+function resetResults(dataset: DemoDataset) {
+  cachedDirectives = null;
+  cachedNominal = null;
+  cachedAsBuilt = null;
+  cachedSummaries = null;
+  selectedPartId = null;
+  setError(null);
+  setStatusBadge("Idle");
+  const label = getDatasetLabel(dataset);
+  if (statusDetails) {
+    statusDetails.innerHTML = `<p class="placeholder">Status details for the ${label} dataset will appear here.</p>`;
+  }
+  if (partList) {
+    partList.innerHTML = `<p class="placeholder">Parts will appear here.</p>`;
+  }
+  if (actionList) {
+    actionList.innerHTML = `<p class="placeholder">Actions will appear here.</p>`;
+  }
+  if (verificationResidual) {
+    verificationResidual.innerHTML = `<p class="placeholder">Expected residual output will appear here.</p>`;
+  }
+  if (rawJson) {
+    rawJson.textContent = "";
+  }
 }
 
 async function runDemo(): Promise<void> {
@@ -376,7 +402,7 @@ async function runDemo(): Promise<void> {
   setStatusBadge("Running", "pending");
 
   try {
-    const dataset = getDatasetSelection();
+    const dataset = selectedDataset;
     const baseUrl = import.meta.env.BASE_URL ?? "/";
     let nominal: NominalPosesDataset;
     let asBuilt: AsBuiltPosesDataset;
@@ -432,7 +458,7 @@ async function runDemo(): Promise<void> {
     renderAlignmentQuality(dataset, directives);
     renderRawJson({ nominal, asBuilt, constraints, directives });
   } catch (error) {
-    const dataset = getDatasetSelection();
+    const dataset = selectedDataset;
     const message =
       dataset === "museum" && error instanceof DatasetFetchError
         ? formatDatasetError(error)
@@ -467,6 +493,8 @@ if (runButton) {
 
 if (datasetSelect) {
   datasetSelect.addEventListener("change", () => {
+    selectedDataset = datasetSelect.value === "museum" ? "museum" : "toy";
+    resetResults(selectedDataset);
     runDemo().catch(() => undefined);
   });
 }
