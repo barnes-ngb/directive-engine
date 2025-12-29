@@ -26,6 +26,7 @@ type MuseumRawNominalPart = {
   part_id: string;
   part_name?: string;
   part_type?: string;
+  nominal_line_mm?: MuseumLine;
   T_model_part_nominal?: Transform;
   T_world_part_nominal?: Transform;
   T_model_part?: Transform;
@@ -37,6 +38,7 @@ type MuseumRawAsBuiltPart = {
   part_id: string;
   pose_confidence?: number;
   confidence_notes?: string;
+  scan_line_mm?: MuseumLine;
   T_scan_part_asBuilt?: Transform;
   T_scan_part?: Transform;
   T_world_part_asBuilt?: Transform;
@@ -63,6 +65,11 @@ export type AlignmentResidual = {
 export type AlignmentQuality = {
   rms: number | null;
   residuals: AlignmentResidual[];
+};
+
+type MuseumLine = {
+  p0: Vec3;
+  p1: Vec3;
 };
 
 type FetchFailureKind = "http" | "parse" | "network";
@@ -128,11 +135,27 @@ function isVec3(value: unknown): value is Vec3 {
   );
 }
 
+function isMuseumLine(value: unknown): value is MuseumLine {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    isVec3((value as MuseumLine).p0) &&
+    isVec3((value as MuseumLine).p1)
+  );
+}
+
 function requireVec3(value: unknown, label: string): Vec3 {
   if (!isVec3(value)) {
     throw new Error(`Museum anchor ${label} is not a valid Vec3.`);
   }
   return value;
+}
+
+function requireLineMidpoint(value: unknown, label: string): Vec3 {
+  if (!isMuseumLine(value)) {
+    throw new Error(`Museum line ${label} is not a valid line.`);
+  }
+  return midpoint(value.p0, value.p1);
 }
 
 function normalizeAnchors(rawAnchors: MuseumAnchorRaw[]): MuseumAnchor[] {
@@ -167,6 +190,10 @@ function add(a: Vec3, b: Vec3): Vec3 {
 
 function scale(vec: Vec3, scalar: number): Vec3 {
   return [vec[0] * scalar, vec[1] * scalar, vec[2] * scalar];
+}
+
+function midpoint(a: Vec3, b: Vec3): Vec3 {
+  return scale(add(a, b), 0.5);
 }
 
 function multiplyMatrixVector(matrix: number[][], vec: Vec3): Vec3 {
@@ -429,6 +456,11 @@ function composeTransforms(lhs: Transform, rhs: Transform): Transform {
   };
 }
 
+function transformPoint(transform: Transform, point: Vec3): Vec3 {
+  const rotation = rotationMatrixFromQuat(transform.rotation_quat_xyzw);
+  return add(multiplyMatrixVector(rotation, point), transform.translation_mm);
+}
+
 export function normalizeMuseumAnchors(raw: MuseumRawDataset): MuseumAnchor[] {
   return normalizeAnchors(raw.anchors ?? []);
 }
@@ -440,6 +472,7 @@ export function convertMuseumRawToPoseDatasets(
   const anchors = normalizeMuseumAnchors(raw);
   const nominalParts = selectParts<MuseumRawNominalPart>(raw, "nominal_parts", "nominal_poses");
   const asBuiltParts = selectParts<MuseumRawAsBuiltPart>(raw, "as_built_parts", "as_built_poses");
+  const identityQuat: Quat = [0, 0, 0, 1];
 
   const nominal = {
     schema_version: "v0.1",
@@ -447,13 +480,14 @@ export function convertMuseumRawToPoseDatasets(
     frame_id: "world",
     units: { length: "mm", rotation: "quaternion_xyzw" },
     parts: nominalParts.map((part) => {
-      const transform = pickTransform(part, [
-        "T_model_part_nominal",
-        "T_world_part_nominal",
-        "T_model_part",
-        "T_world_part",
-        "pose"
-      ], `nominal part ${part.part_id}`);
+      const midpoint = requireLineMidpoint(
+        part.nominal_line_mm,
+        `nominal part ${part.part_id} nominal_line_mm`
+      );
+      const transform: Transform = {
+        translation_mm: midpoint,
+        rotation_quat_xyzw: identityQuat
+      };
       return {
         part_id: part.part_id,
         part_name: part.part_name ?? part.part_id,
@@ -471,16 +505,14 @@ export function convertMuseumRawToPoseDatasets(
     units: { length: "mm", rotation: "quaternion_xyzw" },
     measured_at: raw.measured_at,
     parts: asBuiltParts.map((part) => {
-      const transform = pickTransform(part, [
-        "T_scan_part_asBuilt",
-        "T_scan_part",
-        "T_world_part_asBuilt",
-        "T_world_part",
-        "pose"
-      ], `as-built part ${part.part_id}`);
-      // Assumption: raw as-built poses are reported in the scan frame (mm). Apply T_model_scan^{-1}
-      // so directives compare poses in the model/world frame.
-      const transformed = composeTransforms(scanToModel, transform);
+      const midpoint = requireLineMidpoint(
+        part.scan_line_mm,
+        `as-built part ${part.part_id} scan_line_mm`
+      );
+      const transformed: Transform = {
+        translation_mm: transformPoint(scanToModel, midpoint),
+        rotation_quat_xyzw: identityQuat
+      };
       return {
         part_id: part.part_id,
         T_world_part_asBuilt: transformed,
