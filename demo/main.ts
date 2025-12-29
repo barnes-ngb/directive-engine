@@ -282,7 +282,7 @@ function renderAlignmentQuality(dataset: DemoDataset) {
     return;
   }
 
-  const sortedResiduals = [...residuals].sort((a, b) => b.magnitude - a.magnitude);
+  const sortedResiduals = [...residuals].sort((a, b) => b.residual_mm - a.residual_mm);
 
   alignmentResiduals.innerHTML = sortedResiduals
     .map((entry) => {
