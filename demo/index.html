@@ -49,6 +49,33 @@
         </div>
       </section>
 
+      <section class="panel" aria-labelledby="alignment-title" id="alignment-panel" hidden>
+        <h2 id="alignment-title">Alignment Quality</h2>
+        <div class="panel-body">
+          <div class="alignment-summary">
+            <div><strong>RMS:</strong> <span id="alignment-rms">n/a</span> mm</div>
+          </div>
+          <div class="alignment-table-wrapper">
+            <table class="alignment-table">
+              <thead>
+                <tr>
+                  <th scope="col">Anchor</th>
+                  <th scope="col">Residual (mm)</th>
+                  <th scope="col">dx (mm)</th>
+                  <th scope="col">dy (mm)</th>
+                  <th scope="col">dz (mm)</th>
+                </tr>
+              </thead>
+              <tbody id="alignment-residuals">
+                <tr>
+                  <td class="placeholder" colspan="5">No residuals available.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section class="panel" aria-labelledby="raw-json-title">
         <h2 id="raw-json-title">Raw JSON</h2>
         <div class="panel-body">

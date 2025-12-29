@@ -228,6 +228,46 @@ body {
   font-size: 14px;
 }
 
+.alignment-summary {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.alignment-table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.alignment-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.alignment-table thead {
+  background: #f1f5f9;
+}
+
+.alignment-table th,
+.alignment-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.alignment-table td.placeholder {
+  color: #94a3b8;
+  text-align: center;
+}
+
+.alignment-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .raw-json {
   display: flex;
   flex-direction: column;
