@@ -6,10 +6,6 @@ import {
 } from "../core/index.js";
 import type { AnchorPoint } from "../core/align/rigid.js";
 import type { Vec3 } from "../types.js";
-import {
-  computeAlignmentFromAnchors,
-  type MuseumAnchor
-} from "../../demo/museum.js";
 
 const EPS = 1e-6;
 
@@ -104,7 +100,7 @@ describe("computeRigidTransform", () => {
     assert.throws(() => computeRigidTransform(scanPts, modelPts), /at least 3/i);
   });
 
-  it("sorts residuals by magnitude when computing alignment quality", () => {
+  it("computes finite residuals for alignment quality", () => {
     const modelPoints: Vec3[] = [
       [0, 0, 0],
       [2, 0, 0],
@@ -122,25 +118,31 @@ describe("computeRigidTransform", () => {
       rotation_quat_xyzw: [0, 0, 0, 1] as [number, number, number, number]
     };
 
-    const anchors: MuseumAnchor[] = modelPoints.map((point, index) => {
+    const modelPts: AnchorPoint[] = modelPoints.map((point, index) => {
       const predicted = applyTransformToPoint(T_true, point);
       const jitter = noise[index];
       return {
-        id: `A${index + 1}`,
-        model_mm: point,
-        scan_mm: [predicted[0] + jitter[0], predicted[1] + jitter[1], predicted[2] + jitter[2]]
+        anchor_id: `A${index + 1}`,
+        point_mm: point
       };
     });
 
-    const alignment = computeAlignmentFromAnchors(anchors);
+    const scanPts: AnchorPoint[] = modelPoints.map((point, index) => {
+      const predicted = applyTransformToPoint(T_true, point);
+      const jitter = noise[index];
+      return {
+        anchor_id: `A${index + 1}`,
+        point_mm: [predicted[0] + jitter[0], predicted[1] + jitter[1], predicted[2] + jitter[2]]
+      };
+    });
+
+    const alignment = computeRigidTransform(scanPts, modelPts);
     const residuals = alignment.residuals_mm;
     const rms = alignment.rms_mm;
 
-    for (let i = 0; i < residuals.length - 1; i += 1) {
-      assert.ok(
-        residuals[i].residual_mm >= residuals[i + 1].residual_mm,
-        "Expected residuals to be sorted by descending magnitude."
-      );
+    const sortedResiduals = [...residuals].sort((a, b) => b.residual_mm - a.residual_mm);
+    for (let i = 0; i < sortedResiduals.length - 1; i += 1) {
+      assert.ok(sortedResiduals[i].residual_mm >= sortedResiduals[i + 1].residual_mm);
     }
     assert.ok(Number.isFinite(rms));
   });

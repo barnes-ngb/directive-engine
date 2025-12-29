@@ -1,10 +1,10 @@
 import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
+import { computeRigidTransform } from "../core/index.js";
 import { generateDirectives } from "../core/generateDirectives.js";
 import type { ConstraintsDataset } from "../types.js";
 import {
-  computeAlignmentFromAnchors,
   convertMuseumRawToPoseDatasets,
   normalizeMuseumAnchors,
   type MuseumRawDataset
@@ -34,7 +34,15 @@ describe("contract v0.1 museum dataset", () => {
     };
 
     const anchors = normalizeMuseumAnchors(rawWithMeasuredAt);
-    const alignment = computeAlignmentFromAnchors(anchors);
+    const scanPts = anchors.map((anchor) => ({
+      anchor_id: anchor.id,
+      point_mm: anchor.scan_mm
+    }));
+    const modelPts = anchors.map((anchor) => ({
+      anchor_id: anchor.id,
+      point_mm: anchor.model_mm
+    }));
+    const alignment = computeRigidTransform(scanPts, modelPts);
     const { nominal, asBuilt } = convertMuseumRawToPoseDatasets(rawWithMeasuredAt, alignment.T_model_scan);
 
     const actual = generateDirectives({ nominal, asBuilt, constraints });
