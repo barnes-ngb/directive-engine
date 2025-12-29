@@ -7,6 +7,13 @@ import type {
   Status
 } from "../src/types.js";
 import {
+  computeAlignmentFromAnchors,
+  computeResidualsMm,
+  convertMuseumRawToPoseDatasets,
+  DatasetFetchError,
+  loadMuseumDataset
+} from "./museum.js";
+import {
   describeAction,
   deriveOverallStatus,
   extractPartSummaries,
@@ -21,39 +28,6 @@ type DatasetPaths = {
 };
 
 type DemoDataset = "toy" | "museum";
-
-type MuseumRawPayload =
-  | {
-      nominal: NominalPosesDataset;
-      asBuilt: AsBuiltPosesDataset;
-    }
-  | {
-      nominal_poses: NominalPosesDataset;
-      as_built_poses: AsBuiltPosesDataset;
-    };
-
-type FetchFailureKind = "http" | "parse" | "network";
-
-class DatasetFetchError extends Error {
-  readonly kind: FetchFailureKind;
-  readonly path: string;
-  readonly status?: number;
-  readonly statusText?: string;
-
-  constructor(
-    kind: FetchFailureKind,
-    path: string,
-    status?: number,
-    statusText?: string,
-    message?: string
-  ) {
-    super(message ?? `Failed to load ${path}`);
-    this.kind = kind;
-    this.path = path;
-    this.status = status;
-    this.statusText = statusText;
-  }
-}
 
 const statusPriority: Status[] = STATUS_PRIORITY;
 const statusClasses = new Set(statusPriority);
@@ -103,47 +77,12 @@ function setStatusBadge(status: string, statusClass?: Status) {
   }
 }
 
-function normalizeMuseumRaw(payload: MuseumRawPayload): {
-  nominal: NominalPosesDataset;
-  asBuilt: AsBuiltPosesDataset;
-} {
-  if (!payload || typeof payload !== "object") {
-    throw new Error("Museum raw data is missing nominal or as-built poses.");
-  }
-  if ("nominal" in payload && "asBuilt" in payload) {
-    return { nominal: payload.nominal, asBuilt: payload.asBuilt };
-  }
-  if ("nominal_poses" in payload && "as_built_poses" in payload) {
-    return { nominal: payload.nominal_poses, asBuilt: payload.as_built_poses };
-  }
-  throw new Error("Museum raw data is missing nominal or as-built poses.");
-}
-
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(path);
   if (!response.ok) {
     throw new Error(`Failed to load ${path}: ${response.status} ${response.statusText}`);
   }
   return response.json() as Promise<T>;
-}
-
-async function fetchJsonWithDiagnostics<T>(path: string): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(path);
-  } catch (error) {
-    throw new DatasetFetchError("network", path, undefined, undefined, String(error));
-  }
-
-  if (!response.ok) {
-    throw new DatasetFetchError("http", path, response.status, response.statusText);
-  }
-
-  try {
-    return (await response.json()) as T;
-  } catch (error) {
-    throw new DatasetFetchError("parse", path, response.status, response.statusText, String(error));
-  }
 }
 
 async function runGenerateDirectives(
@@ -319,23 +258,22 @@ async function runDemo(): Promise<void> {
     let asBuilt: AsBuiltPosesDataset;
     let constraints: ConstraintsDataset;
     let paths: DatasetPaths;
+    let museumRenderPayload: Record<string, unknown> | null = null;
 
     if (dataset === "museum") {
-      const museumRawPath = "/museum_raw.json";
-      const museumConstraintsPath = "/museum_constraints.json";
-      const [rawPayload, constraintsPayload] = await Promise.all([
-        fetchJsonWithDiagnostics<MuseumRawPayload>(museumRawPath),
-        fetchJsonWithDiagnostics<ConstraintsDataset>(museumConstraintsPath)
-      ]);
-      const normalized = normalizeMuseumRaw(rawPayload);
-      nominal = normalized.nominal;
-      asBuilt = normalized.asBuilt;
+      const { raw, constraints: constraintsPayload } = await loadMuseumDataset();
+      const alignment = computeAlignmentFromAnchors(raw.anchors);
+      const residuals = computeResidualsMm(raw.anchors, alignment);
+      const datasets = convertMuseumRawToPoseDatasets(raw, { alignment });
+      nominal = datasets.nominal;
+      asBuilt = datasets.asBuilt;
       constraints = constraintsPayload;
       paths = {
-        nominal: museumRawPath,
-        asBuilt: museumRawPath,
-        constraints: museumConstraintsPath
+        nominal: "/museum_raw.json",
+        asBuilt: "/museum_raw.json",
+        constraints: "/museum_constraints.json"
       };
+      museumRenderPayload = { raw, alignment, residuals };
     } else {
       paths = {
         nominal: `${baseUrl}toy_nominal_poses.json`,
@@ -366,7 +304,7 @@ async function runDemo(): Promise<void> {
     cachedSummaries = partSummaries;
     renderParts(partSummaries, partNames);
     renderSelection();
-    renderRawJson({ nominal, asBuilt, constraints, directives });
+    renderRawJson({ nominal, asBuilt, constraints, directives, ...(museumRenderPayload ?? {}) });
   } catch (error) {
     const dataset = getDatasetSelection();
     const message =
