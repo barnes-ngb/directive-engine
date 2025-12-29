@@ -2,11 +2,12 @@ export { generateDirectives } from "./generateDirectives.js";
 export { computeRigidTransform } from "./align/rigid.js";
 export {
   applyTransform,
+  applyTransformToLine,
+  applyTransformToPoint,
   composeTransforms,
   invertTransform,
   rotateVec3ByQuat
-} from "./align/applyTransform.js";
-export { applyTransformToLine, applyTransformToPoint } from "./align/apply.js";
+} from "./align/apply.js";
 export type {
   Action,
   ActionType,
