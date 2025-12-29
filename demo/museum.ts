@@ -3,6 +3,7 @@ import {
   applyTransformToPoint,
   computeRigidTransform
 } from "../src/core/index.js";
+import type { Line3 } from "../src/core/align/apply.js";
 import type { RigidTransformResult } from "../src/core/align/rigid.js";
 import type {
   AsBuiltPosesDataset,
@@ -185,6 +186,10 @@ function midpoint(a: Vec3, b: Vec3): Vec3 {
   return scale(add(a, b), 0.5);
 }
 
+function toLine3(line: MuseumLine): Line3 {
+  return { start_mm: line.p0, end_mm: line.p1 };
+}
+
 // Computes the SE(3) transform T_model_scan that best maps scan-frame anchor points
 // to model-frame anchor points. All coordinates are assumed to be in millimeters.
 export function computeAlignmentFromAnchors(anchors: MuseumAnchor[]): AlignmentResult {
@@ -247,8 +252,8 @@ function getNominalTranslation(part: MuseumRawPart): Vec3 {
 
 function getAsBuiltTranslation(part: MuseumRawPart, T_model_scan: Transform): Vec3 {
   if (part.scan_line_mm) {
-    const transformed = applyTransformToLine(T_model_scan, part.scan_line_mm);
-    return midpoint(transformed.p0, transformed.p1);
+    const transformed = applyTransformToLine(T_model_scan, toLine3(part.scan_line_mm));
+    return midpoint(transformed.start_mm, transformed.end_mm);
   }
   const worldFallback = pickTransformOptional(part as Record<string, unknown>, [
     "T_world_part_asBuilt",

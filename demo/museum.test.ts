@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { applyTransformToPoint } from "../src/core/index.js";
+import { applyTransformToLine } from "../src/core/index.js";
+import type { Line3 } from "../src/core/align/apply.js";
 import type { MuseumRawDataset } from "./museum.js";
 import {
   computeAlignmentFromAnchors,
@@ -18,6 +19,10 @@ type MuseumLine = {
 
 function midpoint(a: Vec3, b: Vec3): Vec3 {
   return [(a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5, (a[2] + b[2]) * 0.5];
+}
+
+function toLine3(line: MuseumLine): Line3 {
+  return { start_mm: line.p0, end_mm: line.p1 };
 }
 
 function expectVecClose(actual: Vec3, expected: Vec3, precision = 6): void {
@@ -50,10 +55,8 @@ describe("convertMuseumRawToPoseDatasets", () => {
 
     const scanLine = rawPart?.scan_line_mm as MuseumLine | undefined;
     expect(scanLine).toBeTruthy();
-    const scanMidpoint = midpoint(
-      applyTransformToPoint(alignment.T_model_scan, scanLine!.p0),
-      applyTransformToPoint(alignment.T_model_scan, scanLine!.p1)
-    );
+    const transformed = applyTransformToLine(alignment.T_model_scan, toLine3(scanLine!));
+    const scanMidpoint = midpoint(transformed.start_mm, transformed.end_mm);
     const asBuiltPart = asBuilt.parts.find((part) => part.part_id === partId);
     expect(asBuiltPart?.T_world_part_asBuilt.rotation_quat_xyzw).toEqual([0, 0, 0, 1]);
     expectVecClose(asBuiltPart!.T_world_part_asBuilt.translation_mm, scanMidpoint);
