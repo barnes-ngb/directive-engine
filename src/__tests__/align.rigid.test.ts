@@ -25,58 +25,78 @@ function residualVec(a: Vec3, b: Vec3): Vec3 {
 
 describe("computeRigidTransform", () => {
   it("recovers a known rigid transform", () => {
-    const scanPts: AnchorPoint[] = [
+    const modelPts: AnchorPoint[] = [
       { anchor_id: "A", point_mm: [1, 2, 3] },
       { anchor_id: "B", point_mm: [-4, 1, 0] },
       { anchor_id: "C", point_mm: [2, -3, 5] },
-      { anchor_id: "D", point_mm: [0, 0, 0] }
+      { anchor_id: "D", point_mm: [0, 0, 1] }
     ];
 
-    const T_model_scan = {
+    const T_true = {
       translation_mm: [10, -5, 3] as Vec3,
       rotation_quat_xyzw: [0, 0, Math.SQRT1_2, Math.SQRT1_2] as [number, number, number, number]
     };
 
-    const modelPts = scanPts.map(({ anchor_id, point_mm }) => ({
+    const scanPts: AnchorPoint[] = modelPts.map(({ anchor_id, point_mm }) => ({
       anchor_id,
-      point_mm: applyTransformToPoint(point_mm, T_model_scan)
+      point_mm: applyTransformToPoint(T_true, point_mm)
     }));
 
     const result = computeRigidTransform(scanPts, modelPts);
 
     for (let i = 0; i < scanPts.length; i++) {
-      const predicted = applyTransformToPoint(scanPts[i].point_mm, result.T_model_scan);
-      closeVec(predicted, modelPts[i].point_mm, 2e-4);
+      const predicted = applyTransformToPoint(result.T_model_scan, modelPts[i].point_mm);
+      closeVec(predicted, scanPts[i].point_mm, 2e-4);
     }
 
     close(result.rms_mm, 0, 2e-4);
   });
 
   it("reports per-anchor residuals", () => {
-    const scanPts: AnchorPoint[] = [
+    const modelPts: AnchorPoint[] = [
       { anchor_id: "A", point_mm: [0, 0, 0] },
       { anchor_id: "B", point_mm: [1, 0, 0] },
-      { anchor_id: "C", point_mm: [0, 1, 0] }
+      { anchor_id: "C", point_mm: [0, 1, 0] },
+      { anchor_id: "D", point_mm: [0, 0, 1] }
     ];
 
-    const modelPts: AnchorPoint[] = [
-      { anchor_id: "C", point_mm: [0.1, 1.2, -0.1] },
-      { anchor_id: "A", point_mm: [0.2, -0.1, 0.05] },
-      { anchor_id: "B", point_mm: [1.1, 0.1, 0.0] }
+    const scanPts: AnchorPoint[] = [
+      { anchor_id: "C", point_mm: [0.05, 1.02, -0.01] },
+      { anchor_id: "A", point_mm: [0.0, 0.0, 0.0] },
+      { anchor_id: "D", point_mm: [0.02, -0.02, 1.01] },
+      { anchor_id: "B", point_mm: [1.02, 0.0, 0.0] }
     ];
 
     const result = computeRigidTransform(scanPts, modelPts);
 
-    assert.equal(result.residuals_mm.length, scanPts.length);
+    assert.equal(result.residuals_mm.length, modelPts.length);
 
+    let rmsSum = 0;
     for (const residual of result.residuals_mm) {
       const scanPoint = scanPts.find((pt) => pt.anchor_id === residual.anchor_id);
       const modelPoint = modelPts.find((pt) => pt.anchor_id === residual.anchor_id);
       assert.ok(scanPoint && modelPoint, "Expected matching anchors");
-      const predicted = applyTransformToPoint(scanPoint.point_mm, result.T_model_scan);
-      const expectedVec = residualVec(modelPoint.point_mm, predicted);
+      const predicted = applyTransformToPoint(result.T_model_scan, modelPoint.point_mm);
+      const expectedVec = residualVec(scanPoint.point_mm, predicted);
       closeVec(residual.residual_vec_mm, expectedVec, 1e-6);
-      close(residual.residual_mm, Math.sqrt(expectedVec[0] ** 2 + expectedVec[1] ** 2 + expectedVec[2] ** 2));
+      const expectedMag = Math.sqrt(expectedVec[0] ** 2 + expectedVec[1] ** 2 + expectedVec[2] ** 2);
+      close(residual.residual_mm, expectedMag, 1e-6);
+      rmsSum += expectedMag ** 2;
     }
+
+    close(result.rms_mm, Math.sqrt(rmsSum / result.residuals_mm.length), 1e-6);
+  });
+
+  it("throws when fewer than three correspondences are available", () => {
+    const scanPts: AnchorPoint[] = [
+      { anchor_id: "A", point_mm: [0, 0, 0] },
+      { anchor_id: "B", point_mm: [1, 0, 0] }
+    ];
+    const modelPts: AnchorPoint[] = [
+      { anchor_id: "A", point_mm: [0, 0, 0] },
+      { anchor_id: "B", point_mm: [1, 0, 0] }
+    ];
+
+    assert.throws(() => computeRigidTransform(scanPts, modelPts), /at least 3/i);
   });
 });
