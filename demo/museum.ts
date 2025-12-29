@@ -1,4 +1,4 @@
-import { applyTransformToPoint, computeRigidTransform, invertTransform } from "../src/core/index.js";
+import { applyTransformToLine, applyTransformToPoint, computeRigidTransform } from "../src/core/index.js";
 import type {
   AsBuiltPosesDataset,
   ConstraintsDataset,
@@ -279,11 +279,10 @@ function getNominalTranslation(part: MuseumRawPart): Vec3 {
   return fallback.translation_mm;
 }
 
-function getAsBuiltTranslation(part: MuseumRawPart, scanToModel: Transform): Vec3 {
+function getAsBuiltTranslation(part: MuseumRawPart, T_model_scan: Transform): Vec3 {
   if (part.scan_line_mm) {
-    const p0Model = applyTransformToPoint(scanToModel, part.scan_line_mm.p0);
-    const p1Model = applyTransformToPoint(scanToModel, part.scan_line_mm.p1);
-    return midpoint(p0Model, p1Model);
+    const modelLine = applyTransformToLine(T_model_scan, part.scan_line_mm);
+    return midpoint(modelLine.p0, modelLine.p1);
   }
   const worldFallback = pickTransformOptional(part as Record<string, unknown>, [
     "T_world_part_asBuilt",
@@ -297,7 +296,7 @@ function getAsBuiltTranslation(part: MuseumRawPart, scanToModel: Transform): Vec
     ["T_scan_part_asBuilt", "T_scan_part", "pose"],
     `as-built part ${part.part_id}`
   );
-  return applyTransformToPoint(scanToModel, scanFallback.translation_mm);
+  return applyTransformToPoint(T_model_scan, scanFallback.translation_mm);
 }
 
 export function normalizeMuseumAnchors(raw: MuseumRawDataset): MuseumAnchor[] {
@@ -334,7 +333,6 @@ export function convertMuseumRawToPoseDatasets(
     })
   } satisfies NominalPosesDataset;
 
-  const scanToModel = invertTransform(alignment);
   const asBuilt = {
     schema_version: "v0.1",
     dataset_id: raw.dataset_id,
@@ -342,7 +340,7 @@ export function convertMuseumRawToPoseDatasets(
     units: { length: "mm", rotation: "quaternion_xyzw" },
     measured_at: requireMeasuredAt(raw.measured_at),
     parts: asBuiltParts.map((part) => {
-      const midpoint = getAsBuiltTranslation(part, scanToModel);
+      const midpoint = getAsBuiltTranslation(part, alignment);
       const transformed: Transform = {
         translation_mm: midpoint,
         rotation_quat_xyzw: identityQuat
