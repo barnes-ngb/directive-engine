@@ -6,6 +6,11 @@ import {
   type AnchorPoint,
   type Vec3
 } from "../core/index.js";
+import {
+  computeAlignmentFromAnchors,
+  computeResidualsMm,
+  type MuseumAnchor
+} from "../../demo/museum.js";
 
 const EPS = 1e-6;
 
@@ -98,5 +103,45 @@ describe("computeRigidTransform", () => {
     ];
 
     assert.throws(() => computeRigidTransform(scanPts, modelPts), /at least 3/i);
+  });
+
+  it("sorts residuals by magnitude when computing alignment quality", () => {
+    const modelPoints: Vec3[] = [
+      [0, 0, 0],
+      [2, 0, 0],
+      [0, 2, 0],
+      [0, 0, 2]
+    ];
+    const noise: Vec3[] = [
+      [0.2, -0.1, 0.05],
+      [-0.05, 0.02, 0.01],
+      [0.1, 0.1, -0.05],
+      [-0.2, 0.05, 0.0]
+    ];
+    const T_true = {
+      translation_mm: [5, -2, 1] as Vec3,
+      rotation_quat_xyzw: [0, 0, 0, 1] as [number, number, number, number]
+    };
+
+    const anchors: MuseumAnchor[] = modelPoints.map((point, index) => {
+      const predicted = applyTransformToPoint(T_true, point);
+      const jitter = noise[index];
+      return {
+        id: `A${index + 1}`,
+        model_mm: point,
+        scan_mm: [predicted[0] + jitter[0], predicted[1] + jitter[1], predicted[2] + jitter[2]]
+      };
+    });
+
+    const alignment = computeAlignmentFromAnchors(anchors);
+    const { residuals, rms } = computeResidualsMm(anchors, alignment);
+
+    for (let i = 0; i < residuals.length - 1; i += 1) {
+      assert.ok(
+        residuals[i].magnitude >= residuals[i + 1].magnitude,
+        "Expected residuals to be sorted by descending magnitude."
+      );
+    }
+    assert.ok(rms !== null && Number.isFinite(rms));
   });
 });
