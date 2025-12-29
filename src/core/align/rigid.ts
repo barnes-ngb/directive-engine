@@ -105,8 +105,8 @@ function computeHornTransform(modelPoints: Vec3[], scanPoints: Vec3[]): Transfor
 
   const [qw, qx, qy, qz] = quatVector;
   const rotation_quat_xyzw: Quat = normalize([qx, qy, qz, qw]);
-  const rotatedModel = rotateVec3ByQuat(modelCentroid, rotation_quat_xyzw);
-  const translation_mm = sub(scanCentroid, rotatedModel);
+  const rotatedScan = rotateVec3ByQuat(scanCentroid, rotation_quat_xyzw);
+  const translation_mm = sub(modelCentroid, rotatedScan);
 
   return { translation_mm, rotation_quat_xyzw };
 }
@@ -146,7 +146,7 @@ export function computeRigidTransform(
 
   const scanPoints = matched.map((entry) => entry.scanPoint);
   const modelPoints = matched.map((entry) => entry.modelPoint);
-  const T_model_scan = computeHornTransform(scanPoints, modelPoints);
+  const T_model_scan = computeHornTransform(modelPoints, scanPoints);
 
   const residuals_mm: AnchorResidual[] = matched.map(({ anchor_id, scanPoint, modelPoint }) => {
     const predicted = applyTransformToPoint(T_model_scan, scanPoint);
