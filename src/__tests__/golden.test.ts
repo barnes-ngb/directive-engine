@@ -32,8 +32,8 @@ function sameStringArrayAsSet(a: string[], b: string[]) {
   assert.deepEqual(sa, sb);
 }
 
-describe("contract v0.1 toy dataset", () => {
-  it("matches expected directives", async () => {
+describe("golden directives", () => {
+  it("matches expected output", async () => {
     const nominalPath = "datasets/toy_v0_1/toy_nominal_poses.json";
     const asBuiltPath = "datasets/toy_v0_1/toy_asbuilt_poses.json";
     const constraintsPath = "datasets/toy_v0_1/toy_constraints.json";
@@ -59,13 +59,17 @@ describe("contract v0.1 toy dataset", () => {
       }
     });
 
+    // Top-level invariants
     assert.equal(actual.schema_version, expected.schema_version);
     assert.equal(actual.dataset_id, expected.dataset_id);
     assert.equal(actual.engine_version, expected.engine_version);
+
     assert.equal(actual.generated_at, expected.generated_at);
 
+    // Summary counts
     assert.deepEqual(actual.summary.counts_by_status, expected.summary.counts_by_status);
 
+    // Steps
     assert.equal(actual.steps.length, expected.steps.length);
 
     for (let i = 0; i < expected.steps.length; i++) {
@@ -84,6 +88,7 @@ describe("contract v0.1 toy dataset", () => {
       close(a.computed_errors.translation_error_norm_mm, e.computed_errors.translation_error_norm_mm);
       close(a.computed_errors.rotation_error_deg, e.computed_errors.rotation_error_deg);
 
+      // Actions: compare structure + deltas, ignore description strings.
       assert.equal(a.actions.length, e.actions.length);
       for (let j = 0; j < e.actions.length; j++) {
         const ea = e.actions[j];
@@ -97,6 +102,7 @@ describe("contract v0.1 toy dataset", () => {
 
         assert.ok(aa.delta && ea.delta, "Expected delta in non-noop action");
         closeVec(aa.delta!.translation_mm, ea.delta!.translation_mm);
+        // quat close
         for (let k = 0; k < 4; k++) close(aa.delta!.rotation_quat_xyzw[k], ea.delta!.rotation_quat_xyzw[k], 1e-6);
 
         if (typeof ea.clamp_applied === "boolean") {
@@ -108,6 +114,7 @@ describe("contract v0.1 toy dataset", () => {
         }
       }
 
+      // Verification: compare type + acceptance + residual + expected_result; ignore notes.
       assert.equal(a.verification.length, e.verification.length);
       for (let j = 0; j < e.verification.length; j++) {
         const ev = e.verification[j];

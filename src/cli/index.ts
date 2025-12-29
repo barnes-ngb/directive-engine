@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
-import { generateDirectives } from "../core/index.js";
+import { generateDirectives } from "../core/generateDirectives.js";
 import type { NominalPosesDataset, AsBuiltPosesDataset, ConstraintsDataset } from "../types.js";
 
 function parseArgs(argv: string[]): Record<string,string> {

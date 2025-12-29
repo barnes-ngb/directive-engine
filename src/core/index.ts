@@ -1,27 +1,7 @@
-export { generateDirectives } from "./generateDirectives.js";
-export type {
-  Action,
-  ActionType,
-  AsBuiltPartPose,
-  AsBuiltPosesDataset,
-  Axis,
-  AxisMask,
-  ComputedErrors,
-  ConstraintsDataset,
-  DirectivesOutput,
-  IndexRotation,
-  NominalPartPose,
-  NominalPosesDataset,
-  PartConstraint,
-  PerAxisLimitDeg,
-  PerAxisLimitMm,
-  Quat,
-  RotationMode,
-  Status,
-  Step,
-  Tolerances,
-  Transform,
-  TransformDelta,
-  Vec3,
-  Verification
-} from "./types.js";
+export { computeRigidTransform } from "./align/rigid.js";
+export {
+  applyTransformToLine,
+  applyTransformToPoint,
+  composeTransforms,
+  invertTransform
+} from "./align/apply.js";

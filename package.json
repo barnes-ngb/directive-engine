@@ -10,8 +10,7 @@
     "build": "vite build",
     "prebuild": "npm run copy:demo-data",
     "preview": "vite preview",
-    "test": "vitest && npm run test:legacy",
-    "test:legacy": "tsx src/test/renderHelpers.ts && tsx src/test/golden.ts"
+    "test": "vitest"
   },
   "devDependencies": {
     "jsdom": "^27.4.0",
