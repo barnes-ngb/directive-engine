@@ -1,4 +1,11 @@
 export { generateDirectives } from "./generateDirectives.js";
+export { computeRigidTransform } from "./align/kabsch.js";
+export {
+  applyTransform,
+  composeTransforms,
+  invertTransform,
+  rotateVec3ByQuat
+} from "./align/applyTransform.js";
 export type {
   Action,
   ActionType,
