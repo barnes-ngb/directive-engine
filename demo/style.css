@@ -22,6 +22,30 @@ body {
   padding: 24px 32px;
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
+  gap: 16px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dataset-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.dataset-select select {
+  border: 1px solid #cbd5f5;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: #ffffff;
+  font-weight: 600;
+  color: #1f2937;
 }
 
 .page-header h1 {
