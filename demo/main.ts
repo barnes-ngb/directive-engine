@@ -284,7 +284,9 @@ function renderAlignmentQuality(dataset: DemoDataset) {
     return;
   }
 
-  alignmentResiduals.innerHTML = residuals
+  const sortedResiduals = [...residuals].sort((a, b) => b.magnitude - a.magnitude);
+
+  alignmentResiduals.innerHTML = sortedResiduals
     .map((entry) => {
       const [dx, dy, dz] = entry.translation ?? [null, null, null];
       return `
