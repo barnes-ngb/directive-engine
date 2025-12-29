@@ -20,10 +20,46 @@ type DatasetPaths = {
   constraints: string;
 };
 
+type DemoDataset = "toy" | "museum";
+
+type MuseumRawPayload =
+  | {
+      nominal: NominalPosesDataset;
+      asBuilt: AsBuiltPosesDataset;
+    }
+  | {
+      nominal_poses: NominalPosesDataset;
+      as_built_poses: AsBuiltPosesDataset;
+    };
+
+type FetchFailureKind = "http" | "parse" | "network";
+
+class DatasetFetchError extends Error {
+  readonly kind: FetchFailureKind;
+  readonly path: string;
+  readonly status?: number;
+  readonly statusText?: string;
+
+  constructor(
+    kind: FetchFailureKind,
+    path: string,
+    status?: number,
+    statusText?: string,
+    message?: string
+  ) {
+    super(message ?? `Failed to load ${path}`);
+    this.kind = kind;
+    this.path = path;
+    this.status = status;
+    this.statusText = statusText;
+  }
+}
+
 const statusPriority: Status[] = STATUS_PRIORITY;
 const statusClasses = new Set(statusPriority);
 
 const runButton = document.querySelector<HTMLButtonElement>(".run-button");
+const datasetSelect = document.querySelector<HTMLSelectElement>("#dataset-select");
 const statusBadge = document.querySelector<HTMLSpanElement>("#status-badge");
 const statusDetails = document.querySelector<HTMLDivElement>("#status-details");
 const partList = document.querySelector<HTMLDivElement>("#part-list");
@@ -67,12 +103,47 @@ function setStatusBadge(status: string, statusClass?: Status) {
   }
 }
 
+function normalizeMuseumRaw(payload: MuseumRawPayload): {
+  nominal: NominalPosesDataset;
+  asBuilt: AsBuiltPosesDataset;
+} {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Museum raw data is missing nominal or as-built poses.");
+  }
+  if ("nominal" in payload && "asBuilt" in payload) {
+    return { nominal: payload.nominal, asBuilt: payload.asBuilt };
+  }
+  if ("nominal_poses" in payload && "as_built_poses" in payload) {
+    return { nominal: payload.nominal_poses, asBuilt: payload.as_built_poses };
+  }
+  throw new Error("Museum raw data is missing nominal or as-built poses.");
+}
+
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(path);
   if (!response.ok) {
     throw new Error(`Failed to load ${path}: ${response.status} ${response.statusText}`);
   }
   return response.json() as Promise<T>;
+}
+
+async function fetchJsonWithDiagnostics<T>(path: string): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(path);
+  } catch (error) {
+    throw new DatasetFetchError("network", path, undefined, undefined, String(error));
+  }
+
+  if (!response.ok) {
+    throw new DatasetFetchError("http", path, response.status, response.statusText);
+  }
+
+  try {
+    return (await response.json()) as T;
+  } catch (error) {
+    throw new DatasetFetchError("parse", path, response.status, response.statusText, String(error));
+  }
 }
 
 async function runGenerateDirectives(
@@ -223,24 +294,61 @@ function renderRawJson(payload: unknown) {
   rawJson.textContent = JSON.stringify(payload, null, 2);
 }
 
+function formatDatasetError(error: DatasetFetchError): string {
+  const statusLabel =
+    error.status !== undefined ? ` (status ${error.status}${error.statusText ? ` ${error.statusText}` : ""})` : "";
+  const prefix = error.kind === "parse" ? "Invalid JSON in" : "Failed to load";
+  const hint = `Place the file under demo/public so it is served at ${error.path}.`;
+  return `${prefix} ${error.path}${statusLabel}. ${hint}`;
+}
+
+function getDatasetSelection(): DemoDataset {
+  if (!datasetSelect) return "toy";
+  return datasetSelect.value === "museum" ? "museum" : "toy";
+}
+
 async function runDemo(): Promise<void> {
   if (runButton) runButton.disabled = true;
   setError(null);
   setStatusBadge("Running", "pending");
 
   try {
+    const dataset = getDatasetSelection();
     const baseUrl = import.meta.env.BASE_URL ?? "/";
-    const paths: DatasetPaths = {
-      nominal: `${baseUrl}toy_nominal_poses.json`,
-      asBuilt: `${baseUrl}toy_asbuilt_poses.json`,
-      constraints: `${baseUrl}toy_constraints.json`
-    };
+    let nominal: NominalPosesDataset;
+    let asBuilt: AsBuiltPosesDataset;
+    let constraints: ConstraintsDataset;
+    let paths: DatasetPaths;
 
-    const [nominal, asBuilt, constraints] = await Promise.all([
-      fetchJson<NominalPosesDataset>(paths.nominal),
-      fetchJson<AsBuiltPosesDataset>(paths.asBuilt),
-      fetchJson<ConstraintsDataset>(paths.constraints)
-    ]);
+    if (dataset === "museum") {
+      const museumRawPath = "/museum_raw.json";
+      const museumConstraintsPath = "/museum_constraints.json";
+      const [rawPayload, constraintsPayload] = await Promise.all([
+        fetchJsonWithDiagnostics<MuseumRawPayload>(museumRawPath),
+        fetchJsonWithDiagnostics<ConstraintsDataset>(museumConstraintsPath)
+      ]);
+      const normalized = normalizeMuseumRaw(rawPayload);
+      nominal = normalized.nominal;
+      asBuilt = normalized.asBuilt;
+      constraints = constraintsPayload;
+      paths = {
+        nominal: museumRawPath,
+        asBuilt: museumRawPath,
+        constraints: museumConstraintsPath
+      };
+    } else {
+      paths = {
+        nominal: `${baseUrl}toy_nominal_poses.json`,
+        asBuilt: `${baseUrl}toy_asbuilt_poses.json`,
+        constraints: `${baseUrl}toy_constraints.json`
+      };
+
+      [nominal, asBuilt, constraints] = await Promise.all([
+        fetchJson<NominalPosesDataset>(paths.nominal),
+        fetchJson<AsBuiltPosesDataset>(paths.asBuilt),
+        fetchJson<ConstraintsDataset>(paths.constraints)
+      ]);
+    }
 
     const directives = await runGenerateDirectives(nominal, asBuilt, constraints, paths);
 
@@ -260,7 +368,13 @@ async function runDemo(): Promise<void> {
     renderSelection();
     renderRawJson({ nominal, asBuilt, constraints, directives });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    const dataset = getDatasetSelection();
+    const message =
+      dataset === "museum" && error instanceof DatasetFetchError
+        ? formatDatasetError(error)
+        : error instanceof Error
+          ? error.message
+          : "Unknown error";
     setError(`Failed to run directives: ${message}`);
     setStatusBadge("Error");
     if (statusDetails) {
@@ -282,6 +396,12 @@ async function runDemo(): Promise<void> {
 
 if (runButton) {
   runButton.addEventListener("click", () => {
+    runDemo().catch(() => undefined);
+  });
+}
+
+if (datasetSelect) {
+  datasetSelect.addEventListener("change", () => {
     runDemo().catch(() => undefined);
   });
 }
