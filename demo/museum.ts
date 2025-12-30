@@ -1,5 +1,12 @@
 import { applyTransformToLine, applyTransformToPoint } from "../src/core/index.js";
 import type { Line3 } from "../src/core/align/apply.js";
+import { normalizeMuseumAnchors as normalizeMuseumAnchorsCore } from "../src/core/convert/museumAnchors.js";
+import type {
+  MuseumAnchor,
+  MuseumLine,
+  MuseumRawDataset,
+  MuseumRawPart
+} from "../src/core/convert/museumAnchors.js";
 import type {
   AsBuiltPosesDataset,
   ConstraintsDataset,
@@ -8,57 +15,6 @@ import type {
   Transform,
   Vec3
 } from "../src/types.js";
-
-export type MuseumAnchor = {
-  id: string;
-  model_mm: Vec3;
-  scan_mm: Vec3;
-};
-
-type MuseumAnchorRaw = {
-  id?: string;
-  anchor_id?: string;
-  model_mm?: Vec3;
-  scan_mm?: Vec3;
-  model_xyz_mm?: Vec3;
-  scan_xyz_mm?: Vec3;
-  model?: Vec3;
-  scan?: Vec3;
-};
-
-type MuseumRawPart = {
-  part_id: string;
-  part_name?: string;
-  part_type?: string;
-  nominal_line_mm?: MuseumLine;
-  scan_line_mm?: MuseumLine;
-  pose_confidence?: number;
-  confidence_notes?: string;
-  T_model_part_nominal?: Transform;
-  T_world_part_nominal?: Transform;
-  T_model_part?: Transform;
-  T_world_part?: Transform;
-  T_scan_part_asBuilt?: Transform;
-  T_scan_part?: Transform;
-  T_world_part_asBuilt?: Transform;
-  pose?: Transform;
-};
-
-export type MuseumRawDataset = {
-  dataset_id: string;
-  measured_at?: string;
-  anchors: MuseumAnchorRaw[];
-  parts?: MuseumRawPart[];
-  nominal_parts?: MuseumRawPart[];
-  as_built_parts?: MuseumRawPart[];
-  nominal_poses?: { parts: MuseumRawPart[] };
-  as_built_poses?: { parts: MuseumRawPart[] };
-};
-
-type MuseumLine = {
-  p0: Vec3;
-  p1: Vec3;
-};
 
 type FetchFailureKind = "http" | "parse" | "network";
 
@@ -133,13 +89,6 @@ function isMuseumLine(value: unknown): value is MuseumLine {
   );
 }
 
-function requireVec3(value: unknown, label: string): Vec3 {
-  if (!isVec3(value)) {
-    throw new Error(`Museum anchor ${label} is not a valid Vec3.`);
-  }
-  return value;
-}
-
 function requireLineMidpoint(value: unknown, label: string): Vec3 {
   if (!isMuseumLine(value)) {
     throw new Error(`Museum line ${label} is not a valid line.`);
@@ -152,19 +101,6 @@ function requireMeasuredAt(value: string | undefined): string {
     throw new Error("Museum dataset measured_at is required for v0.1 datasets.");
   }
   return value;
-}
-
-function normalizeAnchors(rawAnchors: MuseumAnchorRaw[]): MuseumAnchor[] {
-  return rawAnchors.map((anchor, index) => {
-    const id = anchor.id ?? anchor.anchor_id ?? `anchor-${index + 1}`;
-    const model = anchor.model_mm ?? anchor.model_xyz_mm ?? anchor.model;
-    const scan = anchor.scan_mm ?? anchor.scan_xyz_mm ?? anchor.scan;
-    return {
-      id,
-      model_mm: requireVec3(model, `${id} model_mm`),
-      scan_mm: requireVec3(scan, `${id} scan_mm`)
-    };
-  });
 }
 
 function add(a: Vec3, b: Vec3): Vec3 {
@@ -247,9 +183,7 @@ function getAsBuiltTranslation(part: MuseumRawPart, T_model_scan: Transform): Ve
   return applyTransformToPoint(T_model_scan, scanFallback.translation_mm);
 }
 
-export function normalizeMuseumAnchors(raw: MuseumRawDataset): MuseumAnchor[] {
-  return normalizeAnchors(raw.anchors ?? []);
-}
+export const normalizeMuseumAnchors = normalizeMuseumAnchorsCore;
 
 export function convertMuseumRawToPoseDatasets(
   raw: MuseumRawDataset,
