@@ -21,6 +21,8 @@ export {
 export type { TraceContext, TraceEvent } from "./trace.js";
 export { generateDirectives } from "./generateDirectives.js";
 export type { GenerateDirectivesOptions, GenerateDirectivesInput } from "./generateDirectives.js";
+export { simulateStep } from "./simulate.js";
+export type { SimulateStepInput, SimulationResult } from "./simulate.js";
 export type {
   MuseumRawDataset,
   MuseumAnchor,

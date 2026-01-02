@@ -1,4 +1,5 @@
-import { computeRigidTransform, generateDirectives } from "../src/core/index.js";
+import { computeRigidTransform, generateDirectives, simulateStep } from "../src/core/index.js";
+import type { SimulationResult } from "../src/core/index.js";
 import type {
   AsBuiltPosesDataset,
   ConstraintsDataset,
@@ -45,6 +46,7 @@ const alignmentResiduals = document.querySelector<HTMLTableSectionElement>("#ali
 const rawJson = document.querySelector<HTMLPreElement>("#raw-json");
 const errorBanner = document.querySelector<HTMLDivElement>("#error-banner");
 const constraintsPanel = document.querySelector<HTMLDivElement>("#constraints-panel");
+const simulationPanel = document.querySelector<HTMLDivElement>("#simulation-panel");
 
 let cachedDirectives: DirectivesOutput | null = null;
 let cachedNominal: NominalPosesDataset | null = null;
@@ -54,6 +56,7 @@ let cachedAlignment: ReturnType<typeof computeRigidTransform> | null = null;
 let cachedSummaries: ReturnType<typeof extractPartSummaries> | null = null;
 let selectedPartId: string | null = null;
 let selectedDataset: DemoDataset = datasetSelect?.value === "museum" ? "museum" : "toy";
+const cachedSimulationResults = new Map<string, SimulationResult>();
 
 function formatVec(vec?: [number, number, number], digits = 2): string {
   if (!vec) return "n/a";
@@ -235,6 +238,7 @@ function renderSelection() {
   `;
 
   renderConstraints(selectedSummary.id);
+  renderSimulation(selectedSummary.id);
 }
 
 function formatAxisMask(mask: { x: boolean; y: boolean; z: boolean }): string {
@@ -323,6 +327,146 @@ function renderConstraints(partId: string) {
   `;
 }
 
+function runSimulation(partId: string): SimulationResult | null {
+  if (!cachedDirectives || !cachedNominal || !cachedAsBuilt || !cachedConstraints) {
+    return null;
+  }
+
+  const step = cachedDirectives.steps.find((s) => s.part_id === partId);
+  const nominalPart = cachedNominal.parts.find((p) => p.part_id === partId);
+  const asBuiltPart = cachedAsBuilt.parts.find((p) => p.part_id === partId);
+  const partConstraint = cachedConstraints.parts.find((p) => p.part_id === partId);
+
+  if (!step || !nominalPart || !asBuiltPart || !partConstraint) {
+    return null;
+  }
+
+  const result = simulateStep({
+    nominalPose: nominalPart.T_world_part_nominal,
+    asBuiltPose: asBuiltPart.T_world_part_asBuilt,
+    step,
+    tolerances: partConstraint.tolerances
+  });
+
+  cachedSimulationResults.set(partId, result);
+  return result;
+}
+
+function renderSimulation(partId: string) {
+  if (!simulationPanel) return;
+
+  if (!cachedDirectives || !cachedConstraints) {
+    simulationPanel.innerHTML = `<p class="placeholder">Select a part to simulate applying its directive.</p>`;
+    return;
+  }
+
+  const step = cachedDirectives.steps.find((s) => s.part_id === partId);
+  const partConstraint = cachedConstraints.parts.find((p) => p.part_id === partId);
+
+  if (!step || !partConstraint) {
+    simulationPanel.innerHTML = `<p class="placeholder">Part data not available.</p>`;
+    return;
+  }
+
+  const canSimulate = step.status !== "blocked" && step.status !== "needs_review";
+  const cachedResult = cachedSimulationResults.get(partId);
+
+  // Before Error display (always show from step computed_errors)
+  const beforeError = step.computed_errors;
+  const beforeErrorHtml = `
+    <div class="simulation-section">
+      <div class="simulation-label">Before Error</div>
+      <div><strong>Translation:</strong> ${formatVec(beforeError.translation_error_mm_vec)} mm</div>
+      <div><strong>Translation norm:</strong> ${formatResidual(beforeError.translation_error_norm_mm)} mm</div>
+      <div><strong>Rotation:</strong> ${formatResidual(beforeError.rotation_error_deg)}°</div>
+    </div>
+  `;
+
+  // Directive Delta display
+  let directiveDeltaHtml = "";
+  if (step.actions.length > 0) {
+    const primaryAction = step.actions.find((a) => a.type !== "noop") ?? step.actions[0];
+    if (primaryAction && primaryAction.delta) {
+      directiveDeltaHtml = `
+        <div class="simulation-section">
+          <div class="simulation-label">Directive Delta</div>
+          <div><strong>Translation:</strong> ${formatVec(primaryAction.delta.translation_mm)} mm</div>
+          ${primaryAction.type === "rotate" || primaryAction.type === "rotate_to_index"
+            ? `<div><strong>Rotation:</strong> ${primaryAction.axis?.toUpperCase() ?? "?"} axis</div>`
+            : ""
+          }
+        </div>
+      `;
+    }
+  }
+
+  // Button and after error display
+  let buttonHtml: string;
+  let afterErrorHtml = "";
+
+  if (!canSimulate) {
+    const reason = step.status === "blocked" ? "blocked" : "needs review";
+    buttonHtml = `
+      <button class="simulate-button" type="button" disabled title="Cannot simulate: ${reason}">
+        N/A
+      </button>
+      <span class="simulate-note">Cannot simulate: ${reason}</span>
+    `;
+  } else if (cachedResult) {
+    // Show the cached result
+    buttonHtml = `
+      <button class="simulate-button simulated" type="button" data-part-id="${partId}">
+        Re-simulate
+      </button>
+    `;
+    afterErrorHtml = `
+      <div class="simulation-section">
+        <div class="simulation-label">After Error</div>
+        <div><strong>Translation:</strong> ${formatVec(cachedResult.afterError.translation_mm_vec)} mm</div>
+        <div><strong>Translation norm:</strong> ${formatResidual(cachedResult.afterError.translation_norm_mm)} mm</div>
+        <div><strong>Rotation:</strong> ${formatResidual(cachedResult.afterError.rotation_deg)}°</div>
+      </div>
+      <div class="simulation-result">
+        <span class="badge simulation-badge ${cachedResult.pass ? "pass" : "fail"}">
+          ${cachedResult.pass ? "PASS" : "FAIL"}
+        </span>
+        <span class="simulation-tolerance">
+          Tolerance: ${partConstraint.tolerances.translation_mm} mm / ${partConstraint.tolerances.rotation_deg}°
+        </span>
+      </div>
+    `;
+  } else {
+    buttonHtml = `
+      <button class="simulate-button" type="button" data-part-id="${partId}">
+        Simulate Apply
+      </button>
+    `;
+  }
+
+  simulationPanel.innerHTML = `
+    <div class="simulation-grid">
+      ${beforeErrorHtml}
+      ${directiveDeltaHtml}
+      <div class="simulation-actions">
+        ${buttonHtml}
+      </div>
+      ${afterErrorHtml}
+    </div>
+  `;
+
+  // Attach click handler
+  const simulateButton = simulationPanel.querySelector<HTMLButtonElement>(".simulate-button:not([disabled])");
+  if (simulateButton) {
+    simulateButton.addEventListener("click", () => {
+      const id = simulateButton.dataset.partId;
+      if (id) {
+        runSimulation(id);
+        renderSimulation(id);
+      }
+    });
+  }
+}
+
 function renderRawJson(payload: unknown) {
   if (!rawJson) return;
   rawJson.textContent = JSON.stringify(payload, null, 2);
@@ -408,6 +552,7 @@ function resetResults(dataset: DemoDataset) {
   cachedConstraints = null;
   cachedSummaries = null;
   selectedPartId = null;
+  cachedSimulationResults.clear();
   setError(null);
   setStatusBadge("Idle");
   const label = getDatasetLabel(dataset);
@@ -425,6 +570,9 @@ function resetResults(dataset: DemoDataset) {
   }
   if (constraintsPanel) {
     constraintsPanel.innerHTML = `<p class="placeholder">Constraints will appear here.</p>`;
+  }
+  if (simulationPanel) {
+    simulationPanel.innerHTML = `<p class="placeholder">Select a part to simulate applying its directive.</p>`;
   }
   if (rawJson) {
     rawJson.textContent = "";
@@ -527,6 +675,9 @@ async function runDemo(): Promise<void> {
     }
     if (constraintsPanel) {
       constraintsPanel.innerHTML = `<p class="placeholder">Unable to load constraints.</p>`;
+    }
+    if (simulationPanel) {
+      simulationPanel.innerHTML = `<p class="placeholder">Unable to load simulation.</p>`;
     }
     renderAlignmentQuality(dataset);
   } finally {
