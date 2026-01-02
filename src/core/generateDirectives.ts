@@ -13,7 +13,7 @@ import type {
 } from "./types.js";
 
 import { sub, norm, clampVecPerAxis } from "./math/vec.js";
-import { deltaQuat, identity as qIdent, toAxisAngle } from "./math/quat.js";
+import { deltaQuat, identity as qIdent, toAxisAngle, clampQuatAngle } from "./math/quat.js";
 
 const EPS = 1e-9;
 
@@ -331,19 +331,49 @@ export function generateDirectives({
         residualRotationDeg = 0;
       } else if (c.rotation_mode === "free") {
         const axis = dominantAxis(c.allowed_rotation_axes, rAxis) ?? pickRotationAxis(c.allowed_rotation_axes) ?? "x";
+
+        // Check for rotation clamping limits
+        let rotationQuat = qErr;
+        let rotationClampApplied = false;
+        let originalRotationDelta: TransformDelta | undefined;
+
+        if (c.rotation_max_abs_deg) {
+          const maxDeg = c.rotation_max_abs_deg[axis];
+          if (typeof maxDeg === "number" && maxDeg > 0) {
+            const clampResult = clampQuatAngle(qErr, maxDeg);
+            if (clampResult.changed) {
+              rotationClampApplied = true;
+              originalRotationDelta = makeDelta(zeros(), qErr);
+              rotationQuat = clampResult.clamped;
+              residualRotationDeg = clampResult.originalDeg - maxDeg;
+              reason_codes.push("rotation_clamped");
+              if (status !== "blocked") {
+                status = "clamped";
+              }
+            }
+          }
+        }
+
+        const desc = rotationClampApplied
+          ? `Rotate ${n.part_name} about +${axis.toUpperCase()} toward nominal but clamp to max abs limit.`
+          : `Rotate ${n.part_name} about +${axis.toUpperCase()} back to nominal.`;
+
         actions.push({
           action_id: `A${actionCounter++}`,
           type: "rotate",
-          description: `Rotate ${n.part_name} about +${axis.toUpperCase()} back to nominal.`,
+          description: desc,
           axis,
-          delta: makeDelta(zeros(), qErr),
-          clamp_applied: false
+          delta: makeDelta(zeros(), rotationQuat),
+          clamp_applied: rotationClampApplied,
+          original_delta: originalRotationDelta
         });
 
         // For the demo: if only one axis is enabled, call it out.
         const singleAxis = (c.allowed_rotation_axes.x ? 1 : 0) + (c.allowed_rotation_axes.y ? 1 : 0) + (c.allowed_rotation_axes.z ? 1 : 0);
         if (singleAxis === 1) reason_codes.push("rotation_free_single_axis");
-        residualRotationDeg = 0;
+        if (!rotationClampApplied) {
+          residualRotationDeg = 0;
+        }
       } else {
         // fixed but out of tolerance: blocked (not exercised in toy dataset)
         status = "blocked";
