@@ -44,10 +44,12 @@ const alignmentRms = document.querySelector<HTMLSpanElement>("#alignment-rms");
 const alignmentResiduals = document.querySelector<HTMLTableSectionElement>("#alignment-residuals");
 const rawJson = document.querySelector<HTMLPreElement>("#raw-json");
 const errorBanner = document.querySelector<HTMLDivElement>("#error-banner");
+const constraintsPanel = document.querySelector<HTMLDivElement>("#constraints-panel");
 
 let cachedDirectives: DirectivesOutput | null = null;
 let cachedNominal: NominalPosesDataset | null = null;
 let cachedAsBuilt: AsBuiltPosesDataset | null = null;
+let cachedConstraints: ConstraintsDataset | null = null;
 let cachedAlignment: ReturnType<typeof computeRigidTransform> | null = null;
 let cachedSummaries: ReturnType<typeof extractPartSummaries> | null = null;
 let selectedPartId: string | null = null;
@@ -231,6 +233,94 @@ function renderSelection() {
       <div><strong>Expected result:</strong> ${selectedStep?.verification?.[0]?.expected_result ?? "n/a"}</div>
     </div>
   `;
+
+  renderConstraints(selectedSummary.id);
+}
+
+function formatAxisMask(mask: { x: boolean; y: boolean; z: boolean }): string {
+  const axes = [];
+  if (mask.x) axes.push("X");
+  if (mask.y) axes.push("Y");
+  if (mask.z) axes.push("Z");
+  return axes.length > 0 ? axes.join(", ") : "None";
+}
+
+function formatPerAxisLimit(limit?: { x: number; y: number; z: number }): string {
+  if (!limit) return "n/a";
+  return `X: ${limit.x}, Y: ${limit.y}, Z: ${limit.z}`;
+}
+
+function renderConstraints(partId: string) {
+  if (!constraintsPanel || !cachedConstraints) {
+    if (constraintsPanel) {
+      constraintsPanel.innerHTML = `<p class="placeholder">Constraints not available.</p>`;
+    }
+    return;
+  }
+
+  const partConstraint = cachedConstraints.parts.find((p) => p.part_id === partId);
+  if (!partConstraint) {
+    constraintsPanel.innerHTML = `<p class="placeholder">No constraints for part ${partId}.</p>`;
+    return;
+  }
+
+  const threshold = cachedConstraints.engine_config.confidence_threshold;
+
+  // Build translation limits section
+  let translationLimits = "";
+  if (partConstraint.translation_max_abs_mm) {
+    translationLimits += `<div><strong>Max per-axis (mm):</strong> ${formatPerAxisLimit(partConstraint.translation_max_abs_mm)}</div>`;
+  }
+  if (partConstraint.translation_max_norm_mm !== undefined) {
+    translationLimits += `<div><strong>Max norm (mm):</strong> ${partConstraint.translation_max_norm_mm}</div>`;
+  }
+
+  // Build rotation section
+  let rotationSection = `<div><strong>Mode:</strong> ${partConstraint.rotation_mode}</div>`;
+  rotationSection += `<div><strong>Allowed axes:</strong> ${formatAxisMask(partConstraint.allowed_rotation_axes)}</div>`;
+
+  if (partConstraint.rotation_max_abs_deg) {
+    rotationSection += `<div><strong>Max (deg):</strong> ${formatPerAxisLimit(partConstraint.rotation_max_abs_deg)}</div>`;
+  }
+
+  // Index rotation details
+  let indexSection = "";
+  if (partConstraint.index_rotation) {
+    const idx = partConstraint.index_rotation;
+    indexSection = `
+      <div class="constraints-subsection">
+        <div class="constraints-label">Index Rotation</div>
+        <div><strong>Axis:</strong> ${idx.axis.toUpperCase()}</div>
+        <div><strong>Increment:</strong> ${idx.increment_deg}°</div>
+        <div><strong>Allowed indices:</strong> [${idx.allowed_indices.join(", ")}]</div>
+        <div><strong>Nominal index:</strong> ${idx.nominal_index}</div>
+      </div>
+    `;
+  }
+
+  constraintsPanel.innerHTML = `
+    <div class="constraints-grid">
+      <div class="constraints-section">
+        <div class="constraints-label">Translation DOF</div>
+        <div><strong>Allowed axes:</strong> ${formatAxisMask(partConstraint.allowed_translation_axes)}</div>
+        ${translationLimits}
+      </div>
+      <div class="constraints-section">
+        <div class="constraints-label">Rotation DOF</div>
+        ${rotationSection}
+      </div>
+      ${indexSection}
+      <div class="constraints-section">
+        <div class="constraints-label">Tolerances</div>
+        <div><strong>Translation:</strong> ${partConstraint.tolerances.translation_mm} mm</div>
+        <div><strong>Rotation:</strong> ${partConstraint.tolerances.rotation_deg}°</div>
+      </div>
+      <div class="constraints-section">
+        <div class="constraints-label">Global</div>
+        <div><strong>Confidence threshold:</strong> ${threshold}</div>
+      </div>
+    </div>
+  `;
 }
 
 function renderRawJson(payload: unknown) {
@@ -315,6 +405,7 @@ function resetResults(dataset: DemoDataset) {
   cachedDirectives = null;
   cachedNominal = null;
   cachedAsBuilt = null;
+  cachedConstraints = null;
   cachedSummaries = null;
   selectedPartId = null;
   setError(null);
@@ -331,6 +422,9 @@ function resetResults(dataset: DemoDataset) {
   }
   if (verificationResidual) {
     verificationResidual.innerHTML = `<p class="placeholder">Expected residual output will appear here.</p>`;
+  }
+  if (constraintsPanel) {
+    constraintsPanel.innerHTML = `<p class="placeholder">Constraints will appear here.</p>`;
   }
   if (rawJson) {
     rawJson.textContent = "";
@@ -394,6 +488,7 @@ async function runDemo(): Promise<void> {
     cachedDirectives = directives;
     cachedNominal = nominal;
     cachedAsBuilt = asBuilt;
+    cachedConstraints = constraints;
 
     const partNames = new Map(nominal.parts.map((part) => [part.part_id, part.part_name]));
 
@@ -429,6 +524,9 @@ async function runDemo(): Promise<void> {
     }
     if (verificationResidual) {
       verificationResidual.innerHTML = `<p class="placeholder">Unable to load expected residual.</p>`;
+    }
+    if (constraintsPanel) {
+      constraintsPanel.innerHTML = `<p class="placeholder">Unable to load constraints.</p>`;
     }
     renderAlignmentQuality(dataset);
   } finally {

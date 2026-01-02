@@ -322,6 +322,44 @@ body {
   padding: 16px 10px;
 }
 
+.constraints-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.constraints-section,
+.constraints-subsection {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
+}
+
+.constraints-subsection {
+  margin-top: 8px;
+  background: #f8fafc;
+}
+
+.constraints-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.constraints-section > div,
+.constraints-subsection > div {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.constraints-section > div:not(.constraints-label),
+.constraints-subsection > div:not(.constraints-label) {
+  color: #1f2937;
+}
+
 .raw-json {
   display: flex;
   flex-direction: column;
