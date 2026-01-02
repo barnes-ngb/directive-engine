@@ -52,6 +52,38 @@ Note: There is no `data/` directory in this repo; use `datasets/` instead.
 - perfect rotation decomposition per-axis
 - AR UI
 
+## Demo UI Features
+
+### Apply Simulation Panel
+The demo UI includes an "Apply Simulation" panel that allows interactive testing of directive application:
+
+**Location:** `demo/` directory, panel appears in the main demo layout
+
+**Features:**
+- **Before Error:** Shows translation vector + norm (mm) and rotation error (deg) before applying directive
+- **Directive Delta:** Shows the translation and rotation corrections that will be applied
+- **Simulate Apply button:** Click to simulate applying the directive and see results
+- **After Error:** Shows resulting translation + norm and rotation error after simulated application
+- **PASS/FAIL badge:** Green PASS if within tolerances, red FAIL if still out of tolerance
+
+**Behavior:**
+- Button is disabled (shows "N/A") when status is `blocked` or `needs_review`
+- Works with both Toy and Museum datasets
+- Results are cached per-part during a session; click "Re-simulate" to recompute
+
+**Core API:**
+```typescript
+import { simulateStep } from "./src/core/index.js";
+
+const result = simulateStep({
+  nominalPose: { translation_mm: [...], rotation_quat_xyzw: [...] },
+  asBuiltPose: { translation_mm: [...], rotation_quat_xyzw: [...] },
+  step: directiveStep,
+  tolerances: { translation_mm: 1, rotation_deg: 1 }
+});
+// result: { beforeError, directiveDelta, afterError, pass, canSimulate }
+```
+
 ## Change control
 Any proposal that changes semantics or schemas must:
 1) increment contract version OR clearly state it remains v0.1,
