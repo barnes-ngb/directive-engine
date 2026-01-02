@@ -24,7 +24,7 @@ export interface MuseumRawDataset {
   schema_version?: string;
   dataset_id: string;
   anchors: MuseumAnchor[];
-  parts: MuseumPart[];
+  parts?: MuseumPart[];
 }
 
 export interface AnchorPointPairs {
