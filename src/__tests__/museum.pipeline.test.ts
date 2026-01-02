@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import type { ConstraintsDataset } from "../types.js";
-import type { MuseumRawDataset } from "../core/convert/museumAnchors.js";
-import { normalizeMuseumAnchors } from "../core/convert/museumAnchors.js";
+import type { MuseumRawDataset } from "../core/museum/raw.js";
+import { anchorsToPointPairs } from "../core/museum/raw.js";
+import { computeRigidTransform } from "../core/align/rigid.js";
 
 async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, "utf8")) as T;
@@ -18,25 +18,34 @@ function isVec3(value: unknown): value is [number, number, number] {
 }
 
 describe("museum dataset pipeline", () => {
-  it("normalizes anchors from museum facade dataset", async () => {
+  it("converts anchors and computes rigid transform from museum facade dataset", async () => {
     const rawPath = "datasets/museum_facade_v0_1/directive_engine_export/museum_raw.json";
-    const constraintsPath =
-      "datasets/museum_facade_v0_1/directive_engine_export/museum_constraints.json";
 
     const raw = await readJson<MuseumRawDataset>(rawPath);
-    await readJson<ConstraintsDataset>(constraintsPath);
 
-    const anchors = normalizeMuseumAnchors(raw);
+    const { scanPts, modelPts } = anchorsToPointPairs(raw);
 
-    assert.equal(anchors.length, raw.anchors.length);
+    assert.equal(scanPts.length, raw.anchors.length);
+    assert.equal(modelPts.length, raw.anchors.length);
 
-    anchors.forEach((anchor, index) => {
-      assert.ok(anchor.id && anchor.id.length > 0, `Expected anchor id at index ${index}`);
-      assert.ok(isVec3(anchor.model_mm), `Expected model_mm Vec3 for anchor ${anchor.id}`);
-      assert.ok(isVec3(anchor.scan_mm), `Expected scan_mm Vec3 for anchor ${anchor.id}`);
+    scanPts.forEach((pt, index) => {
+      assert.ok(pt.anchor_id && pt.anchor_id.length > 0, `Expected anchor_id at index ${index}`);
+      assert.ok(isVec3(pt.point_mm), `Expected point_mm Vec3 for scan anchor ${pt.anchor_id}`);
     });
 
-    assert.ok(anchors.some((anchor) => anchor.id === "A001"));
-    assert.ok(anchors.some((anchor) => anchor.id === "A002"));
+    modelPts.forEach((pt, index) => {
+      assert.ok(pt.anchor_id && pt.anchor_id.length > 0, `Expected anchor_id at index ${index}`);
+      assert.ok(isVec3(pt.point_mm), `Expected point_mm Vec3 for model anchor ${pt.anchor_id}`);
+    });
+
+    assert.ok(scanPts.some((pt) => pt.anchor_id === "A001"));
+    assert.ok(scanPts.some((pt) => pt.anchor_id === "A002"));
+
+    const result = computeRigidTransform(scanPts, modelPts);
+
+    assert.ok(result.T_model_scan, "Expected T_model_scan transform");
+    assert.ok(typeof result.rms_mm === "number", "Expected rms_mm to be a number");
+    assert.ok(Array.isArray(result.residuals_mm), "Expected residuals_mm array");
+    assert.equal(result.residuals_mm.length, raw.anchors.length);
   });
 });
