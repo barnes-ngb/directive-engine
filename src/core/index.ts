@@ -21,3 +21,10 @@ export {
 export type { TraceContext, TraceEvent } from "./trace.js";
 export { generateDirectives } from "./generateDirectives.js";
 export type { GenerateDirectivesOptions, GenerateDirectivesInput } from "./generateDirectives.js";
+export type {
+  MuseumRawDataset,
+  MuseumAnchor,
+  MuseumPart,
+  AnchorPointPairs
+} from "./museum/raw.js";
+export { anchorsToPointPairs } from "./museum/raw.js";

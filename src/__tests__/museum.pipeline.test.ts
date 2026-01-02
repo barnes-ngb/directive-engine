@@ -1,9 +1,8 @@
 import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
-import type { MuseumRawDataset } from "../core/museum/raw.js";
-import { anchorsToPointPairs } from "../core/museum/raw.js";
-import { computeRigidTransform } from "../core/align/rigid.js";
+import type { MuseumRawDataset } from "../core/index.js";
+import { anchorsToPointPairs, computeRigidTransform } from "../core/index.js";
 
 async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, "utf8")) as T;
