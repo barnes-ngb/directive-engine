@@ -487,3 +487,31 @@ body {
   font-size: 13px;
   color: #64748b;
 }
+
+.reset-button,
+.reset-all-button {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: #ffffff;
+  color: #475569;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.reset-button:hover,
+.reset-all-button:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.reset-all-button {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.reset-all-button:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
