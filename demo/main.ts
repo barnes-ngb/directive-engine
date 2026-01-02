@@ -1,11 +1,15 @@
 import { computeRigidTransform, generateDirectives, simulateStep } from "../src/core/index.js";
+import { identity, multiply, toAxisAngle } from "../src/core/math/quat.js";
+import { add } from "../src/core/math/vec.js";
 import type { SimulationResult } from "../src/core/index.js";
 import type {
+  Action,
   AsBuiltPosesDataset,
   ConstraintsDataset,
   DirectivesOutput,
   NominalPosesDataset,
-  Status
+  Status,
+  Vec3
 } from "../src/types.js";
 import {
   describeAction,
@@ -61,6 +65,27 @@ const cachedSimulationResults = new Map<string, SimulationResult>();
 function formatVec(vec?: [number, number, number], digits = 2): string {
   if (!vec) return "n/a";
   return `[${vec.map((value) => formatResidual(value, digits)).join(", ")}]`;
+}
+
+function computeDirectiveDelta(actions: Action[]): { translation_mm_vec: Vec3; rotation_deg: number } | null {
+  let combinedTranslation: Vec3 = [0, 0, 0];
+  let combinedRotation = identity();
+  let hasDelta = false;
+
+  for (const action of actions) {
+    if (!action.delta) continue;
+    hasDelta = true;
+    combinedTranslation = add(combinedTranslation, action.delta.translation_mm);
+    combinedRotation = multiply(action.delta.rotation_quat_xyzw, combinedRotation);
+  }
+
+  if (!hasDelta) return null;
+
+  const { angleDeg } = toAxisAngle(combinedRotation);
+  return {
+    translation_mm_vec: combinedTranslation,
+    rotation_deg: angleDeg
+  };
 }
 
 function formatStatusLabel(status: string): string {
@@ -370,34 +395,43 @@ function renderSimulation(partId: string) {
 
   const canSimulate = step.status !== "blocked" && step.status !== "needs_review";
   const cachedResult = cachedSimulationResults.get(partId);
+  const beforeError = cachedResult?.beforeError ?? {
+    translation_mm_vec: step.computed_errors.translation_error_mm_vec,
+    translation_norm_mm: step.computed_errors.translation_error_norm_mm,
+    rotation_deg: step.computed_errors.rotation_error_deg
+  };
 
   // Before Error display (always show from step computed_errors)
-  const beforeError = step.computed_errors;
   const beforeErrorHtml = `
     <div class="simulation-section">
       <div class="simulation-label">Before Error</div>
-      <div><strong>Translation:</strong> ${formatVec(beforeError.translation_error_mm_vec)} mm</div>
-      <div><strong>Translation norm:</strong> ${formatResidual(beforeError.translation_error_norm_mm)} mm</div>
-      <div><strong>Rotation:</strong> ${formatResidual(beforeError.rotation_error_deg)}°</div>
+      <div><strong>Translation:</strong> ${formatVec(beforeError.translation_mm_vec)} mm</div>
+      <div><strong>Translation norm:</strong> ${formatResidual(beforeError.translation_norm_mm)} mm</div>
+      <div><strong>Rotation:</strong> ${formatResidual(beforeError.rotation_deg)}°</div>
     </div>
   `;
 
   // Directive Delta display
   let directiveDeltaHtml = "";
-  if (step.actions.length > 0) {
-    const primaryAction = step.actions.find((a) => a.type !== "noop") ?? step.actions[0];
-    if (primaryAction && primaryAction.delta) {
-      directiveDeltaHtml = `
-        <div class="simulation-section">
-          <div class="simulation-label">Directive Delta</div>
-          <div><strong>Translation:</strong> ${formatVec(primaryAction.delta.translation_mm)} mm</div>
-          ${primaryAction.type === "rotate" || primaryAction.type === "rotate_to_index"
-            ? `<div><strong>Rotation:</strong> ${primaryAction.axis?.toUpperCase() ?? "?"} axis</div>`
-            : ""
-          }
-        </div>
-      `;
-    }
+  const directiveDelta = cachedResult?.directiveDelta ?? computeDirectiveDelta(step.actions);
+  if (directiveDelta) {
+    directiveDeltaHtml = `
+      <div class="simulation-section">
+        <div class="simulation-label">Directive Delta</div>
+        <div><strong>Translation:</strong> ${formatVec(directiveDelta.translation_mm_vec)} mm</div>
+        ${directiveDelta.rotation_deg > 1e-6
+          ? `<div><strong>Rotation:</strong> ${formatResidual(directiveDelta.rotation_deg)}°</div>`
+          : ""
+        }
+      </div>
+    `;
+  } else if (step.actions.length > 0) {
+    directiveDeltaHtml = `
+      <div class="simulation-section">
+        <div class="simulation-label">Directive Delta</div>
+        <p class="placeholder">No directive delta available.</p>
+      </div>
+    `;
   }
 
   // Button and after error display
