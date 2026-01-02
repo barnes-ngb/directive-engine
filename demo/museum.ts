@@ -147,11 +147,28 @@ function requireLineMidpoint(value: unknown, label: string): Vec3 {
   return midpoint(value.p0, value.p1);
 }
 
-function requireMeasuredAt(value: string | undefined): string {
-  if (!value) {
-    throw new Error("Museum dataset measured_at is required for v0.1 datasets.");
+export const DEFAULT_MEASURED_AT = "2025-01-01T00:00:00Z";
+
+export function deriveMeasuredAt(datasetId: string): string {
+  const match = datasetId.match(/(\d{8})_(\d{6})$/);
+  if (!match) {
+    return DEFAULT_MEASURED_AT;
   }
-  return value;
+  const [, datePart, timePart] = match;
+  const year = datePart.slice(0, 4);
+  const month = datePart.slice(4, 6);
+  const day = datePart.slice(6, 8);
+  const hour = timePart.slice(0, 2);
+  const minute = timePart.slice(2, 4);
+  const second = timePart.slice(4, 6);
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
+}
+
+function requireMeasuredAt(value: string | undefined, datasetId: string): string {
+  if (value) {
+    return value;
+  }
+  return deriveMeasuredAt(datasetId);
 }
 
 function normalizeAnchors(rawAnchors: MuseumAnchorRaw[]): MuseumAnchor[] {
@@ -287,7 +304,7 @@ export function convertMuseumRawToPoseDatasets(
     dataset_id: raw.dataset_id,
     frame_id: "world",
     units: { length: "mm", rotation: "quaternion_xyzw" },
-    measured_at: requireMeasuredAt(raw.measured_at),
+    measured_at: requireMeasuredAt(raw.measured_at, raw.dataset_id),
     parts: asBuiltParts.map((part) => {
       const midpoint = getAsBuiltTranslation(part, T_model_scan);
       const transformed: Transform = {
