@@ -92,6 +92,11 @@ function formatStatusLabel(status: string): string {
   return status.replace(/_/g, " ");
 }
 
+function formatReasonCodes(reasonCodes: string[]): string {
+  if (!reasonCodes || reasonCodes.length === 0) return "";
+  return reasonCodes.map((code) => code.replace(/_/g, " ")).join(", ");
+}
+
 function setError(message: string | null) {
   if (!errorBanner) return;
   if (message) {
@@ -456,12 +461,15 @@ function renderSimulation(partId: string) {
   }
 
   if (!canSimulate) {
-    const reason = formatStatusLabel(step.status);
+    const statusLabel = formatStatusLabel(step.status);
+    const reasonCodesText = formatReasonCodes(step.reason_codes);
+    const reasonDetail = reasonCodesText ? `: ${reasonCodesText}` : "";
     buttonHtml = `
-      <button class="simulate-button" type="button" disabled title="Cannot simulate: ${reason}">
+      <button class="simulate-button" type="button" disabled title="Cannot simulate: ${statusLabel}${reasonDetail}">
         N/A
       </button>
-      <span class="simulate-note">Cannot simulate: ${reason}</span>
+      <span class="simulate-note">Cannot simulate: ${statusLabel}</span>
+      ${reasonCodesText ? `<span class="simulate-reason-codes">(${reasonCodesText})</span>` : ""}
     `;
   } else if (cachedResult) {
     // Show the cached result
