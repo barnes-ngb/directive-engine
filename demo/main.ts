@@ -437,10 +437,26 @@ function renderSimulation(partId: string) {
   // Button and after error display
   let buttonHtml: string;
   let afterErrorHtml = "";
-  let resetButtonHtml = "";
+  const resetButtons: string[] = [];
+
+  if (cachedResult) {
+    resetButtons.push(`
+      <button class="reset-button" type="button" data-part-id="${partId}">
+        Reset
+      </button>
+    `);
+  }
+
+  if (cachedSimulationResults.size > 0) {
+    resetButtons.push(`
+      <button class="reset-all-button" type="button">
+        Reset All
+      </button>
+    `);
+  }
 
   if (!canSimulate) {
-    const reason = step.status === "blocked" ? "blocked" : "needs review";
+    const reason = formatStatusLabel(step.status);
     buttonHtml = `
       <button class="simulate-button" type="button" disabled title="Cannot simulate: ${reason}">
         N/A
@@ -452,14 +468,6 @@ function renderSimulation(partId: string) {
     buttonHtml = `
       <button class="simulate-button simulated" type="button" data-part-id="${partId}">
         Re-simulate
-      </button>
-    `;
-    resetButtonHtml = `
-      <button class="reset-button" type="button" data-part-id="${partId}">
-        Reset
-      </button>
-      <button class="reset-all-button" type="button">
-        Reset All
       </button>
     `;
     afterErrorHtml = `
@@ -484,14 +492,6 @@ function renderSimulation(partId: string) {
         Simulate Apply
       </button>
     `;
-    // Show Reset All button if there are any cached results
-    if (cachedSimulationResults.size > 0) {
-      resetButtonHtml = `
-        <button class="reset-all-button" type="button">
-          Reset All
-        </button>
-      `;
-    }
   }
 
   simulationPanel.innerHTML = `
@@ -500,7 +500,7 @@ function renderSimulation(partId: string) {
       ${directiveDeltaHtml}
       <div class="simulation-actions">
         ${buttonHtml}
-        ${resetButtonHtml}
+        ${resetButtons.join("")}
       </div>
       ${afterErrorHtml}
     </div>
