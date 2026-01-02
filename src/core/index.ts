@@ -19,3 +19,5 @@ export {
   mergeTracers
 } from "./trace.js";
 export type { TraceContext, TraceEvent } from "./trace.js";
+export { generateDirectives } from "./generateDirectives.js";
+export type { GenerateDirectivesOptions, GenerateDirectivesInput } from "./generateDirectives.js";
