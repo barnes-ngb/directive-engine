@@ -2,7 +2,8 @@ import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import type { ConstraintsDataset } from "../types.js";
-import type { MuseumRawDataset } from "../../demo/museum";
+import type { MuseumRawDataset } from "../core/convert/museumAnchors.js";
+import { normalizeMuseumAnchors } from "../core/convert/museumAnchors.js";
 
 async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, "utf8")) as T;
@@ -14,20 +15,6 @@ function isVec3(value: unknown): value is [number, number, number] {
     value.length === 3 &&
     value.every((component) => typeof component === "number" && Number.isFinite(component))
   );
-}
-
-type NormalizedAnchor = {
-  id: string;
-  model_mm: [number, number, number] | undefined;
-  scan_mm: [number, number, number] | undefined;
-};
-
-function normalizeMuseumAnchors(raw: MuseumRawDataset): NormalizedAnchor[] {
-  return (raw.anchors ?? []).map((anchor, index) => ({
-    id: anchor.anchor_id ?? `anchor-${index + 1}`,
-    model_mm: anchor.model_xyz_mm,
-    scan_mm: anchor.scan_xyz_mm
-  }));
 }
 
 describe("museum dataset pipeline", () => {
