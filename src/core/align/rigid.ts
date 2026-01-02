@@ -71,19 +71,22 @@ function computeHornTransform(modelPoints: Vec3[], scanPoints: Vec3[]): Transfor
   let szy = 0;
   let szz = 0;
 
+  // Build covariance matrix H = Σ (scan_centered * model_centered^T)
+  // This gives rotation R such that R * scan_centered ≈ model_centered
   for (let i = 0; i < modelPoints.length; i++) {
     const [mx, my, mz] = sub(modelPoints[i], modelCentroid);
     const [sx, sy, sz] = sub(scanPoints[i], scanCentroid);
 
-    sxx += mx * sx;
-    sxy += mx * sy;
-    sxz += mx * sz;
-    syx += my * sx;
-    syy += my * sy;
-    syz += my * sz;
-    szx += mz * sx;
-    szy += mz * sy;
-    szz += mz * sz;
+    // H_ij = Σ scan_i * model_j (outer product scan * model^T)
+    sxx += sx * mx;
+    sxy += sx * my;
+    sxz += sx * mz;
+    syx += sy * mx;
+    syy += sy * my;
+    syz += sy * mz;
+    szx += sz * mx;
+    szy += sz * my;
+    szz += sz * mz;
   }
 
   const covarianceNorm = covarianceEnergy([sxx, sxy, sxz, syx, syy, syz, szx, szy, szz]);

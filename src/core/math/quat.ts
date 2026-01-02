@@ -73,3 +73,33 @@ export function toEulerXYZDeg(q: Quat): { xDeg: number; yDeg: number; zDeg: numb
 export function identity(): Quat {
   return [0,0,0,1];
 }
+
+/**
+ * Create a quaternion from an axis and angle in degrees.
+ */
+export function fromAxisAngle(axis: Vec3, angleDeg: number): Quat {
+  const angleRad = angleDeg * (Math.PI / 180);
+  const halfAngle = angleRad / 2;
+  const sinHalf = Math.sin(halfAngle);
+  const cosHalf = Math.cos(halfAngle);
+  // Normalize axis
+  const len = Math.sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
+  if (len < 1e-12) return identity();
+  const nx = axis[0] / len;
+  const ny = axis[1] / len;
+  const nz = axis[2] / len;
+  return normalize([nx * sinHalf, ny * sinHalf, nz * sinHalf, cosHalf]);
+}
+
+/**
+ * Clamp a quaternion's rotation angle to a maximum value (in degrees).
+ * Returns the clamped quaternion and whether clamping was applied.
+ */
+export function clampQuatAngle(q: Quat, maxDeg: number): { clamped: Quat; changed: boolean; originalDeg: number } {
+  const { axis, angleDeg } = toAxisAngle(q);
+  if (angleDeg <= maxDeg + 1e-12) {
+    return { clamped: q, changed: false, originalDeg: angleDeg };
+  }
+  const clampedQuat = fromAxisAngle(axis, maxDeg);
+  return { clamped: clampedQuat, changed: true, originalDeg: angleDeg };
+}
