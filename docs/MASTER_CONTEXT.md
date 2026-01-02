@@ -1,5 +1,7 @@
 # Directive Engine — Master Context
 
+> **See also:** [SCOPES.md](./SCOPES.md) for full project plan, milestones, and work method.
+
 ## Goal
 Browser-first “Installer Directive Center”:
 Input (nominal + as-built + constraints) → directives (actions + status) → verification expectation.
