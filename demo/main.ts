@@ -437,6 +437,7 @@ function renderSimulation(partId: string) {
   // Button and after error display
   let buttonHtml: string;
   let afterErrorHtml = "";
+  let resetButtonHtml = "";
 
   if (!canSimulate) {
     const reason = step.status === "blocked" ? "blocked" : "needs review";
@@ -451,6 +452,14 @@ function renderSimulation(partId: string) {
     buttonHtml = `
       <button class="simulate-button simulated" type="button" data-part-id="${partId}">
         Re-simulate
+      </button>
+    `;
+    resetButtonHtml = `
+      <button class="reset-button" type="button" data-part-id="${partId}">
+        Reset
+      </button>
+      <button class="reset-all-button" type="button">
+        Reset All
       </button>
     `;
     afterErrorHtml = `
@@ -475,6 +484,14 @@ function renderSimulation(partId: string) {
         Simulate Apply
       </button>
     `;
+    // Show Reset All button if there are any cached results
+    if (cachedSimulationResults.size > 0) {
+      resetButtonHtml = `
+        <button class="reset-all-button" type="button">
+          Reset All
+        </button>
+      `;
+    }
   }
 
   simulationPanel.innerHTML = `
@@ -483,12 +500,13 @@ function renderSimulation(partId: string) {
       ${directiveDeltaHtml}
       <div class="simulation-actions">
         ${buttonHtml}
+        ${resetButtonHtml}
       </div>
       ${afterErrorHtml}
     </div>
   `;
 
-  // Attach click handler
+  // Attach click handler for simulate button
   const simulateButton = simulationPanel.querySelector<HTMLButtonElement>(".simulate-button:not([disabled])");
   if (simulateButton) {
     simulateButton.addEventListener("click", () => {
@@ -496,6 +514,29 @@ function renderSimulation(partId: string) {
       if (id) {
         runSimulation(id);
         renderSimulation(id);
+      }
+    });
+  }
+
+  // Attach click handler for reset button (single part)
+  const resetButton = simulationPanel.querySelector<HTMLButtonElement>(".reset-button");
+  if (resetButton) {
+    resetButton.addEventListener("click", () => {
+      const id = resetButton.dataset.partId;
+      if (id) {
+        cachedSimulationResults.delete(id);
+        renderSimulation(id);
+      }
+    });
+  }
+
+  // Attach click handler for reset all button
+  const resetAllButton = simulationPanel.querySelector<HTMLButtonElement>(".reset-all-button");
+  if (resetAllButton) {
+    resetAllButton.addEventListener("click", () => {
+      cachedSimulationResults.clear();
+      if (selectedPartId) {
+        renderSimulation(selectedPartId);
       }
     });
   }
