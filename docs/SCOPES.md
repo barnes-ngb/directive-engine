@@ -206,7 +206,7 @@ Each scope has:
 
 ## Implementation Status
 
-_Last updated: 2026-01-02_
+_Last updated: 2026-01-03_
 
 | Scope | Status | Notes |
 |-------|--------|-------|
@@ -215,7 +215,7 @@ _Last updated: 2026-01-02_
 | **2** | ✅ Complete | Museum dataset loads, alignment panel with RMS + residuals, dataset selector works |
 | **3** | ✅ Complete | `simulateStep()` in core, UI has Simulate/Reset/Reset All buttons |
 | **4** | ✅ Complete | Constraints panel shows axes, limits, tolerances on each directive card |
-| **5** | 🟡 Partial | GH exporter exists (`convert.gh`), missing: validation script, CI checks |
+| **5** | ✅ Complete | GH exporter (`convert.gh`), validation script (`npm run validate`), CI workflow (`.github/workflows/ci.yml`) |
 
 **Test health:** 77 tests passing (14 test files)
 **Build health:** Clean build, ~32KB JS + 6KB CSS output
