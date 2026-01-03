@@ -457,6 +457,29 @@ body {
   font-style: italic;
 }
 
+.simulate-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reason-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.reason-list li {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
 .simulation-result {
   display: flex;
   align-items: center;

@@ -457,11 +457,16 @@ function renderSimulation(partId: string) {
 
   if (!canSimulate) {
     const reason = formatStatusLabel(step.status);
+    const reasonChips = step.reason_codes.map((code) => `<li>${code}</li>`).join("");
+    const reasonList = reasonChips ? `<ul class="reason-list">${reasonChips}</ul>` : "";
     buttonHtml = `
       <button class="simulate-button" type="button" disabled title="Cannot simulate: ${reason}">
         N/A
       </button>
-      <span class="simulate-note">Cannot simulate: ${reason}</span>
+      <div class="simulate-reasons">
+        <span class="simulate-note">Cannot simulate: ${reason}</span>
+        ${reasonList}
+      </div>
     `;
   } else if (cachedResult) {
     // Show the cached result
