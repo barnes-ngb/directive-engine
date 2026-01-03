@@ -97,6 +97,22 @@ function formatReasonCodes(reasonCodes: string[]): string {
   return reasonCodes.map((code) => code.replace(/_/g, " ")).join(", ");
 }
 
+function formatToleranceComparison(value: number | null, tolerance: number, unit: string): string {
+  return `${formatResidual(value)} ${unit} (tol ${formatResidual(tolerance)} ${unit})`;
+}
+
+function withinTolerances(
+  translationNorm: number | null,
+  rotationDeg: number | null,
+  tolerances: { translation_mm: number; rotation_deg: number }
+): boolean {
+  if (translationNorm === null || rotationDeg === null) return false;
+  return (
+    translationNorm <= tolerances.translation_mm + 1e-12 &&
+    rotationDeg <= tolerances.rotation_deg + 1e-12
+  );
+}
+
 function setError(message: string | null) {
   if (!errorBanner) return;
   if (message) {
@@ -405,14 +421,33 @@ function renderSimulation(partId: string) {
     translation_norm_mm: step.computed_errors.translation_error_norm_mm,
     rotation_deg: step.computed_errors.rotation_error_deg
   };
+  const beforePass = withinTolerances(
+    beforeError.translation_norm_mm,
+    beforeError.rotation_deg,
+    partConstraint.tolerances
+  );
 
   // Before Error display (always show from step computed_errors)
   const beforeErrorHtml = `
     <div class="simulation-section">
       <div class="simulation-label">Before Error</div>
       <div><strong>Translation:</strong> ${formatVec(beforeError.translation_mm_vec)} mm</div>
-      <div><strong>Translation norm:</strong> ${formatResidual(beforeError.translation_norm_mm)} mm</div>
-      <div><strong>Rotation:</strong> ${formatResidual(beforeError.rotation_deg)}°</div>
+      <div><strong>Translation norm:</strong> ${formatToleranceComparison(
+        beforeError.translation_norm_mm,
+        partConstraint.tolerances.translation_mm,
+        "mm"
+      )}</div>
+      <div><strong>Rotation:</strong> ${formatToleranceComparison(
+        beforeError.rotation_deg,
+        partConstraint.tolerances.rotation_deg,
+        "°"
+      )}</div>
+      <div class="simulation-result is-inline">
+        <span class="badge simulation-badge ${beforePass ? "pass" : "fail"}">
+          ${beforePass ? "PASS" : "FAIL"}
+        </span>
+        <span class="simulation-tolerance">Current vs tolerance</span>
+      </div>
     </div>
   `;
 
@@ -441,7 +476,26 @@ function renderSimulation(partId: string) {
 
   // Button and after error display
   let buttonHtml: string;
-  let afterErrorHtml = "";
+  let afterErrorHtml = `
+    <div class="simulation-section">
+      <div class="simulation-label">After Error</div>
+      <div><strong>Translation:</strong> n/a</div>
+      <div><strong>Translation norm:</strong> ${formatToleranceComparison(
+        null,
+        partConstraint.tolerances.translation_mm,
+        "mm"
+      )}</div>
+      <div><strong>Rotation:</strong> ${formatToleranceComparison(
+        null,
+        partConstraint.tolerances.rotation_deg,
+        "°"
+      )}</div>
+      <div class="simulation-result is-inline">
+        <span class="badge simulation-badge pending">PENDING</span>
+        <span class="simulation-tolerance">Simulate to evaluate</span>
+      </div>
+    </div>
+  `;
   const resetButtons: string[] = [];
 
   if (cachedResult) {
@@ -471,6 +525,26 @@ function renderSimulation(partId: string) {
       <span class="simulate-note">Cannot simulate: ${statusLabel}</span>
       ${reasonCodesText ? `<span class="simulate-reason-codes">(${reasonCodesText})</span>` : ""}
     `;
+    afterErrorHtml = `
+      <div class="simulation-section">
+        <div class="simulation-label">After Error</div>
+        <div><strong>Translation:</strong> n/a</div>
+        <div><strong>Translation norm:</strong> ${formatToleranceComparison(
+          null,
+          partConstraint.tolerances.translation_mm,
+          "mm"
+        )}</div>
+        <div><strong>Rotation:</strong> ${formatToleranceComparison(
+          null,
+          partConstraint.tolerances.rotation_deg,
+          "°"
+        )}</div>
+        <div class="simulation-result is-inline">
+          <span class="badge simulation-badge pending">N/A</span>
+          <span class="simulation-tolerance">Simulation unavailable</span>
+        </div>
+      </div>
+    `;
   } else if (cachedResult) {
     // Show the cached result
     buttonHtml = `
@@ -482,16 +556,22 @@ function renderSimulation(partId: string) {
       <div class="simulation-section">
         <div class="simulation-label">After Error</div>
         <div><strong>Translation:</strong> ${formatVec(cachedResult.afterError.translation_mm_vec)} mm</div>
-        <div><strong>Translation norm:</strong> ${formatResidual(cachedResult.afterError.translation_norm_mm)} mm</div>
-        <div><strong>Rotation:</strong> ${formatResidual(cachedResult.afterError.rotation_deg)}°</div>
-      </div>
-      <div class="simulation-result">
-        <span class="badge simulation-badge ${cachedResult.pass ? "pass" : "fail"}">
-          ${cachedResult.pass ? "PASS" : "FAIL"}
-        </span>
-        <span class="simulation-tolerance">
-          Tolerance: ${partConstraint.tolerances.translation_mm} mm / ${partConstraint.tolerances.rotation_deg}°
-        </span>
+        <div><strong>Translation norm:</strong> ${formatToleranceComparison(
+          cachedResult.afterError.translation_norm_mm,
+          partConstraint.tolerances.translation_mm,
+          "mm"
+        )}</div>
+        <div><strong>Rotation:</strong> ${formatToleranceComparison(
+          cachedResult.afterError.rotation_deg,
+          partConstraint.tolerances.rotation_deg,
+          "°"
+        )}</div>
+        <div class="simulation-result is-inline">
+          <span class="badge simulation-badge ${cachedResult.pass ? "pass" : "fail"}">
+            ${cachedResult.pass ? "PASS" : "FAIL"}
+          </span>
+          <span class="simulation-tolerance">After vs tolerance</span>
+        </div>
       </div>
     `;
   } else {
