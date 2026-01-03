@@ -473,6 +473,12 @@ body {
   border: 1px solid #e2e8f0;
 }
 
+.simulation-result.is-inline {
+  padding: 6px 10px;
+  border-style: dashed;
+  background: #f8fafc;
+}
+
 .simulation-badge {
   font-size: 14px;
   font-weight: 700;
@@ -487,6 +493,11 @@ body {
 .simulation-badge.fail {
   background: #fee2e2;
   color: #b91c1c;
+}
+
+.simulation-badge.pending {
+  background: #e2e8f0;
+  color: #475569;
 }
 
 .simulation-tolerance {
