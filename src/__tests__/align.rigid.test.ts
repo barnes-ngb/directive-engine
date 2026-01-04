@@ -153,4 +153,88 @@ describe("computeRigidTransform", () => {
     }
     assert.ok(Number.isFinite(result.rms_mm));
   });
+
+  it("returns rms_initial_mm >= rms_mm for a rotated synthetic case", () => {
+    // Create model points
+    const modelPts: AnchorPoint[] = [
+      { anchor_id: "A", point_mm: [0, 0, 0] },
+      { anchor_id: "B", point_mm: [100, 0, 0] },
+      { anchor_id: "C", point_mm: [0, 100, 0] },
+      { anchor_id: "D", point_mm: [0, 0, 100] },
+      { anchor_id: "E", point_mm: [50, 50, 50] }
+    ];
+
+    // Apply a rotation (45 deg around Z-axis) and translation to create scan points
+    const T_model_scan = {
+      translation_mm: [10, -5, 3] as Vec3,
+      rotation_quat_xyzw: [0, 0, Math.SQRT1_2 * 0.5, Math.sqrt(1 - 0.5 * 0.5)] as [number, number, number, number]
+    };
+    const T_scan_model = invertTransform(T_model_scan);
+
+    // Add some noise to make it realistic
+    const noise: Vec3[] = [
+      [0.5, -0.3, 0.2],
+      [-0.2, 0.4, -0.1],
+      [0.1, -0.1, 0.3],
+      [-0.3, 0.2, -0.2],
+      [0.2, -0.2, 0.1]
+    ];
+
+    const scanPts: AnchorPoint[] = modelPts.map(({ anchor_id, point_mm }, index) => {
+      const predicted = applyTransformToPoint(T_scan_model, point_mm);
+      const jitter = noise[index];
+      return {
+        anchor_id,
+        point_mm: [predicted[0] + jitter[0], predicted[1] + jitter[1], predicted[2] + jitter[2]]
+      };
+    });
+
+    const result = computeRigidTransform(scanPts, modelPts);
+
+    // Verify rms_initial_mm is defined and is a finite number
+    assert.ok(
+      typeof result.rms_initial_mm === "number" && Number.isFinite(result.rms_initial_mm),
+      "Expected rms_initial_mm to be a finite number"
+    );
+
+    // Verify rms_mm is defined and is a finite number
+    assert.ok(
+      typeof result.rms_mm === "number" && Number.isFinite(result.rms_mm),
+      "Expected rms_mm to be a finite number"
+    );
+
+    // The initial RMS (translation-only) should be >= final RMS (rigid transform)
+    // because the rigid transform can fit rotation, giving a better fit
+    assert.ok(
+      result.rms_initial_mm >= result.rms_mm - EPS,
+      `Expected rms_initial_mm (${result.rms_initial_mm}) >= rms_mm (${result.rms_mm})`
+    );
+  });
+
+  it("returns equal rms_initial_mm and rms_mm when no rotation is needed", () => {
+    // Create model points
+    const modelPts: AnchorPoint[] = [
+      { anchor_id: "A", point_mm: [0, 0, 0] },
+      { anchor_id: "B", point_mm: [100, 0, 0] },
+      { anchor_id: "C", point_mm: [0, 100, 0] },
+      { anchor_id: "D", point_mm: [0, 0, 100] }
+    ];
+
+    // Apply only translation (no rotation)
+    const translation: Vec3 = [20, -10, 5];
+    const scanPts: AnchorPoint[] = modelPts.map(({ anchor_id, point_mm }) => ({
+      anchor_id,
+      point_mm: [
+        point_mm[0] - translation[0],
+        point_mm[1] - translation[1],
+        point_mm[2] - translation[2]
+      ]
+    }));
+
+    const result = computeRigidTransform(scanPts, modelPts);
+
+    // When there's no rotation, both should be very close to 0
+    close(result.rms_initial_mm, 0, 1e-6);
+    close(result.rms_mm, 0, 1e-6);
+  });
 });
