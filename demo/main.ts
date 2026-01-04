@@ -28,8 +28,9 @@ import {
   downloadDirectivesJson,
   downloadRunSummaryMd,
   downloadDirectivesCsv,
-  printView,
-  type ExportContext
+  openPrintRunSheet,
+  type ExportContext,
+  type PrintRunSheetContext
 } from "./export.js";
 import {
   parseRouteFromUrl,
@@ -852,7 +853,29 @@ function handleExportCsv() {
 }
 
 function handlePrint() {
-  printView();
+  const context = getPrintRunSheetContext();
+  if (!context) {
+    // Fallback to simple window.print if no data available
+    window.print();
+    return;
+  }
+  openPrintRunSheet(context).catch((error) => {
+    console.error("Failed to generate print run sheet:", error);
+    window.print();
+  });
+}
+
+function getPrintRunSheetContext(): PrintRunSheetContext | null {
+  if (!cachedDirectives || !cachedConstraints) return null;
+  // Derive base URL for QR codes from current location
+  const baseUrl = window.location.origin + window.location.pathname;
+  return {
+    directives: cachedDirectives,
+    alignment: cachedAlignment,
+    simulationResults: cachedSimulationResults,
+    constraints: cachedConstraints,
+    baseUrl
+  };
 }
 
 // ============================================================================
