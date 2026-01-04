@@ -101,6 +101,11 @@ const resetRunBtn = document.querySelector<HTMLButtonElement>("#reset-run-btn");
 
 // Runbook layout elements
 const runbookLayout = document.querySelector<HTMLDivElement>("#runbook-layout");
+const runbookCalibrationCard = document.querySelector<HTMLDivElement>("#runbook-calibration-card");
+const runbookCalibrationRms = document.querySelector<HTMLSpanElement>("#runbook-calibration-rms");
+const runbookCalibrationTopAnchors = document.querySelector<HTMLDivElement>("#runbook-calibration-top-anchors");
+const runbookCalibrationDetails = document.querySelector<HTMLDetailsElement>("#runbook-calibration-details");
+const runbookCalibrationResiduals = document.querySelector<HTMLTableSectionElement>("#runbook-calibration-residuals");
 const runbookStepTbody = document.querySelector<HTMLTableSectionElement>("#runbook-step-tbody");
 const runbookDetailPart = document.querySelector<HTMLHeadingElement>("#runbook-detail-part");
 const runbookDetailStatus = document.querySelector<HTMLSpanElement>("#runbook-detail-status");
@@ -841,6 +846,90 @@ function renderAlignmentQuality(dataset: DemoDataset) {
     .join("");
 }
 
+/**
+ * Render the calibration card in Runbook mode.
+ * Shows RMS, top anchors by residual, and expandable full residuals table.
+ * For non-museum datasets, hides the card.
+ */
+function renderRunbookCalibrationCard(dataset: DemoDataset): void {
+  if (!runbookCalibrationCard) return;
+
+  // Hide card for non-museum datasets
+  if (dataset !== "museum") {
+    runbookCalibrationCard.hidden = true;
+    return;
+  }
+
+  // Show card for museum dataset
+  runbookCalibrationCard.hidden = false;
+
+  // No alignment data yet
+  if (!cachedAlignment) {
+    if (runbookCalibrationRms) runbookCalibrationRms.textContent = "—";
+    if (runbookCalibrationTopAnchors) {
+      runbookCalibrationTopAnchors.innerHTML = '<span class="calibration-na">Run engine to compute calibration</span>';
+    }
+    if (runbookCalibrationDetails) runbookCalibrationDetails.hidden = true;
+    return;
+  }
+
+  const { rms_mm: rms, residuals_mm: residuals } = cachedAlignment;
+
+  // Display RMS
+  if (runbookCalibrationRms) {
+    runbookCalibrationRms.textContent = formatResidual(rms);
+  }
+
+  // Sort residuals high to low
+  const sortedResiduals = [...residuals].sort((a, b) => b.residual_mm - a.residual_mm);
+
+  // Compute outlier threshold (mean + 2*std)
+  const mean = residuals.reduce((sum, r) => sum + r.residual_mm, 0) / residuals.length;
+  const variance = residuals.reduce((sum, r) => sum + Math.pow(r.residual_mm - mean, 2), 0) / residuals.length;
+  const std = Math.sqrt(variance);
+  const outlierThreshold = mean + 2 * std;
+
+  // Top 1-3 anchors as chips
+  if (runbookCalibrationTopAnchors) {
+    const topAnchors = sortedResiduals.slice(0, 3);
+    if (topAnchors.length === 0) {
+      runbookCalibrationTopAnchors.innerHTML = '<span class="calibration-na">No anchors</span>';
+    } else {
+      runbookCalibrationTopAnchors.innerHTML = topAnchors
+        .map((entry) => {
+          const isOutlier = entry.residual_mm > outlierThreshold;
+          return `
+            <span class="calibration-anchor-chip${isOutlier ? " outlier" : ""}">
+              <span class="calibration-anchor-id">${entry.anchor_id}</span>
+              <span class="calibration-anchor-residual">${formatResidual(entry.residual_mm)} mm</span>
+            </span>
+          `;
+        })
+        .join("");
+    }
+  }
+
+  // Full residuals table
+  if (runbookCalibrationDetails && runbookCalibrationResiduals) {
+    if (sortedResiduals.length === 0) {
+      runbookCalibrationDetails.hidden = true;
+    } else {
+      runbookCalibrationDetails.hidden = false;
+      runbookCalibrationResiduals.innerHTML = sortedResiduals
+        .map((entry) => {
+          const isOutlier = entry.residual_mm > outlierThreshold;
+          return `
+            <tr${isOutlier ? ' class="outlier"' : ""}>
+              <td>${entry.anchor_id}</td>
+              <td class="numeric">${formatResidual(entry.residual_mm)}</td>
+            </tr>
+          `;
+        })
+        .join("");
+    }
+  }
+}
+
 function formatDatasetError(error: DatasetFetchError): string {
   const statusLabel =
     error.status !== undefined ? ` (status ${error.status}${error.statusText ? ` ${error.statusText}` : ""})` : "";
@@ -886,6 +975,8 @@ function resetResults(dataset: DemoDataset) {
     rawJson.textContent = "";
   }
   updateExportButtons(false);
+  // Update calibration card to show "Run engine" message
+  renderRunbookCalibrationCard(dataset);
 }
 
 function updateExportButtons(enabled: boolean) {
@@ -958,6 +1049,7 @@ function setMode(mode: DemoMode): void {
 
   // Show/hide mode-specific elements
   if (runbookProgress) runbookProgress.hidden = mode !== "runbook";
+  if (runbookCalibrationCard) runbookCalibrationCard.hidden = mode !== "runbook";
   if (runbookLayout) runbookLayout.hidden = mode !== "runbook";
   if (stepView) stepView.hidden = mode !== "step";
   if (overlayView) overlayView.hidden = mode !== "overlay";
@@ -971,9 +1063,13 @@ function setMode(mode: DemoMode): void {
       renderModeView();
     } else if (mode === "runbook") {
       renderRunbookProgress();
+      renderRunbookCalibrationCard(selectedDataset);
       renderRunbookStepTable();
       renderRunbookDetail();
     }
+  } else if (mode === "runbook") {
+    // Even without summaries, render calibration card (shows "Run engine" message)
+    renderRunbookCalibrationCard(selectedDataset);
   }
 }
 
@@ -1658,6 +1754,7 @@ async function runDemo(): Promise<void> {
     renderParts(partSummaries, partNames);
     renderSelection();
     renderAlignmentQuality(dataset);
+    renderRunbookCalibrationCard(dataset);
     renderRawJson({ nominal, asBuilt, constraints, directives });
     updateExportButtons(true);
 
@@ -1694,6 +1791,7 @@ async function runDemo(): Promise<void> {
       simulationPanel.innerHTML = `<p class="placeholder">Unable to load simulation.</p>`;
     }
     renderAlignmentQuality(dataset);
+    renderRunbookCalibrationCard(dataset);
     updateExportButtons(false);
   } finally {
     if (runButton) runButton.disabled = false;

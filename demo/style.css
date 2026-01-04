@@ -1226,6 +1226,178 @@ body.overlay-active {
   transition: width 0.3s ease;
 }
 
+/* Runbook Calibration Card */
+.runbook-calibration-card {
+  margin: 12px 32px 0;
+  padding: 14px 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.calibration-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.calibration-label {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.calibration-rms {
+  font-weight: 700;
+  color: #2563eb;
+  font-size: 16px;
+}
+
+.calibration-rms-unit {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.calibration-na {
+  color: #94a3b8;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.calibration-top-anchors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.calibration-anchor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  font-size: 12px;
+}
+
+.calibration-anchor-chip.outlier {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.calibration-anchor-id {
+  font-weight: 600;
+  color: #334155;
+}
+
+.calibration-anchor-residual {
+  color: #64748b;
+}
+
+.calibration-anchor-chip.outlier .calibration-anchor-residual {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.calibration-details {
+  margin-top: 12px;
+}
+
+.calibration-toggle {
+  font-size: 12px;
+  color: #2563eb;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.calibration-toggle:hover {
+  text-decoration: underline;
+}
+
+.calibration-table-wrapper {
+  margin-top: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.calibration-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.calibration-table th,
+.calibration-table td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.calibration-table th {
+  font-weight: 600;
+  color: #64748b;
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
+}
+
+.calibration-table td.numeric,
+.calibration-table th.numeric {
+  text-align: right;
+}
+
+.calibration-table tr.outlier td {
+  background: #fef2f2;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+/* Responsive: mobile calibration card */
+@media (max-width: 600px) {
+  .runbook-calibration-card {
+    margin: 10px 12px 0;
+    padding: 12px 14px;
+  }
+
+  .calibration-header {
+    gap: 6px;
+  }
+
+  .calibration-label {
+    font-size: 13px;
+  }
+
+  .calibration-rms {
+    font-size: 15px;
+  }
+
+  .calibration-top-anchors {
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .calibration-anchor-chip {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .calibration-table-wrapper {
+    max-height: 160px;
+  }
+
+  .calibration-table {
+    font-size: 11px;
+  }
+
+  .calibration-table th,
+  .calibration-table td {
+    padding: 5px 8px;
+  }
+}
+
 .runbook-nav {
   display: flex;
   align-items: center;
