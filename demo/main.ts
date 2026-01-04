@@ -106,6 +106,11 @@ const resetRunBtn = document.querySelector<HTMLButtonElement>("#reset-run-btn");
 const runbookLayout = document.querySelector<HTMLDivElement>("#runbook-layout");
 const runbookCalibrationCard = document.querySelector<HTMLDivElement>("#runbook-calibration-card");
 const runbookCalibrationRms = document.querySelector<HTMLSpanElement>("#runbook-calibration-rms");
+const runbookCalibrationComparison = document.querySelector<HTMLDivElement>("#runbook-calibration-comparison");
+const runbookRmsBefore = document.querySelector<HTMLSpanElement>("#runbook-rms-before");
+const runbookRmsAfter = document.querySelector<HTMLSpanElement>("#runbook-rms-after");
+const runbookRmsAfterContainer = document.querySelector<HTMLDivElement>(".rms-after");
+const runbookRmsImprovement = document.querySelector<HTMLDivElement>("#runbook-rms-improvement");
 const runbookCalibrationTopAnchors = document.querySelector<HTMLDivElement>("#runbook-calibration-top-anchors");
 const runbookCalibrationDetails = document.querySelector<HTMLDetailsElement>("#runbook-calibration-details");
 const runbookCalibrationResiduals = document.querySelector<HTMLTableSectionElement>("#runbook-calibration-residuals");
@@ -1046,9 +1051,13 @@ function renderRunbookCalibrationCard(dataset: DemoDataset): void {
   if (runbookCalibrationWarning) runbookCalibrationWarning.hidden = true;
   if (runbookCalibrationError) runbookCalibrationError.hidden = true;
 
+  // RMS target tolerance
+  const RMS_TARGET_TOLERANCE_MM = 5;
+
   // For toy dataset, show N/A
   if (dataset !== "museum") {
     if (runbookCalibrationRms) runbookCalibrationRms.textContent = "N/A";
+    if (runbookCalibrationComparison) runbookCalibrationComparison.hidden = true;
     if (runbookCalibrationTopAnchors) {
       runbookCalibrationTopAnchors.innerHTML = '<span class="calibration-na">Not available for this dataset</span>';
     }
@@ -1059,6 +1068,7 @@ function renderRunbookCalibrationCard(dataset: DemoDataset): void {
   // No alignment data yet
   if (!cachedAlignment || !cachedAnchors) {
     if (runbookCalibrationRms) runbookCalibrationRms.textContent = "—";
+    if (runbookCalibrationComparison) runbookCalibrationComparison.hidden = true;
     if (runbookCalibrationTopAnchors) {
       runbookCalibrationTopAnchors.innerHTML = '<span class="calibration-na">Run engine to compute calibration</span>';
     }
@@ -1066,11 +1076,44 @@ function renderRunbookCalibrationCard(dataset: DemoDataset): void {
     return;
   }
 
-  const { rms_mm: rms, residuals_mm: residuals } = cachedAlignment;
+  const { rms_mm: rms, rms_initial_mm: rmsInitial, residuals_mm: residuals } = cachedAlignment;
 
   // Display RMS
   if (runbookCalibrationRms) {
     runbookCalibrationRms.textContent = formatResidual(rms);
+  }
+
+  // Display Before/After RMS comparison
+  if (runbookCalibrationComparison) {
+    runbookCalibrationComparison.hidden = false;
+  }
+
+  if (runbookRmsBefore) {
+    runbookRmsBefore.textContent = formatResidual(rmsInitial);
+  }
+
+  if (runbookRmsAfter) {
+    runbookRmsAfter.textContent = formatResidual(rms);
+  }
+
+  // Set pass/fail class on after container based on target tolerance
+  if (runbookRmsAfterContainer) {
+    runbookRmsAfterContainer.classList.remove("pass", "fail");
+    if (rms <= RMS_TARGET_TOLERANCE_MM) {
+      runbookRmsAfterContainer.classList.add("pass");
+    } else {
+      runbookRmsAfterContainer.classList.add("fail");
+    }
+  }
+
+  // Display improvement percentage
+  if (runbookRmsImprovement) {
+    if (rmsInitial > 0 && rmsInitial > rms) {
+      const improvement = ((rmsInitial - rms) / rmsInitial) * 100;
+      runbookRmsImprovement.textContent = `↓ ${improvement.toFixed(0)}%`;
+    } else {
+      runbookRmsImprovement.textContent = "";
+    }
   }
 
   // Show warning if RMS exceeds threshold

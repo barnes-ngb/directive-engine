@@ -18,6 +18,7 @@ export interface AnchorResidual {
 export interface RigidTransformResult {
   T_model_scan: Transform;
   rms_mm: number;
+  rms_initial_mm: number;
   residuals_mm: AnchorResidual[];
 }
 
@@ -32,6 +33,51 @@ function centroid(points: Vec3[]): Vec3 {
     sum[2] += z;
   }
   return [sum[0] / points.length, sum[1] / points.length, sum[2] / points.length];
+}
+
+/**
+ * Compute initial RMS using translation-only alignment (identity rotation).
+ * T0: rotation = identity, translation = centroid(model) - centroid(scan)
+ * residuals r0 = p_model - apply(T0, p_scan) in model frame
+ * RMS0 = sqrt(mean of ||r0||^2)
+ */
+function computeInitialRms(modelPoints: Vec3[], scanPoints: Vec3[]): number {
+  if (modelPoints.length === 0 || modelPoints.length !== scanPoints.length) {
+    return 0;
+  }
+
+  const modelCentroid = centroid(modelPoints);
+  const scanCentroid = centroid(scanPoints);
+
+  // T0: translation-only alignment (identity rotation)
+  // translation = centroid(model) - centroid(scan)
+  const translation: Vec3 = [
+    modelCentroid[0] - scanCentroid[0],
+    modelCentroid[1] - scanCentroid[1],
+    modelCentroid[2] - scanCentroid[2]
+  ];
+
+  // Compute residuals: r0 = p_model - (p_scan + translation)
+  let sumSqResiduals = 0;
+  for (let i = 0; i < modelPoints.length; i++) {
+    const [mx, my, mz] = modelPoints[i];
+    const [sx, sy, sz] = scanPoints[i];
+
+    // Apply translation-only transform: p_scan + translation
+    const predictedX = sx + translation[0];
+    const predictedY = sy + translation[1];
+    const predictedZ = sz + translation[2];
+
+    // Residual vector
+    const rx = mx - predictedX;
+    const ry = my - predictedY;
+    const rz = mz - predictedZ;
+
+    // Sum of squared residual norms
+    sumSqResiduals += rx * rx + ry * ry + rz * rz;
+  }
+
+  return Math.sqrt(sumSqResiduals / modelPoints.length);
 }
 
 function multiplyMatrixVector(matrix: number[][], vector: number[]): number[] {
@@ -149,6 +195,11 @@ export function computeRigidTransform(
 
   const scanPoints = matched.map((entry) => entry.scanPoint);
   const modelPoints = matched.map((entry) => entry.modelPoint);
+
+  // Compute initial RMS using translation-only alignment (before rigid transform)
+  const rms_initial_mm = computeInitialRms(modelPoints, scanPoints);
+
+  // Compute full rigid transform (rotation + translation)
   const T_model_scan = computeHornTransform(modelPoints, scanPoints);
 
   const residuals_mm: AnchorResidual[] = matched.map(({ anchor_id, scanPoint, modelPoint }) => {
@@ -170,5 +221,5 @@ export function computeRigidTransform(
         ) / residuals_mm.length
       );
 
-  return { T_model_scan, rms_mm, residuals_mm };
+  return { T_model_scan, rms_mm, rms_initial_mm, residuals_mm };
 }
