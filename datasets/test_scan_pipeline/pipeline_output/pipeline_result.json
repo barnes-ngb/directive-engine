@@ -1,0 +1,810 @@
+{
+  "dataset_id": "test_scan_pipeline_20260104",
+  "anchor_alignment": {
+    "T_model_scan": {
+      "translation_mm": [
+        -1,
+        -1,
+        -1
+      ],
+      "rotation_quat_xyzw": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    "rms_mm": 0,
+    "rms_initial_mm": 0,
+    "residuals": [
+      {
+        "anchor_id": "A001",
+        "residual_mm": 0,
+        "residual_vec": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "anchor_id": "A002",
+        "residual_mm": 0,
+        "residual_vec": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "anchor_id": "A003",
+        "residual_mm": 0,
+        "residual_vec": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "anchor_id": "A004",
+        "residual_mm": 0,
+        "residual_vec": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "anchor_id": "B001",
+        "residual_mm": 0,
+        "residual_vec": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "anchor_id": "B002",
+        "residual_mm": 0,
+        "residual_vec": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "converged": true,
+    "withinTolerance": true
+  },
+  "part_fits": [
+    {
+      "part_id": "MULLION_PASS_WITHIN_TOL",
+      "segmentation": {
+        "inlier_count": 100,
+        "inlier_ratio": 1,
+        "total_points": 100
+      },
+      "lineFit": {
+        "centroid": [
+          501.9617953753015,
+          501.29142695623705,
+          2499.912571746479
+        ],
+        "direction": [
+          0.000034489272070817144,
+          0.000029972687788973107,
+          0.999999998956064
+        ],
+        "fit_rms_mm": 2.768869823568886,
+        "point_count": 100,
+        "variance_explained": 0.9999963930124226,
+        "line_p0": [
+          501.87557699307814,
+          501.2164994063965,
+          0.051688735873085534
+        ],
+        "line_p1": [
+          502.04806160001533,
+          501.36639608329693,
+          5001.160624956538
+        ]
+      },
+      "pose": {
+        "T_world_part_asBuilt": {
+          "translation_mm": [
+            501.96181929654676,
+            501.2914477448467,
+            2500.6061568462055
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "pose_confidence": 0.9615554267252825,
+        "confidence_notes": "Good fit quality",
+        "fit_metrics": {
+          "fit_rms_mm": 2.768869823568886,
+          "point_count": 100,
+          "variance_explained": 0.9999963930124226,
+          "line_length_mm": 5001.108941441503
+        }
+      }
+    },
+    {
+      "part_id": "MULLION_NEEDS_CORRECTION",
+      "segmentation": {
+        "inlier_count": 100,
+        "inlier_ratio": 1,
+        "total_points": 100
+      },
+      "lineFit": {
+        "centroid": [
+          209.10438925577853,
+          206.77574286003755,
+          2500.0395099562134
+        ],
+        "direction": [
+          -0.000028506805130401356,
+          -0.00008182799965895541,
+          0.9999999962457702
+        ],
+        "fit_rms_mm": 2.6756930041823392,
+        "point_count": 100,
+        "variance_explained": 0.9999966318753328,
+        "line_p0": [
+          209.17567367787294,
+          206.9803628320108,
+          -0.5711863565879867
+        ],
+        "line_p1": [
+          209.03308163609657,
+          206.5710563000276,
+          5001.463962400578
+        ]
+      },
+      "pose": {
+        "T_world_part_asBuilt": {
+          "translation_mm": [
+            209.10437765698475,
+            206.7757095660192,
+            2500.4463880219946
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "pose_confidence": 0.966214339353483,
+        "confidence_notes": "Good fit quality",
+        "fit_metrics": {
+          "fit_rms_mm": 2.6756930041823392,
+          "point_count": 100,
+          "variance_explained": 0.9999966318753328,
+          "line_length_mm": 5002.035167535955
+        }
+      }
+    },
+    {
+      "part_id": "MULLION_LARGE_ERROR",
+      "segmentation": {
+        "inlier_count": 100,
+        "inlier_ratio": 1,
+        "total_points": 100
+      },
+      "lineFit": {
+        "centroid": [
+          829.1181086912646,
+          824.144799886497,
+          2499.940522353343
+        ],
+        "direction": [
+          0.00001547105142692119,
+          -0.00008530025211868029,
+          0.9999999962422568
+        ],
+        "fit_rms_mm": 2.758669590666001,
+        "point_count": 100,
+        "variance_explained": 0.9999964198516696,
+        "line_p0": [
+          829.0794281513618,
+          824.3580665685573,
+          -0.24764780792747842
+        ],
+        "line_p1": [
+          829.156790493427,
+          823.9315262449195,
+          5000.210280985799
+        ]
+      },
+      "pose": {
+        "T_world_part_asBuilt": {
+          "translation_mm": [
+            829.1181093223944,
+            824.1447964067384,
+            2499.9813165889354
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "pose_confidence": 0.9620654464222009,
+        "confidence_notes": "Good fit quality",
+        "fit_metrics": {
+          "fit_rms_mm": 2.758669590666001,
+          "point_count": 100,
+          "variance_explained": 0.9999964198516696,
+          "line_length_mm": 5000.457947584164
+        }
+      }
+    }
+  ],
+  "nominal_poses": {
+    "schema_version": "v0.1",
+    "dataset_id": "test_scan_pipeline_20260104_nominal",
+    "frame_id": "world",
+    "units": {
+      "length": "mm",
+      "rotation": "quaternion_xyzw"
+    },
+    "parts": [
+      {
+        "part_id": "MULLION_PASS_WITHIN_TOL",
+        "part_name": "MULLION_PASS_WITHIN_TOL",
+        "part_type": "mullion",
+        "T_world_part_nominal": {
+          "translation_mm": [
+            500,
+            500,
+            2500
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      {
+        "part_id": "MULLION_NEEDS_CORRECTION",
+        "part_name": "MULLION_NEEDS_CORRECTION",
+        "part_type": "mullion",
+        "T_world_part_nominal": {
+          "translation_mm": [
+            200,
+            200,
+            2500
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      {
+        "part_id": "MULLION_LARGE_ERROR",
+        "part_name": "MULLION_LARGE_ERROR",
+        "part_type": "mullion",
+        "T_world_part_nominal": {
+          "translation_mm": [
+            800,
+            800,
+            2500
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    ]
+  },
+  "asbuilt_poses": {
+    "schema_version": "v0.1",
+    "dataset_id": "test_scan_pipeline_20260104_asbuilt",
+    "frame_id": "world",
+    "units": {
+      "length": "mm",
+      "rotation": "quaternion_xyzw"
+    },
+    "measured_at": "2026-01-04T09:45:08.520Z",
+    "parts": [
+      {
+        "part_id": "MULLION_PASS_WITHIN_TOL",
+        "T_world_part_asBuilt": {
+          "translation_mm": [
+            501.96181929654676,
+            501.2914477448467,
+            2500.6061568462055
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "pose_confidence": 0.9615554267252825,
+        "confidence_notes": "Good fit quality"
+      },
+      {
+        "part_id": "MULLION_NEEDS_CORRECTION",
+        "T_world_part_asBuilt": {
+          "translation_mm": [
+            209.10437765698475,
+            206.7757095660192,
+            2500.4463880219946
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "pose_confidence": 0.966214339353483,
+        "confidence_notes": "Good fit quality"
+      },
+      {
+        "part_id": "MULLION_LARGE_ERROR",
+        "T_world_part_asBuilt": {
+          "translation_mm": [
+            829.1181093223944,
+            824.1447964067384,
+            2499.9813165889354
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "pose_confidence": 0.9620654464222009,
+        "confidence_notes": "Good fit quality"
+      }
+    ]
+  },
+  "directives": {
+    "schema_version": "v0.1",
+    "dataset_id": "test_scan_pipeline_20260104_nominal",
+    "engine_version": "directive-engine/0.2.0-scan",
+    "generated_at": "2026-01-04T09:45:09.520Z",
+    "inputs": {
+      "nominal_poses": "generated",
+      "as_built_poses": "generated",
+      "constraints": "museum_constraints.json",
+      "confidence_threshold": 0.5
+    },
+    "summary": {
+      "counts_by_status": {
+        "ok": 1,
+        "pending": 1,
+        "clamped": 1,
+        "blocked": 0,
+        "needs_review": 0
+      }
+    },
+    "steps": [
+      {
+        "step_id": "S1",
+        "part_id": "MULLION_PASS_WITHIN_TOL",
+        "status": "ok",
+        "reason_codes": [
+          "within_tolerance"
+        ],
+        "pose_confidence": 0.9615554267252825,
+        "computed_errors": {
+          "translation_error_mm_vec": [
+            -1.9618192965467642,
+            -1.291447744846721,
+            -0.606156846205522
+          ],
+          "translation_error_norm_mm": 2.4256954368128634,
+          "rotation_error_deg": 0
+        },
+        "actions": [
+          {
+            "action_id": "A1",
+            "type": "noop",
+            "description": "No adjustment required; as-built pose is within tolerance.",
+            "delta": {
+              "translation_mm": [
+                0,
+                0,
+                0
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            }
+          }
+        ],
+        "verification": [
+          {
+            "verification_id": "V1",
+            "type": "measure_pose",
+            "acceptance": {
+              "translation_mm": 5,
+              "rotation_deg": 0.5
+            },
+            "expected_residual": {
+              "translation_mm_vec": [
+                0,
+                0,
+                0
+              ],
+              "rotation_deg": 0
+            },
+            "expected_result": "expected_pass"
+          }
+        ]
+      },
+      {
+        "step_id": "S2",
+        "part_id": "MULLION_NEEDS_CORRECTION",
+        "status": "pending",
+        "reason_codes": [
+          "translation_out_of_tolerance",
+          "translate_only"
+        ],
+        "pose_confidence": 0.966214339353483,
+        "computed_errors": {
+          "translation_error_mm_vec": [
+            -9.104377656984752,
+            -6.775709566019202,
+            -0.4463880219946077
+          ],
+          "translation_error_norm_mm": 11.357781249444256,
+          "rotation_error_deg": 0
+        },
+        "actions": [
+          {
+            "action_id": "A2",
+            "type": "translate",
+            "description": "Translate MULLION_NEEDS_CORRECTION to nominal (rotation locked). Apply delta in world frame.",
+            "delta": {
+              "translation_mm": [
+                -9.104377656984752,
+                -6.775709566019202,
+                -0.4463880219946077
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "clamp_applied": false
+          }
+        ],
+        "verification": [
+          {
+            "verification_id": "V2",
+            "type": "measure_pose",
+            "acceptance": {
+              "translation_mm": 5,
+              "rotation_deg": 0.5
+            },
+            "expected_residual": {
+              "translation_mm_vec": [
+                0,
+                0,
+                0
+              ],
+              "rotation_deg": 0
+            },
+            "expected_result": "expected_pass"
+          }
+        ]
+      },
+      {
+        "step_id": "S3",
+        "part_id": "MULLION_LARGE_ERROR",
+        "status": "clamped",
+        "reason_codes": [
+          "translation_out_of_tolerance",
+          "clamped_to_limits",
+          "translate_clamped"
+        ],
+        "pose_confidence": 0.9620654464222009,
+        "computed_errors": {
+          "translation_error_mm_vec": [
+            -29.11810932239439,
+            -24.14479640673835,
+            0.01868341106455773
+          ],
+          "translation_error_norm_mm": 37.82639069622696,
+          "rotation_error_deg": 0
+        },
+        "actions": [
+          {
+            "action_id": "A3",
+            "type": "translate",
+            "description": "Translate MULLION_LARGE_ERROR toward nominal but clamp to per-axis max abs limits.",
+            "delta": {
+              "translation_mm": [
+                -25,
+                -24.14479640673835,
+                0.01868341106455773
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "clamp_applied": true,
+            "original_delta": {
+              "translation_mm": [
+                -29.11810932239439,
+                -24.14479640673835,
+                0.01868341106455773
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            }
+          }
+        ],
+        "verification": [
+          {
+            "verification_id": "V3",
+            "type": "measure_pose",
+            "acceptance": {
+              "translation_mm": 5,
+              "rotation_deg": 0.5
+            },
+            "expected_residual": {
+              "translation_mm_vec": [
+                -4.118109322394389,
+                0,
+                0
+              ],
+              "rotation_deg": 0
+            },
+            "expected_result": "expected_pass"
+          }
+        ]
+      }
+    ]
+  },
+  "simulations": [
+    {
+      "part_id": "MULLION_PASS_WITHIN_TOL",
+      "step": {
+        "step_id": "S1",
+        "part_id": "MULLION_PASS_WITHIN_TOL",
+        "status": "ok",
+        "reason_codes": [
+          "within_tolerance"
+        ],
+        "pose_confidence": 0.9615554267252825,
+        "computed_errors": {
+          "translation_error_mm_vec": [
+            -1.9618192965467642,
+            -1.291447744846721,
+            -0.606156846205522
+          ],
+          "translation_error_norm_mm": 2.4256954368128634,
+          "rotation_error_deg": 0
+        },
+        "actions": [
+          {
+            "action_id": "A1",
+            "type": "noop",
+            "description": "No adjustment required; as-built pose is within tolerance.",
+            "delta": {
+              "translation_mm": [
+                0,
+                0,
+                0
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            }
+          }
+        ],
+        "verification": [
+          {
+            "verification_id": "V1",
+            "type": "measure_pose",
+            "acceptance": {
+              "translation_mm": 5,
+              "rotation_deg": 0.5
+            },
+            "expected_residual": {
+              "translation_mm_vec": [
+                0,
+                0,
+                0
+              ],
+              "rotation_deg": 0
+            },
+            "expected_result": "expected_pass"
+          }
+        ]
+      },
+      "before_error_mm": 2.4256954368128634,
+      "after_error_mm": 2.4256954368128634,
+      "pass": true,
+      "canSimulate": true
+    },
+    {
+      "part_id": "MULLION_NEEDS_CORRECTION",
+      "step": {
+        "step_id": "S2",
+        "part_id": "MULLION_NEEDS_CORRECTION",
+        "status": "pending",
+        "reason_codes": [
+          "translation_out_of_tolerance",
+          "translate_only"
+        ],
+        "pose_confidence": 0.966214339353483,
+        "computed_errors": {
+          "translation_error_mm_vec": [
+            -9.104377656984752,
+            -6.775709566019202,
+            -0.4463880219946077
+          ],
+          "translation_error_norm_mm": 11.357781249444256,
+          "rotation_error_deg": 0
+        },
+        "actions": [
+          {
+            "action_id": "A2",
+            "type": "translate",
+            "description": "Translate MULLION_NEEDS_CORRECTION to nominal (rotation locked). Apply delta in world frame.",
+            "delta": {
+              "translation_mm": [
+                -9.104377656984752,
+                -6.775709566019202,
+                -0.4463880219946077
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "clamp_applied": false
+          }
+        ],
+        "verification": [
+          {
+            "verification_id": "V2",
+            "type": "measure_pose",
+            "acceptance": {
+              "translation_mm": 5,
+              "rotation_deg": 0.5
+            },
+            "expected_residual": {
+              "translation_mm_vec": [
+                0,
+                0,
+                0
+              ],
+              "rotation_deg": 0
+            },
+            "expected_result": "expected_pass"
+          }
+        ]
+      },
+      "before_error_mm": 11.357781249444256,
+      "after_error_mm": 0,
+      "pass": true,
+      "canSimulate": true
+    },
+    {
+      "part_id": "MULLION_LARGE_ERROR",
+      "step": {
+        "step_id": "S3",
+        "part_id": "MULLION_LARGE_ERROR",
+        "status": "clamped",
+        "reason_codes": [
+          "translation_out_of_tolerance",
+          "clamped_to_limits",
+          "translate_clamped"
+        ],
+        "pose_confidence": 0.9620654464222009,
+        "computed_errors": {
+          "translation_error_mm_vec": [
+            -29.11810932239439,
+            -24.14479640673835,
+            0.01868341106455773
+          ],
+          "translation_error_norm_mm": 37.82639069622696,
+          "rotation_error_deg": 0
+        },
+        "actions": [
+          {
+            "action_id": "A3",
+            "type": "translate",
+            "description": "Translate MULLION_LARGE_ERROR toward nominal but clamp to per-axis max abs limits.",
+            "delta": {
+              "translation_mm": [
+                -25,
+                -24.14479640673835,
+                0.01868341106455773
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "clamp_applied": true,
+            "original_delta": {
+              "translation_mm": [
+                -29.11810932239439,
+                -24.14479640673835,
+                0.01868341106455773
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            }
+          }
+        ],
+        "verification": [
+          {
+            "verification_id": "V3",
+            "type": "measure_pose",
+            "acceptance": {
+              "translation_mm": 5,
+              "rotation_deg": 0.5
+            },
+            "expected_residual": {
+              "translation_mm_vec": [
+                -4.118109322394389,
+                0,
+                0
+              ],
+              "rotation_deg": 0
+            },
+            "expected_result": "expected_pass"
+          }
+        ]
+      },
+      "before_error_mm": 37.82639069622696,
+      "after_error_mm": 4.118109322394389,
+      "pass": true,
+      "canSimulate": true
+    }
+  ],
+  "summary": {
+    "anchor_rms_mm": 0,
+    "anchor_within_tolerance": true,
+    "parts_processed": 3,
+    "parts_passed": 3,
+    "parts_failed": 0
+  }
+}

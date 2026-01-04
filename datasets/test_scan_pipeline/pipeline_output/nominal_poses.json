@@ -1,0 +1,65 @@
+{
+  "schema_version": "v0.1",
+  "dataset_id": "test_scan_pipeline_20260104_nominal",
+  "frame_id": "world",
+  "units": {
+    "length": "mm",
+    "rotation": "quaternion_xyzw"
+  },
+  "parts": [
+    {
+      "part_id": "MULLION_PASS_WITHIN_TOL",
+      "part_name": "MULLION_PASS_WITHIN_TOL",
+      "part_type": "mullion",
+      "T_world_part_nominal": {
+        "translation_mm": [
+          500,
+          500,
+          2500
+        ],
+        "rotation_quat_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "part_id": "MULLION_NEEDS_CORRECTION",
+      "part_name": "MULLION_NEEDS_CORRECTION",
+      "part_type": "mullion",
+      "T_world_part_nominal": {
+        "translation_mm": [
+          200,
+          200,
+          2500
+        ],
+        "rotation_quat_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "part_id": "MULLION_LARGE_ERROR",
+      "part_name": "MULLION_LARGE_ERROR",
+      "part_type": "mullion",
+      "T_world_part_nominal": {
+        "translation_mm": [
+          800,
+          800,
+          2500
+        ],
+        "rotation_quat_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    }
+  ]
+}

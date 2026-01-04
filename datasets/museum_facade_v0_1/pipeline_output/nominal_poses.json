@@ -1,0 +1,65 @@
+{
+  "schema_version": "v0.1",
+  "dataset_id": "museum_dataset_20251229_073643_nominal",
+  "frame_id": "world",
+  "units": {
+    "length": "mm",
+    "rotation": "quaternion_xyzw"
+  },
+  "parts": [
+    {
+      "part_id": "MULLION_0001",
+      "part_name": "MULLION_0001",
+      "part_type": "mullion",
+      "T_world_part_nominal": {
+        "translation_mm": [
+          -34247.774999999994,
+          25352.644,
+          9312.587
+        ],
+        "rotation_quat_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "part_id": "MULLION_0002",
+      "part_name": "MULLION_0002",
+      "part_type": "mullion",
+      "T_world_part_nominal": {
+        "translation_mm": [
+          -35017.788499999995,
+          25499.899,
+          9312.5465
+        ],
+        "rotation_quat_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "part_id": "MULLION_0003",
+      "part_name": "MULLION_0003",
+      "part_type": "mullion",
+      "T_world_part_nominal": {
+        "translation_mm": [
+          -35911.989,
+          25414.573,
+          9389.373
+        ],
+        "rotation_quat_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    }
+  ]
+}

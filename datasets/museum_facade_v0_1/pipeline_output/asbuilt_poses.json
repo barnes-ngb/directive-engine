@@ -1,0 +1,30 @@
+{
+  "schema_version": "v0.1",
+  "dataset_id": "museum_dataset_20251229_073643_asbuilt",
+  "frame_id": "world",
+  "units": {
+    "length": "mm",
+    "rotation": "quaternion_xyzw"
+  },
+  "measured_at": "2026-01-04T09:42:19.251Z",
+  "parts": [
+    {
+      "part_id": "MULLION_0002",
+      "T_world_part_asBuilt": {
+        "translation_mm": [
+          -35051.624721660875,
+          25509.66623058838,
+          9064.033888492584
+        ],
+        "rotation_quat_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "pose_confidence": 0.6998823560598705,
+      "confidence_notes": "Reduced confidence due to: low point count (3)"
+    }
+  ]
+}

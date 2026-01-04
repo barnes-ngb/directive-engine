@@ -1,0 +1,504 @@
+{
+  "dataset_id": "museum_dataset_20251229_073643",
+  "anchor_alignment": {
+    "T_model_scan": {
+      "translation_mm": [
+        -21.790792607527692,
+        58.59655433594162,
+        -202.54449173883586
+      ],
+      "rotation_quat_xyzw": [
+        0.0032449272438948348,
+        0.0002842374563199968,
+        0.0007358312593694434,
+        0.9999944240887586
+      ]
+    },
+    "rms_mm": 47.45839041470026,
+    "rms_initial_mm": 51.25115057516041,
+    "residuals": [
+      {
+        "anchor_id": "A001",
+        "residual_mm": 39.35833866600598,
+        "residual_vec": [
+          5.201354473691026,
+          -27.62281699540108,
+          -27.55004020733213
+        ]
+      },
+      {
+        "anchor_id": "A002",
+        "residual_mm": 99.13079849714158,
+        "residual_vec": [
+          13.15659826866613,
+          49.92212580728301,
+          84.62623994695514
+        ]
+      },
+      {
+        "anchor_id": "A003",
+        "residual_mm": 26.451641160403614,
+        "residual_vec": [
+          -4.934562274385826,
+          -22.195548006238823,
+          -13.516547781949157
+        ]
+      },
+      {
+        "anchor_id": "B001",
+        "residual_mm": 18.849268811982007,
+        "residual_vec": [
+          -13.663774208638642,
+          4.728986618294584,
+          -12.09267938406083
+        ]
+      },
+      {
+        "anchor_id": "B002",
+        "residual_mm": 32.532262859606625,
+        "residual_vec": [
+          -0.7264340508336318,
+          -9.666141134632198,
+          -31.054567069944824
+        ]
+      },
+      {
+        "anchor_id": "B003",
+        "residual_mm": 4.946363280645173,
+        "residual_vec": [
+          0.9668177914718399,
+          4.8333937107126985,
+          -0.41240550366273965
+        ]
+      }
+    ],
+    "converged": false,
+    "withinTolerance": false
+  },
+  "part_fits": [
+    {
+      "part_id": "MULLION_0002",
+      "segmentation": {
+        "inlier_count": 3,
+        "inlier_ratio": 0.03,
+        "total_points": 100
+      },
+      "lineFit": {
+        "centroid": [
+          -35051.618342312184,
+          25509.67156713712,
+          9063.812822710828
+        ],
+        "direction": [
+          -0.028836839860206426,
+          -0.024123027098831722,
+          0.9992930081965279
+        ],
+        "fit_rms_mm": 1.9534670641422345,
+        "point_count": 3,
+        "variance_explained": 0.9996078535329015,
+        "line_p0": [
+          -35048.14144572133,
+          25512.580112979438,
+          8943.32671985403
+        ],
+        "line_p1": [
+          -35055.107997600426,
+          25506.752348197322,
+          9184.741057131136
+        ]
+      },
+      "pose": {
+        "T_world_part_asBuilt": {
+          "translation_mm": [
+            -35051.624721660875,
+            25509.66623058838,
+            9064.033888492584
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "pose_confidence": 0.6998823560598705,
+        "confidence_notes": "Reduced confidence due to: low point count (3)",
+        "fit_metrics": {
+          "fit_rms_mm": 1.9534670641422345,
+          "point_count": 3,
+          "variance_explained": 0.9996078535329015,
+          "line_length_mm": 241.58513598808926
+        }
+      }
+    }
+  ],
+  "nominal_poses": {
+    "schema_version": "v0.1",
+    "dataset_id": "museum_dataset_20251229_073643_nominal",
+    "frame_id": "world",
+    "units": {
+      "length": "mm",
+      "rotation": "quaternion_xyzw"
+    },
+    "parts": [
+      {
+        "part_id": "MULLION_0001",
+        "part_name": "MULLION_0001",
+        "part_type": "mullion",
+        "T_world_part_nominal": {
+          "translation_mm": [
+            -34247.774999999994,
+            25352.644,
+            9312.587
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      {
+        "part_id": "MULLION_0002",
+        "part_name": "MULLION_0002",
+        "part_type": "mullion",
+        "T_world_part_nominal": {
+          "translation_mm": [
+            -35017.788499999995,
+            25499.899,
+            9312.5465
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      },
+      {
+        "part_id": "MULLION_0003",
+        "part_name": "MULLION_0003",
+        "part_type": "mullion",
+        "T_world_part_nominal": {
+          "translation_mm": [
+            -35911.989,
+            25414.573,
+            9389.373
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      }
+    ]
+  },
+  "asbuilt_poses": {
+    "schema_version": "v0.1",
+    "dataset_id": "museum_dataset_20251229_073643_asbuilt",
+    "frame_id": "world",
+    "units": {
+      "length": "mm",
+      "rotation": "quaternion_xyzw"
+    },
+    "measured_at": "2026-01-04T09:42:19.251Z",
+    "parts": [
+      {
+        "part_id": "MULLION_0002",
+        "T_world_part_asBuilt": {
+          "translation_mm": [
+            -35051.624721660875,
+            25509.66623058838,
+            9064.033888492584
+          ],
+          "rotation_quat_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "pose_confidence": 0.6998823560598705,
+        "confidence_notes": "Reduced confidence due to: low point count (3)"
+      }
+    ]
+  },
+  "directives": {
+    "schema_version": "v0.1",
+    "dataset_id": "museum_dataset_20251229_073643_nominal",
+    "engine_version": "directive-engine/0.2.0-scan",
+    "generated_at": "2026-01-04T09:42:20.251Z",
+    "inputs": {
+      "nominal_poses": "generated",
+      "as_built_poses": "generated",
+      "constraints": "museum_constraints.json",
+      "confidence_threshold": 0.5
+    },
+    "summary": {
+      "counts_by_status": {
+        "ok": 0,
+        "pending": 0,
+        "clamped": 1,
+        "blocked": 0,
+        "needs_review": 2
+      }
+    },
+    "steps": [
+      {
+        "step_id": "S1",
+        "part_id": "MULLION_0001",
+        "status": "needs_review",
+        "reason_codes": [
+          "missing_input_data"
+        ],
+        "computed_errors": {
+          "translation_error_mm_vec": [
+            0,
+            0,
+            0
+          ],
+          "translation_error_norm_mm": 0,
+          "rotation_error_deg": 0
+        },
+        "actions": [
+          {
+            "action_id": "A1",
+            "type": "noop",
+            "description": "Missing nominal/as-built/constraints input. Cannot issue directive."
+          }
+        ],
+        "verification": [
+          {
+            "verification_id": "V1",
+            "type": "re_scan",
+            "acceptance": {
+              "translation_mm": 0,
+              "rotation_deg": 0
+            },
+            "expected_residual": {
+              "translation_mm_vec": [
+                0,
+                0,
+                0
+              ],
+              "rotation_deg": 0
+            },
+            "expected_result": "unknown",
+            "notes": "Resolve missing inputs."
+          }
+        ]
+      },
+      {
+        "step_id": "S2",
+        "part_id": "MULLION_0002",
+        "status": "clamped",
+        "reason_codes": [
+          "translation_out_of_tolerance",
+          "clamped_to_limits",
+          "translate_clamped"
+        ],
+        "pose_confidence": 0.6998823560598705,
+        "computed_errors": {
+          "translation_error_mm_vec": [
+            33.836221660880256,
+            -9.76723058837888,
+            248.5126115074163
+          ],
+          "translation_error_norm_mm": 250.99563097370202,
+          "rotation_error_deg": 0
+        },
+        "actions": [
+          {
+            "action_id": "A2",
+            "type": "translate",
+            "description": "Translate MULLION_0002 toward nominal but clamp to per-axis max abs limits.",
+            "delta": {
+              "translation_mm": [
+                25,
+                -9.76723058837888,
+                25
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "clamp_applied": true,
+            "original_delta": {
+              "translation_mm": [
+                33.836221660880256,
+                -9.76723058837888,
+                248.5126115074163
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            }
+          }
+        ],
+        "verification": [
+          {
+            "verification_id": "V2",
+            "type": "measure_pose",
+            "acceptance": {
+              "translation_mm": 2,
+              "rotation_deg": 0.5
+            },
+            "expected_residual": {
+              "translation_mm_vec": [
+                8.836221660880256,
+                0,
+                223.5126115074163
+              ],
+              "rotation_deg": 0
+            },
+            "expected_result": "expected_pass"
+          }
+        ]
+      },
+      {
+        "step_id": "S3",
+        "part_id": "MULLION_0003",
+        "status": "needs_review",
+        "reason_codes": [
+          "missing_input_data"
+        ],
+        "computed_errors": {
+          "translation_error_mm_vec": [
+            0,
+            0,
+            0
+          ],
+          "translation_error_norm_mm": 0,
+          "rotation_error_deg": 0
+        },
+        "actions": [
+          {
+            "action_id": "A3",
+            "type": "noop",
+            "description": "Missing nominal/as-built/constraints input. Cannot issue directive."
+          }
+        ],
+        "verification": [
+          {
+            "verification_id": "V3",
+            "type": "re_scan",
+            "acceptance": {
+              "translation_mm": 0,
+              "rotation_deg": 0
+            },
+            "expected_residual": {
+              "translation_mm_vec": [
+                0,
+                0,
+                0
+              ],
+              "rotation_deg": 0
+            },
+            "expected_result": "unknown",
+            "notes": "Resolve missing inputs."
+          }
+        ]
+      }
+    ]
+  },
+  "simulations": [
+    {
+      "part_id": "MULLION_0002",
+      "step": {
+        "step_id": "S2",
+        "part_id": "MULLION_0002",
+        "status": "clamped",
+        "reason_codes": [
+          "translation_out_of_tolerance",
+          "clamped_to_limits",
+          "translate_clamped"
+        ],
+        "pose_confidence": 0.6998823560598705,
+        "computed_errors": {
+          "translation_error_mm_vec": [
+            33.836221660880256,
+            -9.76723058837888,
+            248.5126115074163
+          ],
+          "translation_error_norm_mm": 250.99563097370202,
+          "rotation_error_deg": 0
+        },
+        "actions": [
+          {
+            "action_id": "A2",
+            "type": "translate",
+            "description": "Translate MULLION_0002 toward nominal but clamp to per-axis max abs limits.",
+            "delta": {
+              "translation_mm": [
+                25,
+                -9.76723058837888,
+                25
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            },
+            "clamp_applied": true,
+            "original_delta": {
+              "translation_mm": [
+                33.836221660880256,
+                -9.76723058837888,
+                248.5126115074163
+              ],
+              "rotation_quat_xyzw": [
+                0,
+                0,
+                0,
+                1
+              ]
+            }
+          }
+        ],
+        "verification": [
+          {
+            "verification_id": "V2",
+            "type": "measure_pose",
+            "acceptance": {
+              "translation_mm": 2,
+              "rotation_deg": 0.5
+            },
+            "expected_residual": {
+              "translation_mm_vec": [
+                8.836221660880256,
+                0,
+                223.5126115074163
+              ],
+              "rotation_deg": 0
+            },
+            "expected_result": "expected_pass"
+          }
+        ]
+      },
+      "before_error_mm": 250.99563097370202,
+      "after_error_mm": 223.68720642027208,
+      "pass": false,
+      "canSimulate": true
+    }
+  ],
+  "summary": {
+    "anchor_rms_mm": 47.45839041470026,
+    "anchor_within_tolerance": false,
+    "parts_processed": 1,
+    "parts_passed": 0,
+    "parts_failed": 1
+  }
+}

@@ -30,3 +30,28 @@ export type {
   AnchorPointPairs
 } from "./museum/raw.js";
 export { anchorsToPointPairs } from "./museum/raw.js";
+
+// Scan processing
+export {
+  pointToLineDistance,
+  isProjectionWithinSegment,
+  segmentPointsNearLine,
+  fitLinePCA,
+  computeCentroid,
+  poseFromLineFit,
+  directionToQuaternion,
+  directionToQuaternionFull,
+  generateSyntheticLinePoints,
+  generateSyntheticScan,
+  DEFAULT_CONFIDENCE_CONFIG,
+  DEFAULT_SYNTHETIC_CONFIG,
+} from "./scan/index.js";
+export type {
+  ScanPoint,
+  SegmentationResult,
+  SegmentOptions,
+  LineFitResult,
+  PoseFromFitResult,
+  ConfidenceConfig,
+  SyntheticLineConfig,
+} from "./scan/index.js";
