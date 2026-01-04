@@ -1355,6 +1355,49 @@ body.overlay-active {
   font-weight: 500;
 }
 
+.calibration-table tr.excluded td {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.calibration-table tr.excluded td:not(.checkbox-col) {
+  text-decoration: line-through;
+}
+
+.calibration-table th.checkbox-col,
+.calibration-table td.checkbox-col {
+  width: 60px;
+  text-align: center;
+}
+
+.calibration-table .anchor-include-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
+.calibration-error {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.calibration-rms.error {
+  color: #dc2626;
+}
+
+.calibration-included-count {
+  font-size: 12px;
+  color: #64748b;
+  margin-left: auto;
+}
+
 /* Responsive: mobile calibration card */
 @media (max-width: 600px) {
   .runbook-calibration-card {

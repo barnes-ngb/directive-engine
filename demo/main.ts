@@ -59,6 +59,12 @@ import {
   clearRunState,
   type RunState
 } from "./runState.js";
+import {
+  getOrCreateAnchorExcludeState,
+  isAnchorIncluded,
+  toggleAnchorInclude,
+  type AnchorExcludeState
+} from "./anchorExcludeState.js";
 
 type DatasetPaths = {
   nominal: string;
@@ -106,6 +112,7 @@ const runbookCalibrationRms = document.querySelector<HTMLSpanElement>("#runbook-
 const runbookCalibrationTopAnchors = document.querySelector<HTMLDivElement>("#runbook-calibration-top-anchors");
 const runbookCalibrationDetails = document.querySelector<HTMLDetailsElement>("#runbook-calibration-details");
 const runbookCalibrationResiduals = document.querySelector<HTMLTableSectionElement>("#runbook-calibration-residuals");
+const runbookCalibrationError = document.querySelector<HTMLDivElement>("#runbook-calibration-error");
 const runbookStepTbody = document.querySelector<HTMLTableSectionElement>("#runbook-step-tbody");
 const runbookDetailPart = document.querySelector<HTMLHeadingElement>("#runbook-detail-part");
 const runbookDetailStatus = document.querySelector<HTMLSpanElement>("#runbook-detail-status");
@@ -157,6 +164,7 @@ const initialRoute = parseRouteFromUrl();
 let selectedDataset: DemoDataset = initialRoute.dataset;
 let selectedMode: DemoMode = initialRoute.mode;
 let runState: RunState = getOrCreateRunState(selectedDataset);
+let anchorExcludeState: AnchorExcludeState = getOrCreateAnchorExcludeState(selectedDataset);
 
 function formatVec(vec?: [number, number, number], digits = 2): string {
   if (!vec) return "n/a";
@@ -847,6 +855,116 @@ function renderAlignmentQuality(dataset: DemoDataset) {
 }
 
 /**
+ * Recompute alignment using only included anchors.
+ * Returns null if fewer than 3 anchors are included.
+ * Also recomputes directives if alignment changed.
+ */
+async function recomputeAlignmentWithExcludes(): Promise<boolean> {
+  if (!cachedAnchors || cachedAnchors.length === 0) {
+    return false;
+  }
+
+  // Filter anchors based on exclude state
+  const includedAnchors = cachedAnchors.filter((anchor) =>
+    isAnchorIncluded(anchorExcludeState, anchor.id)
+  );
+
+  // Check minimum anchors required
+  if (includedAnchors.length < 3) {
+    // Don't update cachedAlignment - keep the last valid one
+    // The UI will show an error message
+    return false;
+  }
+
+  // Compute new alignment with included anchors only
+  const scanPts = includedAnchors.map((anchor) => ({
+    anchor_id: anchor.id,
+    point_mm: anchor.scan_mm
+  }));
+  const modelPts = includedAnchors.map((anchor) => ({
+    anchor_id: anchor.id,
+    point_mm: anchor.model_mm
+  }));
+
+  try {
+    const newAlignment = computeRigidTransform(scanPts, modelPts);
+    cachedAlignment = newAlignment;
+
+    // Re-run directive generation with new alignment
+    if (cachedConstraints) {
+      const baseUrl = import.meta.env.BASE_URL ?? "/";
+      const { raw } = await loadMuseumDataset();
+      const converted = convertMuseumRawToPoseDatasets(raw, newAlignment.T_model_scan);
+      const nominal = converted.nominal;
+      const asBuilt = converted.asBuilt;
+
+      const paths = {
+        nominal: `${baseUrl}museum_raw.json`,
+        asBuilt: `${baseUrl}museum_raw.json`,
+        constraints: `${baseUrl}museum_constraints.json`
+      };
+
+      const directives = await runGenerateDirectives(nominal, asBuilt, cachedConstraints, paths);
+
+      cachedDirectives = directives;
+      cachedNominal = nominal;
+      cachedAsBuilt = asBuilt;
+
+      const partNames = new Map(nominal.parts.map((part) => [part.part_id, part.part_name]));
+      const partSummaries = extractPartSummaries(directives);
+      const overallStatus = deriveOverallStatus(partSummaries, directives);
+
+      cachedSummaries = partSummaries;
+
+      // Update UI
+      setStatusBadge(formatStatusLabel(overallStatus), overallStatus);
+      renderStatus(directives, asBuilt);
+      renderParts(partSummaries, partNames);
+      renderSelection();
+      renderAlignmentQuality(selectedDataset);
+      renderRawJson({ nominal, asBuilt, constraints: cachedConstraints, directives });
+
+      // Render mode-specific views
+      if (selectedMode === "runbook") {
+        renderRunbookStepTable();
+        renderRunbookDetail();
+      } else {
+        renderModeView();
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Failed to recompute alignment:", error);
+    return false;
+  }
+}
+
+/**
+ * Handle anchor include toggle from the calibration card.
+ */
+async function handleAnchorToggle(anchorId: string): Promise<void> {
+  anchorExcludeState = toggleAnchorInclude(anchorExcludeState, anchorId);
+
+  // Count included anchors
+  const includedCount = cachedAnchors
+    ? cachedAnchors.filter((a) => isAnchorIncluded(anchorExcludeState, a.id)).length
+    : 0;
+
+  if (includedCount < 3) {
+    // Show error but don't recompute - keep last valid result
+    renderRunbookCalibrationCard(selectedDataset);
+    return;
+  }
+
+  // Recompute alignment and directives
+  const success = await recomputeAlignmentWithExcludes();
+  if (success) {
+    renderRunbookCalibrationCard(selectedDataset);
+  }
+}
+
+/**
  * Render the calibration card in Runbook mode.
  * Shows RMS, top anchors by residual, and expandable full residuals table.
  * For non-museum datasets, hides the card.
@@ -864,38 +982,70 @@ function renderRunbookCalibrationCard(dataset: DemoDataset): void {
   runbookCalibrationCard.hidden = false;
 
   // No alignment data yet
-  if (!cachedAlignment) {
+  if (!cachedAlignment || !cachedAnchors) {
     if (runbookCalibrationRms) runbookCalibrationRms.textContent = "—";
     if (runbookCalibrationTopAnchors) {
       runbookCalibrationTopAnchors.innerHTML = '<span class="calibration-na">Run engine to compute calibration</span>';
     }
     if (runbookCalibrationDetails) runbookCalibrationDetails.hidden = true;
+    if (runbookCalibrationError) runbookCalibrationError.hidden = true;
     return;
+  }
+
+  // Count included anchors
+  const allAnchorIds = cachedAnchors.map((a) => a.id);
+  const includedAnchorIds = allAnchorIds.filter((id) => isAnchorIncluded(anchorExcludeState, id));
+  const includedCount = includedAnchorIds.length;
+  const totalCount = allAnchorIds.length;
+  const hasMinimumAnchors = includedCount >= 3;
+
+  // Show/hide error message
+  if (runbookCalibrationError) {
+    if (!hasMinimumAnchors) {
+      runbookCalibrationError.hidden = false;
+      runbookCalibrationError.textContent = `At least 3 anchors required for alignment (${includedCount} included). Re-enable anchors or using last valid alignment.`;
+    } else {
+      runbookCalibrationError.hidden = true;
+    }
   }
 
   const { rms_mm: rms, residuals_mm: residuals } = cachedAlignment;
 
-  // Display RMS
+  // Display RMS with included count
   if (runbookCalibrationRms) {
     runbookCalibrationRms.textContent = formatResidual(rms);
+    runbookCalibrationRms.classList.toggle("error", !hasMinimumAnchors);
   }
 
-  // Sort residuals high to low
-  const sortedResiduals = [...residuals].sort((a, b) => b.residual_mm - a.residual_mm);
+  // Build residual map for quick lookup (only included anchors)
+  const residualMap = new Map(residuals.map((r) => [r.anchor_id, r]));
 
-  // Compute outlier threshold (mean + 2*std)
-  const mean = residuals.reduce((sum, r) => sum + r.residual_mm, 0) / residuals.length;
-  const variance = residuals.reduce((sum, r) => sum + Math.pow(r.residual_mm - mean, 2), 0) / residuals.length;
+  // Get all anchors sorted by residual (included first, then excluded)
+  // For included anchors, sort by residual descending
+  // For excluded anchors, just append at end
+  const includedResiduals = residuals
+    .filter((r) => isAnchorIncluded(anchorExcludeState, r.anchor_id))
+    .sort((a, b) => b.residual_mm - a.residual_mm);
+
+  const excludedAnchorIds = allAnchorIds.filter((id) => !isAnchorIncluded(anchorExcludeState, id));
+
+  // Compute outlier threshold (mean + 2*std) for included anchors only
+  const mean = includedResiduals.length > 0
+    ? includedResiduals.reduce((sum, r) => sum + r.residual_mm, 0) / includedResiduals.length
+    : 0;
+  const variance = includedResiduals.length > 0
+    ? includedResiduals.reduce((sum, r) => sum + Math.pow(r.residual_mm - mean, 2), 0) / includedResiduals.length
+    : 0;
   const std = Math.sqrt(variance);
   const outlierThreshold = mean + 2 * std;
 
-  // Top 1-3 anchors as chips
+  // Top 1-3 anchors as chips (only included anchors)
   if (runbookCalibrationTopAnchors) {
-    const topAnchors = sortedResiduals.slice(0, 3);
+    const topAnchors = includedResiduals.slice(0, 3);
     if (topAnchors.length === 0) {
-      runbookCalibrationTopAnchors.innerHTML = '<span class="calibration-na">No anchors</span>';
+      runbookCalibrationTopAnchors.innerHTML = '<span class="calibration-na">No included anchors</span>';
     } else {
-      runbookCalibrationTopAnchors.innerHTML = topAnchors
+      let chipsHtml = topAnchors
         .map((entry) => {
           const isOutlier = entry.residual_mm > outlierThreshold;
           return `
@@ -906,27 +1056,61 @@ function renderRunbookCalibrationCard(dataset: DemoDataset): void {
           `;
         })
         .join("");
+
+      // Add included count indicator
+      chipsHtml += `<span class="calibration-included-count">${includedCount}/${totalCount} anchors</span>`;
+      runbookCalibrationTopAnchors.innerHTML = chipsHtml;
     }
   }
 
-  // Full residuals table
+  // Full residuals table with checkboxes
   if (runbookCalibrationDetails && runbookCalibrationResiduals) {
-    if (sortedResiduals.length === 0) {
-      runbookCalibrationDetails.hidden = true;
-    } else {
-      runbookCalibrationDetails.hidden = false;
-      runbookCalibrationResiduals.innerHTML = sortedResiduals
-        .map((entry) => {
-          const isOutlier = entry.residual_mm > outlierThreshold;
-          return `
-            <tr${isOutlier ? ' class="outlier"' : ""}>
-              <td>${entry.anchor_id}</td>
-              <td class="numeric">${formatResidual(entry.residual_mm)}</td>
-            </tr>
-          `;
-        })
-        .join("");
+    runbookCalibrationDetails.hidden = false;
+
+    // Build rows for all anchors (included first, then excluded)
+    let tableHtml = "";
+
+    // Included anchors with residuals
+    for (const entry of includedResiduals) {
+      const isOutlier = entry.residual_mm > outlierThreshold;
+      const rowClass = isOutlier ? "outlier" : "";
+      tableHtml += `
+        <tr class="${rowClass}">
+          <td class="checkbox-col">
+            <input type="checkbox" class="anchor-include-checkbox" data-anchor-id="${entry.anchor_id}" checked />
+          </td>
+          <td>${entry.anchor_id}</td>
+          <td class="numeric">${formatResidual(entry.residual_mm)}</td>
+        </tr>
+      `;
     }
+
+    // Excluded anchors (show as excluded, residual from last computation or n/a)
+    for (const anchorId of excludedAnchorIds) {
+      const residual = residualMap.get(anchorId);
+      const residualText = residual ? formatResidual(residual.residual_mm) : "n/a";
+      tableHtml += `
+        <tr class="excluded">
+          <td class="checkbox-col">
+            <input type="checkbox" class="anchor-include-checkbox" data-anchor-id="${anchorId}" />
+          </td>
+          <td>${anchorId}</td>
+          <td class="numeric">${residualText}</td>
+        </tr>
+      `;
+    }
+
+    runbookCalibrationResiduals.innerHTML = tableHtml;
+
+    // Attach checkbox handlers
+    runbookCalibrationResiduals.querySelectorAll<HTMLInputElement>(".anchor-include-checkbox").forEach((checkbox) => {
+      checkbox.addEventListener("change", () => {
+        const anchorId = checkbox.dataset.anchorId;
+        if (anchorId) {
+          handleAnchorToggle(anchorId);
+        }
+      });
+    });
   }
 }
 
@@ -1811,6 +1995,7 @@ if (datasetSelect) {
   datasetSelect.addEventListener("change", () => {
     selectedDataset = datasetSelect.value === "museum" ? "museum" : "toy";
     runState = getOrCreateRunState(selectedDataset);
+    anchorExcludeState = getOrCreateAnchorExcludeState(selectedDataset);
     resetResults(selectedDataset);
     updateUrlState();
     runDemo().catch(() => undefined);
