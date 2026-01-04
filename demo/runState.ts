@@ -7,34 +7,29 @@
  * Each step tracks:
  * - completed: boolean
  * - completed_at: ISO timestamp
+ * - escalated: boolean (for blocked/needs_review parts that were escalated)
  * - notes: optional user notes
  * - sim_pass: optional simulation pass/fail result
- * - sim_after: optional after-simulation error data
+ * - sim_after_translation_norm_mm: optional post-simulation translation error
+ * - sim_after_rotation_deg: optional post-simulation rotation error
  */
-
-import type { Vec3 } from "../src/types.js";
-
-/** After-simulation error snapshot */
-export interface SimAfterError {
-  translation_mm_vec: Vec3;
-  translation_norm_mm: number;
-  rotation_deg: number;
-}
 
 /** Individual step completion record */
 export interface StepCompletion {
   completed: boolean;
-  completed_at: string | null;
+  completed_at?: string;
+  escalated?: boolean;
   notes?: string;
   sim_pass?: boolean;
-  sim_after?: SimAfterError;
+  sim_after_translation_norm_mm?: number;
+  sim_after_rotation_deg?: number;
 }
 
 /** Full run state for a dataset */
 export interface RunState {
   dataset_id: string;
-  last_updated: string;
-  completed_steps: Record<string, StepCompletion>;
+  updated_at: string;
+  steps: Record<string, StepCompletion>;
 }
 
 const STORAGE_KEY_PREFIX = "directive_engine_runstate::";
@@ -59,7 +54,7 @@ export function loadRunState(datasetId: string): RunState | null {
     // Validate basic structure
     if (
       typeof parsed.dataset_id !== "string" ||
-      typeof parsed.completed_steps !== "object"
+      typeof parsed.steps !== "object"
     ) {
       console.warn(`Invalid run state for ${datasetId}, ignoring`);
       return null;
@@ -78,7 +73,7 @@ export function loadRunState(datasetId: string): RunState | null {
 export function saveRunState(state: RunState): void {
   try {
     const key = getStorageKey(state.dataset_id);
-    state.last_updated = new Date().toISOString();
+    state.updated_at = new Date().toISOString();
     localStorage.setItem(key, JSON.stringify(state));
   } catch (error) {
     console.warn(`Failed to save run state for ${state.dataset_id}:`, error);
@@ -91,8 +86,8 @@ export function saveRunState(state: RunState): void {
 export function createRunState(datasetId: string): RunState {
   return {
     dataset_id: datasetId,
-    last_updated: new Date().toISOString(),
-    completed_steps: {}
+    updated_at: new Date().toISOString(),
+    steps: {}
   };
 }
 
@@ -110,7 +105,7 @@ export function getStepCompletion(
   state: RunState,
   partId: string
 ): StepCompletion | null {
-  return state.completed_steps[partId] ?? null;
+  return state.steps[partId] ?? null;
 }
 
 /**
@@ -122,20 +117,28 @@ export function markStepCompleted(
   options?: {
     notes?: string;
     sim_pass?: boolean;
-    sim_after?: SimAfterError;
+    sim_after_translation_norm_mm?: number;
+    sim_after_rotation_deg?: number;
+    escalated?: boolean;
   }
 ): RunState {
   const updated: RunState = {
     ...state,
-    last_updated: new Date().toISOString(),
-    completed_steps: {
-      ...state.completed_steps,
+    updated_at: new Date().toISOString(),
+    steps: {
+      ...state.steps,
       [partId]: {
         completed: true,
         completed_at: new Date().toISOString(),
         ...(options?.notes !== undefined && { notes: options.notes }),
         ...(options?.sim_pass !== undefined && { sim_pass: options.sim_pass }),
-        ...(options?.sim_after !== undefined && { sim_after: options.sim_after })
+        ...(options?.sim_after_translation_norm_mm !== undefined && {
+          sim_after_translation_norm_mm: options.sim_after_translation_norm_mm
+        }),
+        ...(options?.sim_after_rotation_deg !== undefined && {
+          sim_after_rotation_deg: options.sim_after_rotation_deg
+        }),
+        ...(options?.escalated !== undefined && { escalated: options.escalated })
       }
     }
   };
@@ -149,17 +152,65 @@ export function markStepCompleted(
 export function markStepIncomplete(state: RunState, partId: string): RunState {
   const updated: RunState = {
     ...state,
-    last_updated: new Date().toISOString(),
-    completed_steps: {
-      ...state.completed_steps,
+    updated_at: new Date().toISOString(),
+    steps: {
+      ...state.steps,
       [partId]: {
-        completed: false,
-        completed_at: null
+        completed: false
       }
     }
   };
   saveRunState(updated);
   return updated;
+}
+
+/**
+ * Mark a step as escalated (for blocked/needs_review parts)
+ */
+export function markStepEscalated(
+  state: RunState,
+  partId: string,
+  notes: string
+): RunState {
+  const existing = state.steps[partId] ?? { completed: false };
+  const updated: RunState = {
+    ...state,
+    updated_at: new Date().toISOString(),
+    steps: {
+      ...state.steps,
+      [partId]: {
+        ...existing,
+        escalated: true,
+        notes
+      }
+    }
+  };
+  saveRunState(updated);
+  return updated;
+}
+
+/**
+ * Reset a single step (clear all completion data)
+ */
+export function resetStep(state: RunState, partId: string): RunState {
+  const newSteps = { ...state.steps };
+  delete newSteps[partId];
+  const updated: RunState = {
+    ...state,
+    updated_at: new Date().toISOString(),
+    steps: newSteps
+  };
+  saveRunState(updated);
+  return updated;
+}
+
+/**
+ * Reset entire run (clear all steps)
+ */
+export function resetRun(datasetId: string): RunState {
+  const newState = createRunState(datasetId);
+  saveRunState(newState);
+  return newState;
 }
 
 /**
@@ -170,16 +221,15 @@ export function updateStepNotes(
   partId: string,
   notes: string
 ): RunState {
-  const existing = state.completed_steps[partId] ?? {
-    completed: false,
-    completed_at: null
+  const existing = state.steps[partId] ?? {
+    completed: false
   };
 
   const updated: RunState = {
     ...state,
-    last_updated: new Date().toISOString(),
-    completed_steps: {
-      ...state.completed_steps,
+    updated_at: new Date().toISOString(),
+    steps: {
+      ...state.steps,
       [partId]: {
         ...existing,
         notes
@@ -197,22 +247,23 @@ export function updateStepSimulation(
   state: RunState,
   partId: string,
   sim_pass: boolean,
-  sim_after: SimAfterError
+  sim_after_translation_norm_mm: number,
+  sim_after_rotation_deg: number
 ): RunState {
-  const existing = state.completed_steps[partId] ?? {
-    completed: false,
-    completed_at: null
+  const existing = state.steps[partId] ?? {
+    completed: false
   };
 
   const updated: RunState = {
     ...state,
-    last_updated: new Date().toISOString(),
-    completed_steps: {
-      ...state.completed_steps,
+    updated_at: new Date().toISOString(),
+    steps: {
+      ...state.steps,
       [partId]: {
         ...existing,
         sim_pass,
-        sim_after
+        sim_after_translation_norm_mm,
+        sim_after_rotation_deg
       }
     }
   };
@@ -224,7 +275,7 @@ export function updateStepSimulation(
  * Get count of completed steps
  */
 export function getCompletedCount(state: RunState): number {
-  return Object.values(state.completed_steps).filter((s) => s.completed).length;
+  return Object.values(state.steps).filter((s) => s.completed).length;
 }
 
 /**
@@ -233,14 +284,17 @@ export function getCompletedCount(state: RunState): number {
 export function getProgressSummary(
   state: RunState,
   partIds: string[]
-): { completed: number; total: number; percent: number } {
+): { completed: number; total: number; percent: number; escalated: number } {
   const total = partIds.length;
   const completed = partIds.filter(
-    (id) => state.completed_steps[id]?.completed
+    (id) => state.steps[id]?.completed
+  ).length;
+  const escalated = partIds.filter(
+    (id) => state.steps[id]?.escalated
   ).length;
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-  return { completed, total, percent };
+  return { completed, total, percent, escalated };
 }
 
 /**

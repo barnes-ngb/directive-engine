@@ -41,14 +41,50 @@
         <span class="progress-label">Run Progress</span>
         <span class="progress-count" id="progress-count">0 / 0</span>
         <span class="progress-percent" id="progress-percent">0%</span>
+        <button class="reset-run-btn" id="reset-run-btn" type="button" title="Reset entire run">Reset Run</button>
       </div>
       <div class="progress-bar">
         <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
       </div>
-      <div class="runbook-nav">
-        <button class="nav-button" id="nav-prev" type="button" disabled>&larr; Previous</button>
-        <span class="nav-step" id="nav-step">Step 1 of 0</span>
-        <button class="nav-button" id="nav-next" type="button">&rarr; Next</button>
+    </div>
+
+    <!-- Runbook Mode Step Table + Detail Layout -->
+    <div class="runbook-layout" id="runbook-layout" hidden>
+      <div class="runbook-step-table-container">
+        <table class="runbook-step-table" id="runbook-step-table">
+          <thead>
+            <tr>
+              <th>Part ID</th>
+              <th>Engine Status</th>
+              <th>Sim</th>
+              <th>Done</th>
+            </tr>
+          </thead>
+          <tbody id="runbook-step-tbody">
+            <!-- Filled dynamically -->
+          </tbody>
+        </table>
+      </div>
+      <div class="runbook-detail" id="runbook-detail">
+        <div class="runbook-detail-header">
+          <h3 class="runbook-detail-part" id="runbook-detail-part">Select a step</h3>
+          <span class="badge" id="runbook-detail-status">—</span>
+        </div>
+        <div class="runbook-detail-body" id="runbook-detail-body">
+          <p class="placeholder">Click a row to see step details.</p>
+        </div>
+        <div class="runbook-detail-actions" id="runbook-detail-actions" hidden>
+          <div class="runbook-completion-controls" id="runbook-completion-controls">
+            <!-- Filled dynamically based on status -->
+          </div>
+          <div class="runbook-notes-section">
+            <label for="runbook-notes">Notes:</label>
+            <textarea id="runbook-notes" rows="2" placeholder="Add notes for this step..."></textarea>
+          </div>
+          <div class="runbook-step-actions">
+            <button class="runbook-reset-step-btn" id="runbook-reset-step" type="button">Reset Step</button>
+          </div>
+        </div>
       </div>
     </div>
 

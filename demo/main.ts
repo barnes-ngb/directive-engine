@@ -48,12 +48,14 @@ import {
   getOrCreateRunState,
   markStepCompleted,
   markStepIncomplete,
+  markStepEscalated,
+  resetStep,
+  resetRun,
   updateStepNotes,
   updateStepSimulation,
   getProgressSummary,
   clearRunState,
-  type RunState,
-  type SimAfterError
+  type RunState
 } from "./runState.js";
 
 type DatasetPaths = {
@@ -92,6 +94,20 @@ const runbookProgress = document.querySelector<HTMLDivElement>("#runbook-progres
 const progressCount = document.querySelector<HTMLSpanElement>("#progress-count");
 const progressPercent = document.querySelector<HTMLSpanElement>("#progress-percent");
 const progressFill = document.querySelector<HTMLDivElement>("#progress-fill");
+const resetRunBtn = document.querySelector<HTMLButtonElement>("#reset-run-btn");
+
+// Runbook layout elements
+const runbookLayout = document.querySelector<HTMLDivElement>("#runbook-layout");
+const runbookStepTbody = document.querySelector<HTMLTableSectionElement>("#runbook-step-tbody");
+const runbookDetailPart = document.querySelector<HTMLHeadingElement>("#runbook-detail-part");
+const runbookDetailStatus = document.querySelector<HTMLSpanElement>("#runbook-detail-status");
+const runbookDetailBody = document.querySelector<HTMLDivElement>("#runbook-detail-body");
+const runbookDetailActions = document.querySelector<HTMLDivElement>("#runbook-detail-actions");
+const runbookCompletionControls = document.querySelector<HTMLDivElement>("#runbook-completion-controls");
+const runbookNotesInput = document.querySelector<HTMLTextAreaElement>("#runbook-notes");
+const runbookResetStepBtn = document.querySelector<HTMLButtonElement>("#runbook-reset-step");
+
+// Old navigation elements (still referenced)
 const navPrev = document.querySelector<HTMLButtonElement>("#nav-prev");
 const navNext = document.querySelector<HTMLButtonElement>("#nav-next");
 const navStep = document.querySelector<HTMLSpanElement>("#nav-step");
@@ -277,7 +293,7 @@ function renderParts(
         .map((part) => {
           const name = partNames.get(part.id) ?? part.id;
           const isSelected = part.id === selectedPartId;
-          const isCompleted = runState.completed_steps[part.id]?.completed ?? false;
+          const isCompleted = runState.steps[part.id]?.completed ?? false;
           const completedClass = isCompleted ? "is-completed" : "";
           const checkmark = showCheckmarks
             ? `<span class="completion-check">${isCompleted ? "✓" : ""}</span>`
@@ -920,6 +936,7 @@ function setMode(mode: DemoMode): void {
 
   // Show/hide mode-specific elements
   if (runbookProgress) runbookProgress.hidden = mode !== "runbook";
+  if (runbookLayout) runbookLayout.hidden = mode !== "runbook";
   if (stepView) stepView.hidden = mode !== "step";
   if (overlayView) overlayView.hidden = mode !== "overlay";
 
@@ -932,6 +949,8 @@ function setMode(mode: DemoMode): void {
       renderModeView();
     } else if (mode === "runbook") {
       renderRunbookProgress();
+      renderRunbookStepTable();
+      renderRunbookDetail();
     }
   }
 }
@@ -998,7 +1017,7 @@ function navigateStep(direction: "prev" | "next"): void {
 function toggleStepCompletion(): void {
   if (!selectedPartId) return;
 
-  const currentCompletion = runState.completed_steps[selectedPartId];
+  const currentCompletion = runState.steps[selectedPartId];
   const isCompleted = currentCompletion?.completed ?? false;
 
   if (isCompleted) {
@@ -1006,23 +1025,23 @@ function toggleStepCompletion(): void {
   } else {
     // Include simulation result if available
     const simResult = cachedSimulationResults.get(selectedPartId);
-    const simAfter: SimAfterError | undefined = simResult
-      ? {
-          translation_mm_vec: simResult.afterError.translation_mm_vec,
-          translation_norm_mm: simResult.afterError.translation_norm_mm,
-          rotation_deg: simResult.afterError.rotation_deg
-        }
-      : undefined;
 
     runState = markStepCompleted(runState, selectedPartId, {
-      notes: stepNotesInput?.value || undefined,
+      notes: stepNotesInput?.value || runbookNotesInput?.value || undefined,
       sim_pass: simResult?.pass,
-      sim_after: simAfter
+      sim_after_translation_norm_mm: simResult?.afterError.translation_norm_mm,
+      sim_after_rotation_deg: simResult?.afterError.rotation_deg
     });
   }
 
   renderRunbookProgress();
   renderModeView();
+
+  // Re-render runbook if in runbook mode
+  if (selectedMode === "runbook") {
+    renderRunbookStepTable();
+    renderRunbookDetail();
+  }
 
   // Re-render part list to update completion checkmarks
   if (cachedNominal && cachedSummaries) {
@@ -1050,7 +1069,7 @@ function renderStepView(): void {
   const summary = cachedSummaries.find((s) => s.id === selectedPartId);
   const step = cachedDirectives.steps.find((s) => s.part_id === selectedPartId);
   const nominalPart = cachedNominal?.parts.find((p) => p.part_id === selectedPartId);
-  const completion = runState.completed_steps[selectedPartId];
+  const completion = runState.steps[selectedPartId];
   const isCompleted = completion?.completed ?? false;
 
   if (!summary || !step) return;
@@ -1118,7 +1137,7 @@ function renderOverlayView(): void {
 
   const summary = cachedSummaries.find((s) => s.id === selectedPartId);
   const step = cachedDirectives.steps.find((s) => s.part_id === selectedPartId);
-  const completion = runState.completed_steps[selectedPartId];
+  const completion = runState.steps[selectedPartId];
   const isCompleted = completion?.completed ?? false;
 
   if (!summary || !step) return;
@@ -1155,6 +1174,388 @@ function renderOverlayView(): void {
   if (overlayCompleteBtn) {
     overlayCompleteBtn.classList.toggle("is-completed", isCompleted);
   }
+}
+
+// ============================================================================
+// Runbook Mode Rendering
+// ============================================================================
+
+function getSimBadgeInfo(partId: string, status: string): { label: string; class: string } {
+  // If status is blocked or needs_review, simulation is N/A
+  if (status === "blocked" || status === "needs_review") {
+    return { label: "N/A", class: "na" };
+  }
+
+  // Check for cached simulation result
+  const simResult = cachedSimulationResults.get(partId);
+  if (simResult) {
+    return simResult.pass
+      ? { label: "PASS", class: "pass" }
+      : { label: "FAIL", class: "fail" };
+  }
+
+  // Check if we have persisted sim result in run state
+  const stepState = runState.steps[partId];
+  if (stepState?.sim_pass !== undefined) {
+    return stepState.sim_pass
+      ? { label: "PASS", class: "pass" }
+      : { label: "FAIL", class: "fail" };
+  }
+
+  return { label: "PENDING", class: "pending" };
+}
+
+function renderRunbookStepTable(): void {
+  if (!runbookStepTbody || !cachedSummaries || !cachedNominal) return;
+
+  const partNames = new Map(cachedNominal.parts.map((p) => [p.part_id, p.part_name]));
+
+  runbookStepTbody.innerHTML = cachedSummaries
+    .map((summary) => {
+      const stepState = runState.steps[summary.id];
+      const isCompleted = stepState?.completed ?? false;
+      const isEscalated = stepState?.escalated ?? false;
+      const isSelected = summary.id === selectedPartId;
+      const simBadge = getSimBadgeInfo(summary.id, summary.status);
+
+      const rowClasses = [
+        isSelected ? "is-selected" : "",
+        isCompleted ? "is-completed" : "",
+        isEscalated ? "is-escalated" : ""
+      ].filter(Boolean).join(" ");
+
+      const doneCheckClasses = [
+        "runbook-done-check",
+        isCompleted ? "is-done" : "",
+        isEscalated && !isCompleted ? "is-escalated" : ""
+      ].filter(Boolean).join(" ");
+
+      const doneSymbol = isCompleted ? "✓" : (isEscalated ? "!" : "");
+
+      return `
+        <tr class="${rowClasses}" data-part-id="${summary.id}">
+          <td>${partNames.get(summary.id) ?? summary.id}</td>
+          <td><span class="badge ${summary.status}">${formatStatusLabel(summary.status)}</span></td>
+          <td><span class="runbook-sim-badge ${simBadge.class}">${simBadge.label}</span></td>
+          <td><span class="${doneCheckClasses}">${doneSymbol}</span></td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  // Attach click handlers
+  runbookStepTbody.querySelectorAll<HTMLTableRowElement>("tr").forEach((row) => {
+    row.addEventListener("click", () => {
+      const partId = row.dataset.partId;
+      if (partId) {
+        selectedPartId = partId;
+        updateUrlState();
+        renderRunbookStepTable();
+        renderRunbookDetail();
+      }
+    });
+  });
+}
+
+function renderRunbookDetail(): void {
+  if (!cachedSummaries || !cachedDirectives || !cachedConstraints) return;
+
+  if (!selectedPartId) {
+    // No part selected
+    if (runbookDetailPart) runbookDetailPart.textContent = "Select a step";
+    if (runbookDetailStatus) {
+      runbookDetailStatus.textContent = "—";
+      runbookDetailStatus.classList.remove(...Array.from(statusClasses));
+    }
+    if (runbookDetailBody) {
+      runbookDetailBody.innerHTML = `<p class="placeholder">Click a row to see step details.</p>`;
+    }
+    if (runbookDetailActions) runbookDetailActions.hidden = true;
+    return;
+  }
+
+  const summary = cachedSummaries.find((s) => s.id === selectedPartId);
+  const step = cachedDirectives.steps.find((s) => s.part_id === selectedPartId);
+  const nominalPart = cachedNominal?.parts.find((p) => p.part_id === selectedPartId);
+  const partConstraint = cachedConstraints.parts.find((p) => p.part_id === selectedPartId);
+  const stepState = runState.steps[selectedPartId];
+
+  if (!summary || !step) return;
+
+  const partName = nominalPart?.part_name ?? selectedPartId;
+
+  // Header
+  if (runbookDetailPart) runbookDetailPart.textContent = partName;
+  if (runbookDetailStatus) {
+    runbookDetailStatus.textContent = formatStatusLabel(summary.status);
+    runbookDetailStatus.classList.remove(...Array.from(statusClasses));
+    runbookDetailStatus.classList.add(summary.status);
+  }
+
+  // Build detail body
+  const actionDesc = summary.actions.length > 0
+    ? summary.actions.map((a) => `${a.type}: ${describeAction(a)}`).join("<br>")
+    : "No action required";
+
+  const deltaInfo = computeDirectiveDelta(summary.actions);
+  const deltaText = deltaInfo
+    ? `Translation: ${formatVec(deltaInfo.translation_mm_vec)} mm${deltaInfo.rotation_deg > 1e-6 ? ` | Rotation: ${formatResidual(deltaInfo.rotation_deg)}°` : ""}`
+    : "No delta";
+
+  const errorInfo = step.computed_errors;
+  const errorText = `Translation: ${formatVec(errorInfo.translation_error_mm_vec)} mm (norm: ${formatResidual(errorInfo.translation_error_norm_mm)} mm)<br>Rotation: ${formatResidual(errorInfo.rotation_error_deg)}°`;
+
+  // Get simulation info
+  const simResult = cachedSimulationResults.get(selectedPartId);
+  const simBadge = getSimBadgeInfo(selectedPartId, summary.status);
+  const canSimulate = summary.status !== "blocked" && summary.status !== "needs_review";
+
+  let simSection = "";
+  if (canSimulate) {
+    if (simResult) {
+      simSection = `
+        <div class="runbook-detail-section">
+          <div class="runbook-detail-label">Simulation Result</div>
+          <div class="runbook-detail-value">
+            <span class="runbook-sim-badge ${simBadge.class}">${simBadge.label}</span>
+            After: ${formatResidual(simResult.afterError.translation_norm_mm)} mm / ${formatResidual(simResult.afterError.rotation_deg)}°
+            <br>
+            <button class="simulate-button simulated" type="button" id="runbook-resimulate">Re-simulate</button>
+          </div>
+        </div>
+      `;
+    } else {
+      simSection = `
+        <div class="runbook-detail-section">
+          <div class="runbook-detail-label">Simulation</div>
+          <div class="runbook-detail-value">
+            <span class="runbook-sim-badge pending">PENDING</span>
+            <button class="simulate-button" type="button" id="runbook-simulate">Simulate Apply</button>
+          </div>
+        </div>
+      `;
+    }
+  } else {
+    simSection = `
+      <div class="runbook-detail-section">
+        <div class="runbook-detail-label">Simulation</div>
+        <div class="runbook-detail-value">
+          <span class="runbook-sim-badge na">N/A</span>
+          Cannot simulate: ${formatStatusLabel(summary.status)}
+        </div>
+      </div>
+    `;
+  }
+
+  if (runbookDetailBody) {
+    runbookDetailBody.innerHTML = `
+      <div class="runbook-detail-section">
+        <div class="runbook-detail-label">Action</div>
+        <div class="runbook-detail-value">${actionDesc}</div>
+      </div>
+      <div class="runbook-detail-section">
+        <div class="runbook-detail-label">Directive Delta</div>
+        <div class="runbook-detail-value">${deltaText}</div>
+      </div>
+      <div class="runbook-detail-section">
+        <div class="runbook-detail-label">Current Error</div>
+        <div class="runbook-detail-value">${errorText}</div>
+      </div>
+      ${simSection}
+    `;
+
+    // Attach simulate button handlers
+    const simBtn = runbookDetailBody.querySelector<HTMLButtonElement>("#runbook-simulate, #runbook-resimulate");
+    if (simBtn) {
+      simBtn.addEventListener("click", () => {
+        if (selectedPartId) {
+          runSimulation(selectedPartId);
+          renderRunbookStepTable();
+          renderRunbookDetail();
+        }
+      });
+    }
+  }
+
+  // Show actions panel
+  if (runbookDetailActions) runbookDetailActions.hidden = false;
+
+  // Build completion controls based on status
+  const isCompleted = stepState?.completed ?? false;
+  const isEscalated = stepState?.escalated ?? false;
+  const isBlocked = summary.status === "blocked" || summary.status === "needs_review";
+  const simPassed = simResult?.pass === true || stepState?.sim_pass === true;
+
+  if (runbookCompletionControls) {
+    let controlsHtml = "";
+
+    if (isCompleted) {
+      // Already completed - show undo button
+      controlsHtml = `
+        <button class="runbook-mark-complete-btn is-completed" id="runbook-mark-incomplete">
+          ✓ Completed
+        </button>
+        <span class="runbook-completion-hint">Click to mark incomplete</span>
+      `;
+    } else if (isBlocked) {
+      // Blocked or needs_review - can only escalate
+      if (isEscalated) {
+        controlsHtml = `
+          <span class="runbook-sim-badge" style="background: #fef3c7; color: #b45309;">ESCALATED</span>
+          <span class="runbook-completion-hint">This step has been escalated.</span>
+        `;
+      } else {
+        controlsHtml = `
+          <button class="runbook-mark-complete-btn" disabled>Mark Complete</button>
+          <button class="runbook-escalate-btn" id="runbook-escalate">Escalate</button>
+          <span class="runbook-completion-hint">Cannot complete: ${formatStatusLabel(summary.status)}. Escalate with a note.</span>
+        `;
+      }
+    } else {
+      // Normal status - check sim pass
+      if (simPassed) {
+        controlsHtml = `
+          <button class="runbook-mark-complete-btn" id="runbook-mark-complete">Mark Complete</button>
+        `;
+      } else {
+        controlsHtml = `
+          <button class="runbook-mark-complete-btn" disabled>Mark Complete</button>
+          <button class="runbook-override-btn" id="runbook-override">Override Complete</button>
+          <span class="runbook-completion-hint">Simulation must pass or use override with note.</span>
+        `;
+      }
+    }
+
+    runbookCompletionControls.innerHTML = controlsHtml;
+
+    // Attach button handlers
+    const markCompleteBtn = runbookCompletionControls.querySelector<HTMLButtonElement>("#runbook-mark-complete");
+    const markIncompleteBtn = runbookCompletionControls.querySelector<HTMLButtonElement>("#runbook-mark-incomplete");
+    const overrideBtn = runbookCompletionControls.querySelector<HTMLButtonElement>("#runbook-override");
+    const escalateBtn = runbookCompletionControls.querySelector<HTMLButtonElement>("#runbook-escalate");
+
+    if (markCompleteBtn) {
+      markCompleteBtn.addEventListener("click", handleRunbookMarkComplete);
+    }
+    if (markIncompleteBtn) {
+      markIncompleteBtn.addEventListener("click", handleRunbookMarkIncomplete);
+    }
+    if (overrideBtn) {
+      overrideBtn.addEventListener("click", handleRunbookOverride);
+    }
+    if (escalateBtn) {
+      escalateBtn.addEventListener("click", handleRunbookEscalate);
+    }
+  }
+
+  // Update notes field
+  if (runbookNotesInput) {
+    runbookNotesInput.value = stepState?.notes ?? "";
+  }
+}
+
+function handleRunbookMarkComplete(): void {
+  if (!selectedPartId) return;
+
+  const simResult = cachedSimulationResults.get(selectedPartId);
+  runState = markStepCompleted(runState, selectedPartId, {
+    notes: runbookNotesInput?.value || undefined,
+    sim_pass: simResult?.pass,
+    sim_after_translation_norm_mm: simResult?.afterError.translation_norm_mm,
+    sim_after_rotation_deg: simResult?.afterError.rotation_deg
+  });
+
+  renderRunbookProgress();
+  renderRunbookStepTable();
+  renderRunbookDetail();
+}
+
+function handleRunbookMarkIncomplete(): void {
+  if (!selectedPartId) return;
+
+  runState = markStepIncomplete(runState, selectedPartId);
+
+  renderRunbookProgress();
+  renderRunbookStepTable();
+  renderRunbookDetail();
+}
+
+function handleRunbookOverride(): void {
+  if (!selectedPartId) return;
+
+  const notes = runbookNotesInput?.value?.trim();
+  if (!notes) {
+    alert("A note is required to override completion without simulation pass.");
+    runbookNotesInput?.focus();
+    return;
+  }
+
+  if (!confirm(`Override completion for this step?\n\nNote: ${notes}`)) {
+    return;
+  }
+
+  const simResult = cachedSimulationResults.get(selectedPartId);
+  runState = markStepCompleted(runState, selectedPartId, {
+    notes,
+    sim_pass: simResult?.pass ?? false,
+    sim_after_translation_norm_mm: simResult?.afterError.translation_norm_mm,
+    sim_after_rotation_deg: simResult?.afterError.rotation_deg
+  });
+
+  renderRunbookProgress();
+  renderRunbookStepTable();
+  renderRunbookDetail();
+}
+
+function handleRunbookEscalate(): void {
+  if (!selectedPartId) return;
+
+  const notes = runbookNotesInput?.value?.trim();
+  if (!notes) {
+    alert("A note is required to escalate this step.");
+    runbookNotesInput?.focus();
+    return;
+  }
+
+  runState = markStepEscalated(runState, selectedPartId, notes);
+
+  renderRunbookProgress();
+  renderRunbookStepTable();
+  renderRunbookDetail();
+}
+
+function handleRunbookNotesChange(): void {
+  if (!selectedPartId || !runbookNotesInput) return;
+  runState = updateStepNotes(runState, selectedPartId, runbookNotesInput.value);
+}
+
+function handleResetStep(): void {
+  if (!selectedPartId) return;
+
+  if (!confirm(`Reset step for part ${selectedPartId}?\n\nThis will clear completion status and notes.`)) {
+    return;
+  }
+
+  runState = resetStep(runState, selectedPartId);
+  // Also clear cached simulation
+  cachedSimulationResults.delete(selectedPartId);
+
+  renderRunbookProgress();
+  renderRunbookStepTable();
+  renderRunbookDetail();
+}
+
+function handleResetRun(): void {
+  if (!confirm(`Reset entire run for ${selectedDataset}?\n\nThis will clear all completion data.`)) {
+    return;
+  }
+
+  runState = resetRun(selectedDataset);
+  cachedSimulationResults.clear();
+
+  renderRunbookProgress();
+  renderRunbookStepTable();
+  renderRunbookDetail();
 }
 
 async function runDemo(): Promise<void> {
@@ -1331,6 +1732,19 @@ if (stepNotesInput) {
   stepNotesInput.addEventListener("blur", handleNotesChange);
 }
 
+// Runbook mode handlers
+if (resetRunBtn) {
+  resetRunBtn.addEventListener("click", handleResetRun);
+}
+
+if (runbookResetStepBtn) {
+  runbookResetStepBtn.addEventListener("click", handleResetStep);
+}
+
+if (runbookNotesInput) {
+  runbookNotesInput.addEventListener("blur", handleRunbookNotesChange);
+}
+
 // Overlay mode handlers
 if (overlayPrevBtn) {
   overlayPrevBtn.addEventListener("click", () => navigateStep("prev"));
@@ -1399,6 +1813,12 @@ runDemo()
           renderParts(cachedSummaries, partNames);
         }
       }
+    }
+
+    // If in runbook mode, render the step table and detail
+    if (selectedMode === "runbook") {
+      renderRunbookStepTable();
+      renderRunbookDetail();
     }
   })
   .catch(() => undefined);

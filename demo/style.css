@@ -1533,3 +1533,372 @@ body.mode-runbook .part-button {
 body.mode-runbook .part-meta {
   grid-column: 2;
 }
+
+/* ================================================
+   Runbook Mode Layout - Step Table + Detail
+   ================================================ */
+
+.runbook-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 400px) 1fr;
+  gap: 24px;
+  padding: 24px 32px;
+  min-height: calc(100vh - 200px);
+}
+
+@media (max-width: 900px) {
+  .runbook-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Step Table Container */
+.runbook-step-table-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+}
+
+.runbook-step-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.runbook-step-table th,
+.runbook-step-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.runbook-step-table th {
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.runbook-step-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.runbook-step-table tbody tr:hover {
+  background: #f1f5f9;
+}
+
+.runbook-step-table tbody tr.is-selected {
+  background: #dbeafe;
+}
+
+.runbook-step-table tbody tr.is-completed {
+  background: #dcfce7;
+}
+
+.runbook-step-table tbody tr.is-completed.is-selected {
+  background: #bbf7d0;
+}
+
+.runbook-step-table tbody tr.is-escalated {
+  background: #fef3c7;
+}
+
+.runbook-step-table tbody tr.is-escalated.is-selected {
+  background: #fde68a;
+}
+
+.runbook-step-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Sim badge in table */
+.runbook-sim-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.runbook-sim-badge.pass {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.runbook-sim-badge.fail {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.runbook-sim-badge.pending {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.runbook-sim-badge.na {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+/* Completion checkbox in table */
+.runbook-done-check {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: transparent;
+  background: #ffffff;
+}
+
+.runbook-done-check.is-done {
+  background: #059669;
+  border-color: #059669;
+  color: #ffffff;
+}
+
+.runbook-done-check.is-escalated {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+
+/* Detail Panel */
+.runbook-detail {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.runbook-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.runbook-detail-part {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.runbook-detail-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.runbook-detail-section {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.runbook-detail-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.runbook-detail-value {
+  font-size: 14px;
+  color: #1f2937;
+  line-height: 1.5;
+}
+
+.runbook-detail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Completion Controls */
+.runbook-completion-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.runbook-mark-complete-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.runbook-mark-complete-btn:hover:not([disabled]) {
+  background: #1d4ed8;
+}
+
+.runbook-mark-complete-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.runbook-mark-complete-btn.is-completed {
+  background: #059669;
+}
+
+.runbook-mark-complete-btn.is-completed:hover {
+  background: #047857;
+}
+
+.runbook-override-btn {
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: #ffffff;
+  color: #b45309;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.runbook-override-btn:hover {
+  background: #fef3c7;
+}
+
+.runbook-escalate-btn {
+  border: 1px solid #dc2626;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: #ffffff;
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.runbook-escalate-btn:hover {
+  background: #fee2e2;
+}
+
+.runbook-completion-hint {
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* Notes Section */
+.runbook-notes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.runbook-notes-section label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+#runbook-notes {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  background: #f8fafc;
+}
+
+#runbook-notes:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #ffffff;
+}
+
+/* Step Actions */
+.runbook-step-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.runbook-reset-step-btn {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  background: #ffffff;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.runbook-reset-step-btn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+/* Reset Run Button */
+.reset-run-btn {
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 6px 12px;
+  background: #ffffff;
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  margin-left: auto;
+}
+
+.reset-run-btn:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+/* Mode visibility for runbook layout */
+body.mode-runbook .runbook-layout {
+  display: grid;
+}
+
+body.mode-viewer .runbook-layout,
+body.mode-step .runbook-layout,
+body.mode-overlay .runbook-layout {
+  display: none;
+}
+
+/* Hide page-content in runbook mode since we use runbook-layout */
+body.mode-runbook .page-content {
+  display: none;
+}
