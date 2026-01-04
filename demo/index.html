@@ -61,18 +61,22 @@
       <div class="calibration-top-anchors" id="runbook-calibration-top-anchors">
         <!-- Top 1-3 anchors by residual -->
       </div>
+      <div class="calibration-error" id="runbook-calibration-error" hidden>
+        <!-- Error message when fewer than 3 anchors included -->
+      </div>
       <details class="calibration-details" id="runbook-calibration-details">
         <summary class="calibration-toggle">Show all residuals</summary>
         <div class="calibration-table-wrapper">
           <table class="calibration-table">
             <thead>
               <tr>
+                <th class="include-col">Include</th>
                 <th>Anchor</th>
                 <th class="numeric">Residual (mm)</th>
               </tr>
             </thead>
             <tbody id="runbook-calibration-residuals">
-              <!-- Full residual table -->
+              <!-- Full residual table with include checkboxes -->
             </tbody>
           </table>
         </div>

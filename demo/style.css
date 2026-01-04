@@ -1366,6 +1366,50 @@ body.overlay-active {
   font-weight: 500;
 }
 
+.calibration-table tr.excluded td {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.calibration-table tr.excluded td:first-child {
+  text-decoration: none;
+  opacity: 1;
+}
+
+.calibration-table th.include-col,
+.calibration-table td.include-col {
+  width: 56px;
+  text-align: center;
+}
+
+.calibration-table .anchor-include-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
+.calibration-table .anchor-include-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.calibration-error {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.calibration-anchor-chip.excluded {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
 /* Responsive: mobile calibration card */
 @media (max-width: 600px) {
   .runbook-calibration-card {

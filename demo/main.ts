@@ -110,6 +110,7 @@ const runbookCalibrationTopAnchors = document.querySelector<HTMLDivElement>("#ru
 const runbookCalibrationDetails = document.querySelector<HTMLDetailsElement>("#runbook-calibration-details");
 const runbookCalibrationResiduals = document.querySelector<HTMLTableSectionElement>("#runbook-calibration-residuals");
 const runbookCalibrationWarning = document.querySelector<HTMLDivElement>("#runbook-calibration-warning");
+const runbookCalibrationError = document.querySelector<HTMLDivElement>("#runbook-calibration-error");
 const runbookStepTbody = document.querySelector<HTMLTableSectionElement>("#runbook-step-tbody");
 const runbookDetailPart = document.querySelector<HTMLHeadingElement>("#runbook-detail-part");
 const runbookDetailStatus = document.querySelector<HTMLSpanElement>("#runbook-detail-status");
@@ -155,6 +156,134 @@ let cachedSummaries: ReturnType<typeof extractPartSummaries> | null = null;
 let selectedPartId: string | null = null;
 let currentStepIndex: number = 0;
 const cachedSimulationResults = new Map<string, SimulationResult>();
+
+// Anchor inclusion state for calibration
+let anchorInclusionState: Map<string, boolean> = new Map();
+let cachedMuseumRaw: Awaited<ReturnType<typeof loadMuseumDataset>> | null = null;
+
+// LocalStorage helpers for anchor inclusion
+const ANCHOR_INCLUSION_KEY_PREFIX = "directive-engine-anchor-inclusion-";
+
+function getAnchorInclusionKey(datasetId: string): string {
+  return `${ANCHOR_INCLUSION_KEY_PREFIX}${datasetId}`;
+}
+
+function loadAnchorInclusion(datasetId: string): Map<string, boolean> {
+  const key = getAnchorInclusionKey(datasetId);
+  try {
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      const parsed = JSON.parse(stored) as Record<string, boolean>;
+      return new Map(Object.entries(parsed));
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return new Map();
+}
+
+function saveAnchorInclusion(datasetId: string, state: Map<string, boolean>): void {
+  const key = getAnchorInclusionKey(datasetId);
+  const obj: Record<string, boolean> = {};
+  state.forEach((included, anchorId) => {
+    obj[anchorId] = included;
+  });
+  try {
+    localStorage.setItem(key, JSON.stringify(obj));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function isAnchorIncluded(anchorId: string): boolean {
+  // Default to included if not in state
+  return anchorInclusionState.get(anchorId) ?? true;
+}
+
+function setAnchorIncluded(anchorId: string, included: boolean): void {
+  anchorInclusionState.set(anchorId, included);
+}
+
+function getIncludedAnchorCount(): number {
+  if (!cachedAnchors) return 0;
+  return cachedAnchors.filter((a) => isAnchorIncluded(a.id)).length;
+}
+
+/**
+ * Recompute alignment and directives using only included anchors.
+ * Returns true if recomputation succeeded, false if not enough anchors.
+ */
+async function recomputeWithIncludedAnchors(): Promise<boolean> {
+  if (!cachedMuseumRaw || !cachedAnchors) return false;
+
+  const { raw, constraints } = cachedMuseumRaw;
+
+  // Filter to only included anchors
+  const includedAnchors = cachedAnchors.filter((a) => isAnchorIncluded(a.id));
+
+  if (includedAnchors.length < 3) {
+    return false;
+  }
+
+  // Recompute alignment with included anchors only
+  const scanPts = includedAnchors.map((anchor) => ({
+    anchor_id: anchor.id,
+    point_mm: anchor.scan_mm
+  }));
+  const modelPts = includedAnchors.map((anchor) => ({
+    anchor_id: anchor.id,
+    point_mm: anchor.model_mm
+  }));
+
+  const alignment = computeRigidTransform(scanPts, modelPts);
+
+  // Convert museum raw to pose datasets with new alignment
+  const converted = convertMuseumRawToPoseDatasets(raw, alignment.T_model_scan);
+  const nominal = converted.nominal;
+  const asBuilt = converted.asBuilt;
+
+  const baseUrl = import.meta.env.BASE_URL ?? "/";
+  const paths = {
+    nominal: `${baseUrl}museum_raw.json`,
+    asBuilt: `${baseUrl}museum_raw.json`,
+    constraints: `${baseUrl}museum_constraints.json`
+  };
+
+  // Re-generate directives
+  const directives = await runGenerateDirectives(nominal, asBuilt, constraints, paths);
+
+  // Update cached state
+  cachedAlignment = alignment;
+  cachedDirectives = directives;
+  cachedNominal = nominal;
+  cachedAsBuilt = asBuilt;
+  cachedConstraints = constraints;
+
+  // Extract new summaries
+  const partSummaries = extractPartSummaries(directives);
+  const overallStatus = deriveOverallStatus(partSummaries, directives);
+  cachedSummaries = partSummaries;
+
+  // Update UI
+  setStatusBadge(formatStatusLabel(overallStatus), overallStatus);
+  const partNames = new Map(nominal.parts.map((part) => [part.part_id, part.part_name]));
+  renderParts(partSummaries, partNames);
+  renderStatus(directives, asBuilt);
+  renderSelection();
+  renderAlignmentQuality("museum");
+  renderRawJson({ nominal, asBuilt, constraints, directives });
+
+  // Render mode-specific views
+  if (selectedMode === "runbook") {
+    renderRunbookProgress();
+    renderRunbookStepTable();
+    renderRunbookDetail();
+  } else {
+    renderModeView();
+  }
+
+  return true;
+}
 
 // Route and run state
 const initialRoute = parseRouteFromUrl();
@@ -851,10 +980,61 @@ function renderAlignmentQuality(dataset: DemoDataset) {
 }
 
 /**
+ * Handle anchor toggle: update inclusion state and recompute if valid.
+ */
+async function handleAnchorToggle(anchorId: string, included: boolean): Promise<void> {
+  if (!cachedMuseumRaw) return;
+
+  const datasetId = cachedMuseumRaw.raw.dataset_id;
+
+  // Temporarily set the new state to check if we'd have enough anchors
+  const previousIncluded = isAnchorIncluded(anchorId);
+  setAnchorIncluded(anchorId, included);
+
+  const includedCount = getIncludedAnchorCount();
+
+  if (includedCount < 3) {
+    // Revert the change
+    setAnchorIncluded(anchorId, previousIncluded);
+
+    // Show error
+    if (runbookCalibrationError) {
+      runbookCalibrationError.textContent = `Cannot exclude ${anchorId}: at least 3 anchors required for calibration.`;
+      runbookCalibrationError.hidden = false;
+    }
+
+    // Re-render to reset checkbox state
+    renderRunbookCalibrationCard("museum");
+    return;
+  }
+
+  // Hide error
+  if (runbookCalibrationError) {
+    runbookCalibrationError.hidden = true;
+  }
+
+  // Save to localStorage
+  saveAnchorInclusion(datasetId, anchorInclusionState);
+
+  // Recompute alignment and directives
+  const success = await recomputeWithIncludedAnchors();
+
+  if (!success) {
+    // Revert on failure
+    setAnchorIncluded(anchorId, previousIncluded);
+    saveAnchorInclusion(datasetId, anchorInclusionState);
+  }
+
+  // Re-render calibration card with updated values
+  renderRunbookCalibrationCard("museum");
+}
+
+/**
  * Render the calibration card in Runbook mode.
  * Shows RMS, top anchors by residual, and expandable full residuals table.
  * For non-museum datasets, shows N/A.
  * Shows warning when RMS exceeds threshold.
+ * Includes "Include" checkboxes for anchor exclusion.
  */
 function renderRunbookCalibrationCard(dataset: DemoDataset): void {
   if (!runbookCalibrationCard) return;
@@ -862,8 +1042,9 @@ function renderRunbookCalibrationCard(dataset: DemoDataset): void {
   // Always show card in runbook mode
   runbookCalibrationCard.hidden = false;
 
-  // Hide warning by default
+  // Hide warning and error by default
   if (runbookCalibrationWarning) runbookCalibrationWarning.hidden = true;
+  if (runbookCalibrationError) runbookCalibrationError.hidden = true;
 
   // For toy dataset, show N/A
   if (dataset !== "museum") {
@@ -876,7 +1057,7 @@ function renderRunbookCalibrationCard(dataset: DemoDataset): void {
   }
 
   // No alignment data yet
-  if (!cachedAlignment) {
+  if (!cachedAlignment || !cachedAnchors) {
     if (runbookCalibrationRms) runbookCalibrationRms.textContent = "—";
     if (runbookCalibrationTopAnchors) {
       runbookCalibrationTopAnchors.innerHTML = '<span class="calibration-na">Run engine to compute calibration</span>';
@@ -895,8 +1076,9 @@ function renderRunbookCalibrationCard(dataset: DemoDataset): void {
   // Show warning if RMS exceeds threshold
   if (runbookCalibrationWarning) {
     if (rms > CALIBRATION_RMS_WARNING_THRESHOLD_MM) {
-      // Find top residual anchor for the warning message
-      const sortedForWarning = [...residuals].sort((a, b) => b.residual_mm - a.residual_mm);
+      // Find top residual anchor (among included) for the warning message
+      const includedResiduals = residuals.filter((r) => isAnchorIncluded(r.anchor_id));
+      const sortedForWarning = [...includedResiduals].sort((a, b) => b.residual_mm - a.residual_mm);
       const topAnchor = sortedForWarning[0]?.anchor_id || "unknown";
       runbookCalibrationWarning.innerHTML = `Calibration high — re-check anchor pairing (e.g., ${topAnchor}).`;
       runbookCalibrationWarning.hidden = false;
@@ -905,24 +1087,52 @@ function renderRunbookCalibrationCard(dataset: DemoDataset): void {
     }
   }
 
-  // Sort residuals high to low
-  const sortedResiduals = [...residuals].sort((a, b) => b.residual_mm - a.residual_mm);
+  // Build residual info for all anchors (including excluded ones)
+  // For excluded anchors, we show the last known residual or N/A
+  const allAnchorResiduals = cachedAnchors.map((anchor) => {
+    const residual = residuals.find((r) => r.anchor_id === anchor.id);
+    const included = isAnchorIncluded(anchor.id);
+    return {
+      anchor_id: anchor.id,
+      residual_mm: included && residual ? residual.residual_mm : null,
+      residual_vec_mm: included && residual ? residual.residual_vec_mm : null,
+      included
+    };
+  });
 
-  // Compute outlier threshold (mean + 2*std)
-  const mean = residuals.reduce((sum, r) => sum + r.residual_mm, 0) / residuals.length;
-  const variance = residuals.reduce((sum, r) => sum + Math.pow(r.residual_mm - mean, 2), 0) / residuals.length;
+  // Sort by residual (included first, then by residual value descending)
+  const sortedResiduals = [...allAnchorResiduals].sort((a, b) => {
+    // Included anchors come first
+    if (a.included !== b.included) return a.included ? -1 : 1;
+    // Then sort by residual descending
+    const aVal = a.residual_mm ?? 0;
+    const bVal = b.residual_mm ?? 0;
+    return bVal - aVal;
+  });
+
+  // Compute outlier threshold from included anchors only
+  const includedResiduals = allAnchorResiduals.filter((r) => r.included && r.residual_mm !== null);
+  const mean = includedResiduals.length > 0
+    ? includedResiduals.reduce((sum, r) => sum + (r.residual_mm ?? 0), 0) / includedResiduals.length
+    : 0;
+  const variance = includedResiduals.length > 0
+    ? includedResiduals.reduce((sum, r) => sum + Math.pow((r.residual_mm ?? 0) - mean, 2), 0) / includedResiduals.length
+    : 0;
   const std = Math.sqrt(variance);
   const outlierThreshold = mean + 2 * std;
 
-  // Top 1-3 anchors as chips
+  // Count included anchors
+  const includedCount = getIncludedAnchorCount();
+
+  // Top 1-3 included anchors as chips
   if (runbookCalibrationTopAnchors) {
-    const topAnchors = sortedResiduals.slice(0, 3);
+    const topAnchors = sortedResiduals.filter((r) => r.included).slice(0, 3);
     if (topAnchors.length === 0) {
       runbookCalibrationTopAnchors.innerHTML = '<span class="calibration-na">No anchors</span>';
     } else {
       runbookCalibrationTopAnchors.innerHTML = topAnchors
         .map((entry) => {
-          const isOutlier = entry.residual_mm > outlierThreshold;
+          const isOutlier = (entry.residual_mm ?? 0) > outlierThreshold;
           return `
             <span class="calibration-anchor-chip${isOutlier ? " outlier" : ""}">
               <span class="calibration-anchor-id">${entry.anchor_id}</span>
@@ -934,23 +1144,49 @@ function renderRunbookCalibrationCard(dataset: DemoDataset): void {
     }
   }
 
-  // Full residuals table
+  // Full residuals table with Include checkboxes
   if (runbookCalibrationDetails && runbookCalibrationResiduals) {
     if (sortedResiduals.length === 0) {
       runbookCalibrationDetails.hidden = true;
     } else {
       runbookCalibrationDetails.hidden = false;
+
       runbookCalibrationResiduals.innerHTML = sortedResiduals
         .map((entry) => {
-          const isOutlier = entry.residual_mm > outlierThreshold;
+          const isOutlier = entry.included && (entry.residual_mm ?? 0) > outlierThreshold;
+          const rowClasses = [
+            isOutlier ? "outlier" : "",
+            !entry.included ? "excluded" : ""
+          ].filter(Boolean).join(" ");
+
+          // Disable checkbox if this is the last included anchor that would drop below 3
+          const wouldBeLastRequired = entry.included && includedCount <= 3;
+
           return `
-            <tr${isOutlier ? ' class="outlier"' : ""}>
+            <tr${rowClasses ? ` class="${rowClasses}"` : ""}>
+              <td class="include-col">
+                <input type="checkbox"
+                       class="anchor-include-checkbox"
+                       data-anchor-id="${entry.anchor_id}"
+                       ${entry.included ? "checked" : ""}
+                       ${wouldBeLastRequired ? 'disabled title="At least 3 anchors required"' : ""} />
+              </td>
               <td>${entry.anchor_id}</td>
-              <td class="numeric">${formatResidual(entry.residual_mm)}</td>
+              <td class="numeric">${entry.included ? formatResidual(entry.residual_mm) : "—"}</td>
             </tr>
           `;
         })
         .join("");
+
+      // Attach toggle handlers
+      runbookCalibrationResiduals.querySelectorAll<HTMLInputElement>(".anchor-include-checkbox").forEach((checkbox) => {
+        checkbox.addEventListener("change", () => {
+          const anchorId = checkbox.dataset.anchorId;
+          if (anchorId) {
+            handleAnchorToggle(anchorId, checkbox.checked).catch(console.error);
+          }
+        });
+      });
     }
   }
 }
@@ -1715,16 +1951,31 @@ async function runDemo(): Promise<void> {
     let paths: DatasetPaths;
 
     if (dataset === "museum") {
-      const { raw, constraints: rawConstraints } = await loadMuseumDataset();
+      const museumData = await loadMuseumDataset();
+      const { raw, constraints: rawConstraints } = museumData;
+
+      // Cache raw museum data for recomputation on anchor toggle
+      cachedMuseumRaw = museumData;
+
       // Kabsch/Horn alignment from anchor correspondences (mm). T_model_scan maps scan -> model.
       // Apply it so as-built scan-frame poses are transformed into the model/world frame.
       const anchors = normalizeMuseumAnchors(raw);
       cachedAnchors = anchors; // Store anchors for alignment view visualization
-      const scanPts = anchors.map((anchor) => ({
+
+      // Load anchor inclusion state from localStorage
+      anchorInclusionState = loadAnchorInclusion(raw.dataset_id);
+
+      // Filter to only included anchors for initial alignment
+      const includedAnchors = anchors.filter((a) => isAnchorIncluded(a.id));
+
+      // Use all anchors if too few are included (shouldn't happen with fresh state)
+      const anchorsForAlignment = includedAnchors.length >= 3 ? includedAnchors : anchors;
+
+      const scanPts = anchorsForAlignment.map((anchor) => ({
         anchor_id: anchor.id,
         point_mm: anchor.scan_mm
       }));
-      const modelPts = anchors.map((anchor) => ({
+      const modelPts = anchorsForAlignment.map((anchor) => ({
         anchor_id: anchor.id,
         point_mm: anchor.model_mm
       }));
@@ -1742,6 +1993,8 @@ async function runDemo(): Promise<void> {
     } else {
       cachedAlignment = null;
       cachedAnchors = null;
+      cachedMuseumRaw = null;
+      anchorInclusionState = new Map();
       paths = {
         nominal: `${baseUrl}toy_nominal_poses.json`,
         asBuilt: `${baseUrl}toy_asbuilt_poses.json`,
