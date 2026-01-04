@@ -30,3 +30,34 @@ export type {
   AnchorPointPairs
 } from "./museum/raw.js";
 export { anchorsToPointPairs } from "./museum/raw.js";
+
+// Point Cloud Fitting
+export {
+  fitPartToPointCloud,
+  getWorldReferencePoints,
+  computeDOFMovement,
+  formatDOFMovement,
+  checkDOFTolerance,
+  decomposeDOFMovement,
+  DEFAULT_FIT_CONFIG,
+} from "./fit/index.js";
+export type {
+  Point3D,
+  PointCloud,
+  FabPartGeometry,
+  FabPartPointSetGeometry,
+  FabPartLineGeometry,
+  FabPartPlaneGeometry,
+  FabPartCylinderGeometry,
+  TranslationDOF,
+  RotationDOF,
+  DOFMovement,
+  PointDeviation,
+  DeviationStats,
+  FitResult,
+  FitConfig,
+  DOFTolerances,
+  DOFToleranceResult,
+  ConstrainedDOF,
+  DecomposedDOF,
+} from "./fit/index.js";
