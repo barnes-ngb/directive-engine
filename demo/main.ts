@@ -1791,34 +1791,48 @@ initOverlay({
   }
 });
 
-runDemo().catch(() => undefined);
 // Initialize mode on page load
 setMode(selectedMode);
 
-// Run initial demo and apply initial route selection
-runDemo()
-  .then(() => {
-    // After demo loads, apply part from URL if specified
-    if (initialRoute.part && cachedSummaries) {
-      const partExists = cachedSummaries.some((s) => s.id === initialRoute.part);
-      if (partExists) {
-        selectedPartId = initialRoute.part;
-        const partIds = cachedSummaries.map((s) => s.id);
-        currentStepIndex = partIds.indexOf(selectedPartId);
-        renderSelection();
-        renderModeView();
-        renderRunbookProgress();
-        if (cachedNominal) {
-          const partNames = new Map(cachedNominal.parts.map((p) => [p.part_id, p.part_name]));
-          renderParts(cachedSummaries, partNames);
-        }
-      }
-    }
+// Track whether we've auto-run for deep links (to prevent double execution)
+let hasAutoRun = false;
 
-    // If in runbook mode, render the step table and detail
-    if (selectedMode === "runbook") {
-      renderRunbookStepTable();
-      renderRunbookDetail();
-    }
-  })
-  .catch(() => undefined);
+/**
+ * Apply part selection from URL after directives are loaded.
+ * Scrolls to the part in the list and selects it.
+ */
+function applyPartFromUrl(): void {
+  if (!initialRoute.part || !cachedSummaries) return;
+
+  const partExists = cachedSummaries.some((s) => s.id === initialRoute.part);
+  if (!partExists) return;
+
+  selectedPartId = initialRoute.part;
+  const partIds = cachedSummaries.map((s) => s.id);
+  currentStepIndex = partIds.indexOf(selectedPartId);
+  renderSelection();
+  renderModeView();
+  renderRunbookProgress();
+
+  if (cachedNominal) {
+    const partNames = new Map(cachedNominal.parts.map((p) => [p.part_id, p.part_name]));
+    renderParts(cachedSummaries, partNames);
+  }
+
+  // If in runbook mode, render the step table and detail
+  if (selectedMode === "runbook") {
+    renderRunbookStepTable();
+    renderRunbookDetail();
+  }
+}
+
+// Auto-run on page load for non-viewer modes (runbook, step, overlay)
+// This ensures parts are populated for deep links to work
+if (selectedMode !== "viewer" && !hasAutoRun) {
+  hasAutoRun = true;
+  runDemo()
+    .then(() => {
+      applyPartFromUrl();
+    })
+    .catch(() => undefined);
+}
