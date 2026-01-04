@@ -171,6 +171,12 @@ body {
   gap: 8px;
 }
 
+.part-list li {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
 .part-button {
   width: 100%;
   border: 1px solid transparent;
@@ -575,6 +581,422 @@ body {
 .export-button.export-print:hover {
   background: #1d4ed8;
   border-color: #1d4ed8;
+}
+
+/* ================================================
+   Phone Overlay Mode Styles
+   ================================================ */
+
+/* Body lock when overlay is active */
+body.overlay-active {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* Overlay container - fullscreen */
+.phone-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-overlay[hidden] {
+  display: none;
+}
+
+/* Background layer */
+.overlay-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
+
+.overlay-background.overlay-neutral {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+}
+
+.overlay-background.overlay-camera video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Main content layer */
+.overlay-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  padding-top: max(16px, env(safe-area-inset-top, 16px));
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  padding-left: max(16px, env(safe-area-inset-left, 16px));
+  padding-right: max(16px, env(safe-area-inset-right, 16px));
+}
+
+/* Header with part info and status */
+.overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.overlay-part-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.overlay-part-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.overlay-part-id {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.overlay-status {
+  font-size: 14px;
+  padding: 6px 14px;
+}
+
+/* Arrow container - centered in viewport */
+.overlay-arrow-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.overlay-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 80px;
+  color: #ffffff;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+  transition: transform 0.3s ease;
+}
+
+.overlay-arrow svg {
+  width: 100%;
+  height: 100%;
+}
+
+.overlay-arrow-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.overlay-arrow-magnitude {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.overlay-arrow-vector {
+  font-size: 13px;
+  color: #64748b;
+  font-family: "SF Mono", "Monaco", monospace;
+}
+
+/* Simulation status display */
+.overlay-sim-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin: 0 auto;
+  max-width: 280px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.overlay-sim-badge {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.overlay-sim-text {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.overlay-sim-pass {
+  background: rgba(220, 252, 231, 0.95);
+}
+
+.overlay-sim-pass .overlay-sim-badge {
+  background: #166534;
+  color: #ffffff;
+}
+
+.overlay-sim-pass .overlay-sim-text {
+  color: #166534;
+}
+
+.overlay-sim-fail {
+  background: rgba(254, 226, 226, 0.95);
+}
+
+.overlay-sim-fail .overlay-sim-badge {
+  background: #b91c1c;
+  color: #ffffff;
+}
+
+.overlay-sim-fail .overlay-sim-text {
+  color: #b91c1c;
+}
+
+.overlay-sim-pending {
+  background: rgba(241, 245, 249, 0.95);
+}
+
+.overlay-sim-pending .overlay-sim-badge {
+  background: #64748b;
+  color: #ffffff;
+}
+
+.overlay-sim-pending .overlay-sim-text {
+  color: #475569;
+}
+
+.overlay-sim-na {
+  background: rgba(241, 245, 249, 0.95);
+}
+
+.overlay-sim-na .overlay-sim-badge {
+  background: #94a3b8;
+  color: #ffffff;
+}
+
+.overlay-sim-na .overlay-sim-text {
+  color: #64748b;
+}
+
+/* Completion status */
+.overlay-completion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 16px auto;
+  padding: 12px 20px;
+  background: rgba(220, 252, 231, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.overlay-completion-badge {
+  font-size: 14px;
+  font-weight: 700;
+  color: #166534;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.overlay-completion-note {
+  font-size: 12px;
+  color: #475569;
+  font-style: italic;
+  text-align: center;
+  max-width: 240px;
+}
+
+/* Bottom action buttons */
+.overlay-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.overlay-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.overlay-button:active:not([disabled]) {
+  transform: scale(0.98);
+}
+
+.overlay-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.overlay-button-icon {
+  font-size: 18px;
+}
+
+.overlay-button-back {
+  background: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
+  backdrop-filter: blur(10px);
+}
+
+.overlay-button-back:active {
+  background: rgba(241, 245, 249, 0.95);
+}
+
+.overlay-button-simulate {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.overlay-button-simulate:active:not([disabled]) {
+  background: #1d4ed8;
+}
+
+.overlay-button-simulate.simulated {
+  background: #059669;
+}
+
+.overlay-button-simulate.simulated:active {
+  background: #047857;
+}
+
+.overlay-button-complete {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.overlay-button-complete:active:not([disabled]) {
+  background: #15803d;
+}
+
+.overlay-button-complete.completed {
+  background: #94a3b8;
+  cursor: default;
+}
+
+/* Part list overlay button */
+.part-overlay-button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.part-overlay-button:hover {
+  background: #1d4ed8;
+}
+
+.part-overlay-button.completed {
+  background: #059669;
+}
+
+.part-overlay-button.completed:hover {
+  background: #047857;
+}
+
+/* Mobile-first responsive adjustments */
+@media (max-width: 480px) {
+  .overlay-header {
+    padding: 10px 14px;
+  }
+
+  .overlay-part-name {
+    font-size: 18px;
+  }
+
+  .overlay-arrow-magnitude {
+    font-size: 20px;
+  }
+
+  .overlay-button {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .overlay-content {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .overlay-header {
+    flex: 1 1 auto;
+    min-width: 200px;
+  }
+
+  .overlay-arrow-container {
+    flex: 0 0 auto;
+    margin: 0;
+  }
+
+  .overlay-sim-status {
+    margin: 0;
+  }
+
+  .overlay-actions {
+    flex-direction: row;
+    flex: 1 1 100%;
+    margin-top: 12px;
+  }
+
+  .overlay-button {
+    flex: 1;
+  }
 }
 
 /* Print Styles */

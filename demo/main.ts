@@ -31,6 +31,12 @@ import {
   printView,
   type ExportContext
 } from "./export.js";
+import {
+  initOverlay,
+  openOverlay,
+  isOverlayOpen,
+  getCompletedParts
+} from "./overlay.js";
 
 type DatasetPaths = {
   nominal: string;
@@ -185,6 +191,19 @@ async function runGenerateDirectives(
   }
 }
 
+function handleOpenOverlay(partId: string) {
+  if (!cachedDirectives || !cachedNominal) return;
+
+  const step = cachedDirectives.steps.find((s) => s.part_id === partId);
+  const nominalPart = cachedNominal.parts.find((p) => p.part_id === partId);
+  if (!step || !nominalPart) return;
+
+  const partName = nominalPart.part_name;
+  const cachedResult = cachedSimulationResults.get(partId) ?? null;
+
+  openOverlay(partId, partName, step, cachedResult);
+}
+
 function renderParts(
   parts: ReturnType<typeof extractPartSummaries>,
   partNames: Map<string, string>
@@ -196,12 +215,15 @@ function renderParts(
     return;
   }
 
+  const completedParts = getCompletedParts();
+
   partList.innerHTML = `
     <ul class="part-list">
       ${parts
         .map((part) => {
           const name = partNames.get(part.id) ?? part.id;
           const isSelected = part.id === selectedPartId;
+          const isCompleted = completedParts.has(part.id);
           return `
             <li>
               <button class="part-button ${isSelected ? "is-selected" : ""}" type="button" data-part-id="${part.id}">
@@ -210,6 +232,9 @@ function renderParts(
                   <span>Part ${part.id}</span>
                 </span>
                 <span class="badge ${part.status}">${formatStatusLabel(part.status)}</span>
+              </button>
+              <button class="part-overlay-button ${isCompleted ? "completed" : ""}" type="button" data-part-id="${part.id}" title="Open overlay mode">
+                ${isCompleted ? "Done" : "Overlay"}
               </button>
             </li>
           `;
@@ -222,7 +247,17 @@ function renderParts(
     button.addEventListener("click", () => {
       selectedPartId = button.dataset.partId ?? null;
       renderSelection();
-      renderParts(steps, partNames);
+      renderParts(parts, partNames);
+    });
+  });
+
+  partList.querySelectorAll<HTMLButtonElement>(".part-overlay-button").forEach((button) => {
+    button.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const partId = button.dataset.partId;
+      if (partId) {
+        handleOpenOverlay(partId);
+      }
     });
   });
 }
@@ -929,5 +964,21 @@ if (exportCsvButton) {
 if (exportPrintButton) {
   exportPrintButton.addEventListener("click", handlePrint);
 }
+
+// Initialize overlay mode
+initOverlay({
+  onSimulate: (partId: string) => {
+    return runSimulation(partId);
+  },
+  onClose: () => {
+    // Re-render the current selection when overlay closes
+    if (selectedPartId) {
+      renderSelection();
+    }
+  },
+  onMarkComplete: (partId: string, note: string | null, simPassed: boolean) => {
+    console.log(`Part ${partId} marked complete. Sim passed: ${simPassed}, Note: ${note ?? "(none)"}`);
+  }
+});
 
 runDemo().catch(() => undefined);
