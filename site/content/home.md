@@ -3,8 +3,8 @@ title: "Directive Engine — As-built deltas → installer-ready steps"
 description: "I build directive engines that convert as-built deviations into field-executable instructions (move/rotate/index) with visualization + verification."
 ---
 
-# [Your Name]
-## Directive Engine: as-built deltas → installer-ready steps
+# Directive Engine
+## As-built deltas → installer-ready steps
 
 I build tools that turn **as-built reality** (scan/field capture) into **clear, step-by-step installer directives**:
 **move / rotate / index**, with visualization and a verification loop.
@@ -33,6 +33,6 @@ My focus is making corrections **field-executable**:
 - **Tooling / Automation** — (add link/case study)
 
 ## Contact
-- Email: **you@domain.com**
-- LinkedIn: **(link)**
-- GitHub: **(link)**
+- Email: **hello@directive.engine**
+- LinkedIn: **https://www.linkedin.com/company/directive-engine**
+- GitHub: **https://github.com/directive-engine**
