@@ -1,4 +1,11 @@
+/**
+ * Quaternion math operations.
+ *
+ * All quaternions use the [x, y, z, w] convention.
+ * Operations assume unit quaternions for rotations.
+ */
 import type { Quat, Vec3 } from "../types.js";
+import { EPS_AXIS_DEGENERATE, EPS_VECTOR_NORM, EPS_TOLERANCE } from "../constants.js";
 
 export function normalize(q: Quat): Quat {
   const [x,y,z,w] = q;
@@ -48,7 +55,7 @@ export function toAxisAngle(q: Quat): { axis: Vec3; angleDeg: number } {
   const w = wClamped * sign;
   const angleRad = 2 * Math.acos(w);
   const sinHalf = Math.sqrt(Math.max(0, 1 - w*w));
-  const axis: Vec3 = sinHalf < 1e-8 ? [1, 0, 0] : [x / sinHalf, y / sinHalf, z / sinHalf];
+  const axis: Vec3 = sinHalf < EPS_AXIS_DEGENERATE ? [1, 0, 0] : [x / sinHalf, y / sinHalf, z / sinHalf];
   return { axis, angleDeg: angleRad * (180 / Math.PI) };
 }
 
@@ -84,7 +91,7 @@ export function fromAxisAngle(axis: Vec3, angleDeg: number): Quat {
   const cosHalf = Math.cos(halfAngle);
   // Normalize axis
   const len = Math.sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
-  if (len < 1e-12) return identity();
+  if (len < EPS_VECTOR_NORM) return identity();
   const nx = axis[0] / len;
   const ny = axis[1] / len;
   const nz = axis[2] / len;
@@ -97,7 +104,7 @@ export function fromAxisAngle(axis: Vec3, angleDeg: number): Quat {
  */
 export function clampQuatAngle(q: Quat, maxDeg: number): { clamped: Quat; changed: boolean; originalDeg: number } {
   const { axis, angleDeg } = toAxisAngle(q);
-  if (angleDeg <= maxDeg + 1e-12) {
+  if (angleDeg <= maxDeg + EPS_TOLERANCE) {
     return { clamped: q, changed: false, originalDeg: angleDeg };
   }
   const clampedQuat = fromAxisAngle(axis, maxDeg);

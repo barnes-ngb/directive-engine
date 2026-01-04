@@ -1,7 +1,14 @@
+/**
+ * Simulation utilities for applying directives to poses.
+ *
+ * Provides functions to simulate the effect of applying directive steps
+ * to as-built poses and verify the expected outcomes.
+ */
 import type { Action, Quat, Step, Tolerances, Transform, Vec3 } from "./types.js";
 import { composeTransforms } from "./align/apply.js";
 import { sub, norm, add } from "./math/vec.js";
 import { deltaQuat, toAxisAngle, identity, multiply } from "./math/quat.js";
+import { EPS_TOLERANCE } from "./constants.js";
 
 export interface SimulateStepInput {
   nominalPose: Transform;
@@ -94,8 +101,8 @@ function withinTolerances(
   tolerances: Tolerances
 ): boolean {
   return (
-    translationNorm <= tolerances.translation_mm + 1e-12 &&
-    rotationDeg <= tolerances.rotation_deg + 1e-12
+    translationNorm <= tolerances.translation_mm + EPS_TOLERANCE &&
+    rotationDeg <= tolerances.rotation_deg + EPS_TOLERANCE
   );
 }
 
