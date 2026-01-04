@@ -83,6 +83,39 @@ export interface ConstraintsDataset {
 export type Status = "ok" | "pending" | "clamped" | "blocked" | "needs_review";
 export type ActionType = "translate" | "rotate" | "rotate_to_index" | "noop";
 
+/**
+ * Well-known reason codes for directive steps.
+ * These explain why a particular status or action was assigned.
+ */
+export const ReasonCode = {
+  // Input issues
+  MISSING_INPUT_DATA: "missing_input_data",
+  LOW_CONFIDENCE: "low_confidence",
+
+  // Within tolerance
+  WITHIN_TOLERANCE: "within_tolerance",
+
+  // Translation reasons
+  TRANSLATION_OUT_OF_TOLERANCE: "translation_out_of_tolerance",
+  TRANSLATION_EXCEEDS_MAX_NORM: "translation_exceeds_max_norm",
+  TRANSLATE_ONLY: "translate_only",
+  TRANSLATE_CLAMPED: "translate_clamped",
+
+  // Rotation reasons
+  ROTATION_OUT_OF_TOLERANCE: "rotation_out_of_tolerance",
+  ROTATION_CLAMPED: "rotation_clamped",
+  ROTATION_FREE_SINGLE_AXIS: "rotation_free_single_axis",
+  ROTATION_LOCKED_BLOCKED: "rotation_locked_blocked",
+  INDEX_ROTATION: "index_rotation",
+  INDEX_ROTATION_CONFIG_MISSING: "index_rotation_config_missing",
+
+  // Limit reasons
+  OUTSIDE_LIMITS_BLOCKED: "outside_limits_blocked",
+  CLAMPED_TO_LIMITS: "clamped_to_limits",
+} as const;
+
+export type ReasonCodeType = typeof ReasonCode[keyof typeof ReasonCode];
+
 export interface TransformDelta {
   translation_mm: Vec3;
   rotation_quat_xyzw: Quat;
@@ -118,7 +151,7 @@ export interface Step {
   step_id: string;
   part_id: string;
   status: Status;
-  reason_codes: string[];
+  reason_codes: ReasonCodeType[];
   pose_confidence?: number;
   computed_errors: ComputedErrors;
   actions: Action[];

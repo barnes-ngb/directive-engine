@@ -10,16 +10,10 @@ import type {
   Quat,
   Vec3
 } from "./types.js";
+import { ValidationError } from "./errors.js";
+import { EPS_QUAT_NORM } from "./constants.js";
 
-export class ValidationError extends Error {
-  readonly errors: string[];
-
-  constructor(errors: string[]) {
-    super(`Validation failed: ${errors.join("; ")}`);
-    this.name = "ValidationError";
-    this.errors = errors;
-  }
-}
+export { ValidationError };
 
 function isVec3(value: unknown): value is Vec3 {
   return (
@@ -37,7 +31,7 @@ function isQuat(value: unknown): value is Quat {
   );
 }
 
-function isQuatNormalized(q: Quat, tolerance = 0.01): boolean {
+function isQuatNormalized(q: Quat, tolerance = EPS_QUAT_NORM): boolean {
   const norm = Math.sqrt(q[0] ** 2 + q[1] ** 2 + q[2] ** 2 + q[3] ** 2);
   return Math.abs(norm - 1) <= tolerance;
 }
