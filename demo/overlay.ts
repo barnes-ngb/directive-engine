@@ -10,7 +10,7 @@
  */
 
 import type { SimulationResult } from "../src/core/index.js";
-import type { Step, Vec3, Status } from "../src/types.js";
+import type { Step, Vec3 } from "../src/types.js";
 import { formatResidual } from "./summary.js";
 
 export interface OverlayState {
