@@ -269,3 +269,7 @@ export function downloadDirectivesCsv(context: ExportContext): void {
 export function printView(): void {
   window.print();
 }
+
+// Re-export print run sheet functionality
+export { openPrintRunSheet, generatePrintRunSheetHtml } from "./printRunSheet.js";
+export type { PrintRunSheetContext } from "./printRunSheet.js";

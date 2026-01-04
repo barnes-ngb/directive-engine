@@ -28,8 +28,9 @@ import {
   downloadDirectivesJson,
   downloadRunSummaryMd,
   downloadDirectivesCsv,
-  printView,
-  type ExportContext
+  openPrintRunSheet,
+  type ExportContext,
+  type PrintRunSheetContext
 } from "./export.js";
 import {
   initOverlay,
@@ -37,6 +38,23 @@ import {
   isOverlayOpen,
   getCompletedParts
 } from "./overlay.js";
+  parseRouteFromUrl,
+  updateUrlFromState,
+  type DemoDataset,
+  type DemoMode,
+  type RouteState
+} from "./routing.js";
+import {
+  getOrCreateRunState,
+  markStepCompleted,
+  markStepIncomplete,
+  updateStepNotes,
+  updateStepSimulation,
+  getProgressSummary,
+  clearRunState,
+  type RunState,
+  type SimAfterError
+} from "./runState.js";
 
 type DatasetPaths = {
   nominal: string;
@@ -44,14 +62,14 @@ type DatasetPaths = {
   constraints: string;
 };
 
-type DemoDataset = "toy" | "museum";
-
 
 const statusPriority: Status[] = STATUS_PRIORITY;
 const statusClasses = new Set(statusPriority);
 
+// Core UI elements
 const runButton = document.querySelector<HTMLButtonElement>(".run-button");
 const datasetSelect = document.querySelector<HTMLSelectElement>("#dataset-select");
+const modeSelect = document.querySelector<HTMLSelectElement>("#mode-select");
 const statusBadge = document.querySelector<HTMLSpanElement>("#status-badge");
 const statusDetails = document.querySelector<HTMLDivElement>("#status-details");
 const partList = document.querySelector<HTMLDivElement>("#part-list");
@@ -69,6 +87,36 @@ const exportSummaryButton = document.querySelector<HTMLButtonElement>("#export-s
 const exportCsvButton = document.querySelector<HTMLButtonElement>("#export-csv");
 const exportPrintButton = document.querySelector<HTMLButtonElement>("#export-print");
 
+// Runbook mode elements
+const runbookProgress = document.querySelector<HTMLDivElement>("#runbook-progress");
+const progressCount = document.querySelector<HTMLSpanElement>("#progress-count");
+const progressPercent = document.querySelector<HTMLSpanElement>("#progress-percent");
+const progressFill = document.querySelector<HTMLDivElement>("#progress-fill");
+const navPrev = document.querySelector<HTMLButtonElement>("#nav-prev");
+const navNext = document.querySelector<HTMLButtonElement>("#nav-next");
+const navStep = document.querySelector<HTMLSpanElement>("#nav-step");
+
+// Step mode elements
+const stepView = document.querySelector<HTMLDivElement>("#step-view");
+const stepPartName = document.querySelector<HTMLHeadingElement>("#step-part-name");
+const stepStatusBadge = document.querySelector<HTMLSpanElement>("#step-status-badge");
+const stepContent = document.querySelector<HTMLDivElement>("#step-content");
+const stepCompleteBtn = document.querySelector<HTMLButtonElement>("#step-complete-btn");
+const stepPrev = document.querySelector<HTMLButtonElement>("#step-prev");
+const stepNext = document.querySelector<HTMLButtonElement>("#step-next");
+const stepNotesInput = document.querySelector<HTMLTextAreaElement>("#step-notes-input");
+
+// Overlay mode elements
+const overlayView = document.querySelector<HTMLDivElement>("#overlay-view");
+const overlayPart = document.querySelector<HTMLSpanElement>("#overlay-part");
+const overlayBadge = document.querySelector<HTMLSpanElement>("#overlay-badge");
+const overlayAction = document.querySelector<HTMLDivElement>("#overlay-action");
+const overlayDelta = document.querySelector<HTMLDivElement>("#overlay-delta");
+const overlayPrevBtn = document.querySelector<HTMLButtonElement>("#overlay-prev");
+const overlayNextBtn = document.querySelector<HTMLButtonElement>("#overlay-next");
+const overlayCompleteBtn = document.querySelector<HTMLButtonElement>("#overlay-complete");
+
+// State variables
 let cachedDirectives: DirectivesOutput | null = null;
 let cachedNominal: NominalPosesDataset | null = null;
 let cachedAsBuilt: AsBuiltPosesDataset | null = null;
@@ -76,8 +124,14 @@ let cachedConstraints: ConstraintsDataset | null = null;
 let cachedAlignment: ReturnType<typeof computeRigidTransform> | null = null;
 let cachedSummaries: ReturnType<typeof extractPartSummaries> | null = null;
 let selectedPartId: string | null = null;
-let selectedDataset: DemoDataset = datasetSelect?.value === "museum" ? "museum" : "toy";
+let currentStepIndex: number = 0;
 const cachedSimulationResults = new Map<string, SimulationResult>();
+
+// Route and run state
+const initialRoute = parseRouteFromUrl();
+let selectedDataset: DemoDataset = initialRoute.dataset;
+let selectedMode: DemoMode = initialRoute.mode;
+let runState: RunState = getOrCreateRunState(selectedDataset);
 
 function formatVec(vec?: [number, number, number], digits = 2): string {
   if (!vec) return "n/a";
@@ -216,6 +270,7 @@ function renderParts(
   }
 
   const completedParts = getCompletedParts();
+  const showCheckmarks = selectedMode === "runbook";
 
   partList.innerHTML = `
     <ul class="part-list">
@@ -224,9 +279,15 @@ function renderParts(
           const name = partNames.get(part.id) ?? part.id;
           const isSelected = part.id === selectedPartId;
           const isCompleted = completedParts.has(part.id);
+          const isCompleted = runState.completed_steps[part.id]?.completed ?? false;
+          const completedClass = isCompleted ? "is-completed" : "";
+          const checkmark = showCheckmarks
+            ? `<span class="completion-check">${isCompleted ? "✓" : ""}</span>`
+            : "";
           return `
             <li>
-              <button class="part-button ${isSelected ? "is-selected" : ""}" type="button" data-part-id="${part.id}">
+              <button class="part-button ${isSelected ? "is-selected" : ""} ${completedClass}" type="button" data-part-id="${part.id}">
+                ${checkmark}
                 <span class="part-meta">
                   <strong>${name}</strong>
                   <span>Part ${part.id}</span>
@@ -246,6 +307,7 @@ function renderParts(
   partList.querySelectorAll<HTMLButtonElement>(".part-button").forEach((button) => {
     button.addEventListener("click", () => {
       selectedPartId = button.dataset.partId ?? null;
+      updateUrlState();
       renderSelection();
       renderParts(parts, partNames);
     });
@@ -258,6 +320,7 @@ function renderParts(
       if (partId) {
         handleOpenOverlay(partId);
       }
+      renderModeView();
     });
   });
 }
@@ -823,7 +886,277 @@ function handleExportCsv() {
 }
 
 function handlePrint() {
-  printView();
+  const context = getPrintRunSheetContext();
+  if (!context) {
+    // Fallback to simple window.print if no data available
+    window.print();
+    return;
+  }
+  openPrintRunSheet(context).catch((error) => {
+    console.error("Failed to generate print run sheet:", error);
+    window.print();
+  });
+}
+
+function getPrintRunSheetContext(): PrintRunSheetContext | null {
+  if (!cachedDirectives || !cachedConstraints) return null;
+  // Derive base URL for QR codes from current location
+  const baseUrl = window.location.origin + window.location.pathname;
+  return {
+    directives: cachedDirectives,
+    alignment: cachedAlignment,
+    simulationResults: cachedSimulationResults,
+    constraints: cachedConstraints,
+    baseUrl
+  };
+}
+
+// ============================================================================
+// Mode Management
+// ============================================================================
+
+function setMode(mode: DemoMode): void {
+  selectedMode = mode;
+  document.body.classList.remove("mode-viewer", "mode-runbook", "mode-step", "mode-overlay");
+  document.body.classList.add(`mode-${mode}`);
+
+  // Show/hide mode-specific elements
+  if (runbookProgress) runbookProgress.hidden = mode !== "runbook";
+  if (stepView) stepView.hidden = mode !== "step";
+  if (overlayView) overlayView.hidden = mode !== "overlay";
+
+  // Update URL
+  updateUrlFromState({ dataset: selectedDataset, mode, part: selectedPartId });
+
+  // Re-render for mode-specific views
+  if (cachedSummaries) {
+    if (mode === "step" || mode === "overlay") {
+      renderModeView();
+    } else if (mode === "runbook") {
+      renderRunbookProgress();
+    }
+  }
+}
+
+function updateUrlState(): void {
+  updateUrlFromState({
+    dataset: selectedDataset,
+    mode: selectedMode,
+    part: selectedPartId
+  });
+}
+
+function renderRunbookProgress(): void {
+  if (!cachedSummaries) return;
+
+  const partIds = cachedSummaries.map((s) => s.id);
+  const progress = getProgressSummary(runState, partIds);
+
+  if (progressCount) progressCount.textContent = `${progress.completed} / ${progress.total}`;
+  if (progressPercent) progressPercent.textContent = `${progress.percent}%`;
+  if (progressFill) progressFill.style.width = `${progress.percent}%`;
+
+  // Update step navigator
+  const stepIdx = selectedPartId
+    ? partIds.indexOf(selectedPartId)
+    : currentStepIndex;
+  const effectiveIdx = stepIdx >= 0 ? stepIdx : 0;
+
+  if (navStep) navStep.textContent = `Step ${effectiveIdx + 1} of ${partIds.length}`;
+  if (navPrev) navPrev.disabled = effectiveIdx <= 0;
+  if (navNext) navNext.disabled = effectiveIdx >= partIds.length - 1;
+}
+
+function navigateStep(direction: "prev" | "next"): void {
+  if (!cachedSummaries) return;
+
+  const partIds = cachedSummaries.map((s) => s.id);
+  const currentIdx = selectedPartId
+    ? partIds.indexOf(selectedPartId)
+    : currentStepIndex;
+
+  let newIdx = currentIdx;
+  if (direction === "prev" && currentIdx > 0) {
+    newIdx = currentIdx - 1;
+  } else if (direction === "next" && currentIdx < partIds.length - 1) {
+    newIdx = currentIdx + 1;
+  }
+
+  if (newIdx !== currentIdx) {
+    currentStepIndex = newIdx;
+    selectedPartId = partIds[newIdx];
+    updateUrlState();
+    renderSelection();
+    renderRunbookProgress();
+    renderModeView();
+    // Re-render part list to update selection
+    if (cachedNominal && cachedSummaries) {
+      const partNames = new Map(cachedNominal.parts.map((p) => [p.part_id, p.part_name]));
+      renderParts(cachedSummaries, partNames);
+    }
+  }
+}
+
+function toggleStepCompletion(): void {
+  if (!selectedPartId) return;
+
+  const currentCompletion = runState.completed_steps[selectedPartId];
+  const isCompleted = currentCompletion?.completed ?? false;
+
+  if (isCompleted) {
+    runState = markStepIncomplete(runState, selectedPartId);
+  } else {
+    // Include simulation result if available
+    const simResult = cachedSimulationResults.get(selectedPartId);
+    const simAfter: SimAfterError | undefined = simResult
+      ? {
+          translation_mm_vec: simResult.afterError.translation_mm_vec,
+          translation_norm_mm: simResult.afterError.translation_norm_mm,
+          rotation_deg: simResult.afterError.rotation_deg
+        }
+      : undefined;
+
+    runState = markStepCompleted(runState, selectedPartId, {
+      notes: stepNotesInput?.value || undefined,
+      sim_pass: simResult?.pass,
+      sim_after: simAfter
+    });
+  }
+
+  renderRunbookProgress();
+  renderModeView();
+
+  // Re-render part list to update completion checkmarks
+  if (cachedNominal && cachedSummaries) {
+    const partNames = new Map(cachedNominal.parts.map((p) => [p.part_id, p.part_name]));
+    renderParts(cachedSummaries, partNames);
+  }
+}
+
+function handleNotesChange(): void {
+  if (!selectedPartId || !stepNotesInput) return;
+  runState = updateStepNotes(runState, selectedPartId, stepNotesInput.value);
+}
+
+function renderModeView(): void {
+  if (selectedMode === "step") {
+    renderStepView();
+  } else if (selectedMode === "overlay") {
+    renderOverlayView();
+  }
+}
+
+function renderStepView(): void {
+  if (!cachedSummaries || !cachedDirectives || !selectedPartId) return;
+
+  const summary = cachedSummaries.find((s) => s.id === selectedPartId);
+  const step = cachedDirectives.steps.find((s) => s.part_id === selectedPartId);
+  const nominalPart = cachedNominal?.parts.find((p) => p.part_id === selectedPartId);
+  const completion = runState.completed_steps[selectedPartId];
+  const isCompleted = completion?.completed ?? false;
+
+  if (!summary || !step) return;
+
+  const partName = nominalPart?.part_name ?? selectedPartId;
+  if (stepPartName) stepPartName.textContent = partName;
+
+  // Status badge
+  if (stepStatusBadge) {
+    stepStatusBadge.textContent = formatStatusLabel(summary.status);
+    stepStatusBadge.classList.remove(...Array.from(statusClasses));
+    stepStatusBadge.classList.add(summary.status);
+  }
+
+  // Build content sections
+  const actionDesc = summary.actions.length > 0
+    ? summary.actions.map((a) => `${a.type}: ${describeAction(a)}`).join("<br>")
+    : "No action required";
+
+  const deltaInfo = computeDirectiveDelta(summary.actions);
+  const deltaText = deltaInfo
+    ? `Translation: ${formatVec(deltaInfo.translation_mm_vec)} mm${deltaInfo.rotation_deg > 1e-6 ? ` | Rotation: ${formatResidual(deltaInfo.rotation_deg)}°` : ""}`
+    : "No delta";
+
+  const errorInfo = step.computed_errors;
+  const errorText = `Translation: ${formatVec(errorInfo.translation_error_mm_vec)} mm (norm: ${formatResidual(errorInfo.translation_error_norm_mm)} mm) | Rotation: ${formatResidual(errorInfo.rotation_error_deg)}°`;
+
+  if (stepContent) {
+    stepContent.innerHTML = `
+      <div class="step-content-section">
+        <div class="step-content-label">Action</div>
+        <div class="step-content-value">${actionDesc}</div>
+      </div>
+      <div class="step-content-section">
+        <div class="step-content-label">Directive Delta</div>
+        <div class="step-content-value">${deltaText}</div>
+      </div>
+      <div class="step-content-section">
+        <div class="step-content-label">Current Error</div>
+        <div class="step-content-value">${errorText}</div>
+      </div>
+    `;
+  }
+
+  // Complete button
+  if (stepCompleteBtn) {
+    stepCompleteBtn.textContent = isCompleted ? "Mark Incomplete" : "Mark Complete";
+    stepCompleteBtn.classList.toggle("is-completed", isCompleted);
+  }
+
+  // Navigation buttons
+  const partIds = cachedSummaries.map((s) => s.id);
+  const currentIdx = partIds.indexOf(selectedPartId);
+  if (stepPrev) stepPrev.disabled = currentIdx <= 0;
+  if (stepNext) stepNext.disabled = currentIdx >= partIds.length - 1;
+
+  // Notes
+  if (stepNotesInput) {
+    stepNotesInput.value = completion?.notes ?? "";
+  }
+}
+
+function renderOverlayView(): void {
+  if (!cachedSummaries || !cachedDirectives || !selectedPartId) return;
+
+  const summary = cachedSummaries.find((s) => s.id === selectedPartId);
+  const step = cachedDirectives.steps.find((s) => s.part_id === selectedPartId);
+  const completion = runState.completed_steps[selectedPartId];
+  const isCompleted = completion?.completed ?? false;
+
+  if (!summary || !step) return;
+
+  if (overlayPart) overlayPart.textContent = selectedPartId;
+
+  if (overlayBadge) {
+    overlayBadge.textContent = formatStatusLabel(summary.status);
+    overlayBadge.classList.remove(...Array.from(statusClasses));
+    overlayBadge.classList.add(summary.status);
+  }
+
+  // Action description
+  const actionText = summary.actions.length > 0
+    ? summary.actions.map((a) => describeAction(a)).join("; ")
+    : "No action";
+  if (overlayAction) overlayAction.textContent = actionText;
+
+  // Delta
+  const deltaInfo = computeDirectiveDelta(summary.actions);
+  if (overlayDelta) {
+    overlayDelta.textContent = deltaInfo
+      ? `Δ ${formatVec(deltaInfo.translation_mm_vec)} mm`
+      : "No delta";
+  }
+
+  // Navigation
+  const partIds = cachedSummaries.map((s) => s.id);
+  const currentIdx = partIds.indexOf(selectedPartId);
+  if (overlayPrevBtn) overlayPrevBtn.disabled = currentIdx <= 0;
+  if (overlayNextBtn) overlayNextBtn.disabled = currentIdx >= partIds.length - 1;
+
+  // Complete button
+  if (overlayCompleteBtn) {
+    overlayCompleteBtn.classList.toggle("is-completed", isCompleted);
+  }
 }
 
 async function runDemo(): Promise<void> {
@@ -893,11 +1226,21 @@ async function runDemo(): Promise<void> {
 
     renderStatus(directives, asBuilt);
     cachedSummaries = partSummaries;
+
+    // Set initial part selection if none selected
+    if (!selectedPartId && partSummaries.length > 0) {
+      selectedPartId = partSummaries[0].id;
+    }
+
     renderParts(partSummaries, partNames);
     renderSelection();
     renderAlignmentQuality(dataset);
     renderRawJson({ nominal, asBuilt, constraints, directives });
     updateExportButtons(true);
+
+    // Render mode-specific views
+    renderRunbookProgress();
+    renderModeView();
   } catch (error) {
     const dataset = selectedDataset;
     const message =
@@ -941,11 +1284,66 @@ if (runButton) {
 }
 
 if (datasetSelect) {
+  // Sync dataset select with initial route
+  datasetSelect.value = selectedDataset;
+
   datasetSelect.addEventListener("change", () => {
     selectedDataset = datasetSelect.value === "museum" ? "museum" : "toy";
+    runState = getOrCreateRunState(selectedDataset);
     resetResults(selectedDataset);
+    updateUrlState();
     runDemo().catch(() => undefined);
   });
+}
+
+// Mode select handler
+if (modeSelect) {
+  // Sync mode select with initial route
+  modeSelect.value = selectedMode;
+
+  modeSelect.addEventListener("change", () => {
+    const mode = modeSelect.value as DemoMode;
+    setMode(mode);
+  });
+}
+
+// Runbook navigation handlers
+if (navPrev) {
+  navPrev.addEventListener("click", () => navigateStep("prev"));
+}
+
+if (navNext) {
+  navNext.addEventListener("click", () => navigateStep("next"));
+}
+
+// Step mode handlers
+if (stepCompleteBtn) {
+  stepCompleteBtn.addEventListener("click", toggleStepCompletion);
+}
+
+if (stepPrev) {
+  stepPrev.addEventListener("click", () => navigateStep("prev"));
+}
+
+if (stepNext) {
+  stepNext.addEventListener("click", () => navigateStep("next"));
+}
+
+if (stepNotesInput) {
+  stepNotesInput.addEventListener("blur", handleNotesChange);
+}
+
+// Overlay mode handlers
+if (overlayPrevBtn) {
+  overlayPrevBtn.addEventListener("click", () => navigateStep("prev"));
+}
+
+if (overlayNextBtn) {
+  overlayNextBtn.addEventListener("click", () => navigateStep("next"));
+}
+
+if (overlayCompleteBtn) {
+  overlayCompleteBtn.addEventListener("click", toggleStepCompletion);
 }
 
 // Export button handlers
@@ -982,3 +1380,27 @@ initOverlay({
 });
 
 runDemo().catch(() => undefined);
+// Initialize mode on page load
+setMode(selectedMode);
+
+// Run initial demo and apply initial route selection
+runDemo()
+  .then(() => {
+    // After demo loads, apply part from URL if specified
+    if (initialRoute.part && cachedSummaries) {
+      const partExists = cachedSummaries.some((s) => s.id === initialRoute.part);
+      if (partExists) {
+        selectedPartId = initialRoute.part;
+        const partIds = cachedSummaries.map((s) => s.id);
+        currentStepIndex = partIds.indexOf(selectedPartId);
+        renderSelection();
+        renderModeView();
+        renderRunbookProgress();
+        if (cachedNominal) {
+          const partNames = new Map(cachedNominal.parts.map((p) => [p.part_id, p.part_name]));
+          renderParts(cachedSummaries, partNames);
+        }
+      }
+    }
+  })
+  .catch(() => undefined);

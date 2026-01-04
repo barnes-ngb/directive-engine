@@ -20,11 +20,76 @@
             <option value="museum">Museum</option>
           </select>
         </label>
+        <label class="mode-select" for="mode-select">
+          <span>Mode</span>
+          <select id="mode-select">
+            <option value="viewer" selected>Viewer</option>
+            <option value="runbook">Runbook</option>
+            <option value="step">Step</option>
+            <option value="overlay">Overlay</option>
+          </select>
+        </label>
         <button class="run-button" type="button">Run</button>
       </div>
     </header>
 
     <div class="error-banner" id="error-banner" role="alert" hidden></div>
+
+    <!-- Runbook Mode Progress Bar -->
+    <div class="runbook-progress" id="runbook-progress" hidden>
+      <div class="progress-header">
+        <span class="progress-label">Run Progress</span>
+        <span class="progress-count" id="progress-count">0 / 0</span>
+        <span class="progress-percent" id="progress-percent">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+      <div class="runbook-nav">
+        <button class="nav-button" id="nav-prev" type="button" disabled>&larr; Previous</button>
+        <span class="nav-step" id="nav-step">Step 1 of 0</span>
+        <button class="nav-button" id="nav-next" type="button">&rarr; Next</button>
+      </div>
+    </div>
+
+    <!-- Step Mode Single Part Display -->
+    <div class="step-view" id="step-view" hidden>
+      <div class="step-card">
+        <div class="step-header">
+          <h2 class="step-part-name" id="step-part-name">Part Name</h2>
+          <span class="badge" id="step-status-badge">Status</span>
+        </div>
+        <div class="step-content" id="step-content">
+          <!-- Filled dynamically -->
+        </div>
+        <div class="step-actions-bar">
+          <button class="step-complete-btn" id="step-complete-btn" type="button">Mark Complete</button>
+          <button class="nav-button" id="step-prev" type="button">&larr; Prev</button>
+          <button class="nav-button" id="step-next" type="button">Next &rarr;</button>
+        </div>
+        <div class="step-notes">
+          <label for="step-notes-input">Notes:</label>
+          <textarea id="step-notes-input" rows="2" placeholder="Add notes for this step..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overlay Mode Minimal View -->
+    <div class="overlay-view" id="overlay-view" hidden>
+      <div class="overlay-card" id="overlay-card">
+        <div class="overlay-header">
+          <span class="overlay-part" id="overlay-part">PART_ID</span>
+          <span class="badge" id="overlay-badge">Status</span>
+        </div>
+        <div class="overlay-action" id="overlay-action">Action description</div>
+        <div class="overlay-delta" id="overlay-delta">Translation: [0, 0, 0] mm</div>
+        <div class="overlay-nav">
+          <button class="overlay-nav-btn" id="overlay-prev">&larr;</button>
+          <button class="overlay-complete-btn" id="overlay-complete">&#10003;</button>
+          <button class="overlay-nav-btn" id="overlay-next">&rarr;</button>
+        </div>
+      </div>
+    </div>
 
     <main class="page-content">
       <section class="panel" aria-labelledby="parts-title">
