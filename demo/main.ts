@@ -22,8 +22,10 @@ import {
   DatasetFetchError,
   convertMuseumRawToPoseDatasets,
   loadMuseumDataset,
-  normalizeMuseumAnchors
+  normalizeMuseumAnchors,
+  type MuseumAnchor
 } from "./museum.js";
+import { renderAlignmentView, clearAlignmentView } from "./alignmentView.js";
 import {
   downloadDirectivesJson,
   downloadRunSummaryMd,
@@ -80,6 +82,7 @@ const verificationResidual = document.querySelector<HTMLDivElement>("#verificati
 const alignmentPanel = document.querySelector<HTMLElement>("#alignment-panel");
 const alignmentRms = document.querySelector<HTMLSpanElement>("#alignment-rms");
 const alignmentResiduals = document.querySelector<HTMLTableSectionElement>("#alignment-residuals");
+const alignmentViewCanvas = document.querySelector<HTMLCanvasElement>("#alignment-view-canvas");
 const rawJson = document.querySelector<HTMLPreElement>("#raw-json");
 const errorBanner = document.querySelector<HTMLDivElement>("#error-banner");
 const constraintsPanel = document.querySelector<HTMLDivElement>("#constraints-panel");
@@ -138,6 +141,7 @@ let cachedNominal: NominalPosesDataset | null = null;
 let cachedAsBuilt: AsBuiltPosesDataset | null = null;
 let cachedConstraints: ConstraintsDataset | null = null;
 let cachedAlignment: ReturnType<typeof computeRigidTransform> | null = null;
+let cachedAnchors: MuseumAnchor[] | null = null;
 let cachedSummaries: ReturnType<typeof extractPartSummaries> | null = null;
 let selectedPartId: string | null = null;
 let currentStepIndex: number = 0;
@@ -771,6 +775,10 @@ function renderAlignmentQuality(dataset: DemoDataset) {
         </tr>
       `;
     }
+    // Clear the canvas with N/A message for non-Museum datasets
+    if (alignmentViewCanvas) {
+      clearAlignmentView(alignmentViewCanvas);
+    }
     return;
   }
 
@@ -785,11 +793,25 @@ function renderAlignmentQuality(dataset: DemoDataset) {
         </tr>
       `;
     }
+    if (alignmentViewCanvas) {
+      clearAlignmentView(alignmentViewCanvas);
+    }
     return;
   }
 
   const { rms_mm: rms, residuals_mm: residuals } = cachedAlignment;
   if (alignmentRms) alignmentRms.textContent = formatResidual(rms);
+
+  // Render the alignment view visualization
+  if (alignmentViewCanvas && cachedAnchors && cachedAnchors.length > 0) {
+    renderAlignmentView({
+      canvas: alignmentViewCanvas,
+      anchors: cachedAnchors,
+      alignment: cachedAlignment
+    });
+  } else if (alignmentViewCanvas) {
+    clearAlignmentView(alignmentViewCanvas);
+  }
 
   if (!alignmentResiduals) return;
   if (residuals.length === 0) {
@@ -1576,6 +1598,7 @@ async function runDemo(): Promise<void> {
       // Kabsch/Horn alignment from anchor correspondences (mm). T_model_scan maps scan -> model.
       // Apply it so as-built scan-frame poses are transformed into the model/world frame.
       const anchors = normalizeMuseumAnchors(raw);
+      cachedAnchors = anchors; // Store anchors for alignment view visualization
       const scanPts = anchors.map((anchor) => ({
         anchor_id: anchor.id,
         point_mm: anchor.scan_mm
@@ -1597,6 +1620,7 @@ async function runDemo(): Promise<void> {
       };
     } else {
       cachedAlignment = null;
+      cachedAnchors = null;
       paths = {
         nominal: `${baseUrl}toy_nominal_poses.json`,
         asBuilt: `${baseUrl}toy_asbuilt_poses.json`,

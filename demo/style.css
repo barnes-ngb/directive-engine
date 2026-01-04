@@ -322,6 +322,21 @@ body {
   border-bottom: none;
 }
 
+/* Alignment View Canvas */
+.alignment-view-container {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.alignment-view-canvas {
+  width: 100%;
+  height: 280px;
+  display: block;
+}
+
 .placeholder-cell {
   color: #94a3b8;
   text-align: center;
