@@ -1259,6 +1259,17 @@ body.overlay-active {
   color: #64748b;
 }
 
+.calibration-warning {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 500;
+}
+
 .calibration-na {
   color: #94a3b8;
   font-style: italic;
@@ -1372,6 +1383,12 @@ body.overlay-active {
 
   .calibration-rms {
     font-size: 15px;
+  }
+
+  .calibration-warning {
+    margin-top: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
   }
 
   .calibration-top-anchors {

@@ -70,6 +70,9 @@ type DatasetPaths = {
 const statusPriority: Status[] = STATUS_PRIORITY;
 const statusClasses = new Set(statusPriority);
 
+// Calibration warning threshold (configurable constant)
+const CALIBRATION_RMS_WARNING_THRESHOLD_MM = 10;
+
 // Core UI elements
 const runButton = document.querySelector<HTMLButtonElement>(".run-button");
 const datasetSelect = document.querySelector<HTMLSelectElement>("#dataset-select");
@@ -106,6 +109,7 @@ const runbookCalibrationRms = document.querySelector<HTMLSpanElement>("#runbook-
 const runbookCalibrationTopAnchors = document.querySelector<HTMLDivElement>("#runbook-calibration-top-anchors");
 const runbookCalibrationDetails = document.querySelector<HTMLDetailsElement>("#runbook-calibration-details");
 const runbookCalibrationResiduals = document.querySelector<HTMLTableSectionElement>("#runbook-calibration-residuals");
+const runbookCalibrationWarning = document.querySelector<HTMLDivElement>("#runbook-calibration-warning");
 const runbookStepTbody = document.querySelector<HTMLTableSectionElement>("#runbook-step-tbody");
 const runbookDetailPart = document.querySelector<HTMLHeadingElement>("#runbook-detail-part");
 const runbookDetailStatus = document.querySelector<HTMLSpanElement>("#runbook-detail-status");
@@ -849,19 +853,27 @@ function renderAlignmentQuality(dataset: DemoDataset) {
 /**
  * Render the calibration card in Runbook mode.
  * Shows RMS, top anchors by residual, and expandable full residuals table.
- * For non-museum datasets, hides the card.
+ * For non-museum datasets, shows N/A.
+ * Shows warning when RMS exceeds threshold.
  */
 function renderRunbookCalibrationCard(dataset: DemoDataset): void {
   if (!runbookCalibrationCard) return;
 
-  // Hide card for non-museum datasets
+  // Always show card in runbook mode
+  runbookCalibrationCard.hidden = false;
+
+  // Hide warning by default
+  if (runbookCalibrationWarning) runbookCalibrationWarning.hidden = true;
+
+  // For toy dataset, show N/A
   if (dataset !== "museum") {
-    runbookCalibrationCard.hidden = true;
+    if (runbookCalibrationRms) runbookCalibrationRms.textContent = "N/A";
+    if (runbookCalibrationTopAnchors) {
+      runbookCalibrationTopAnchors.innerHTML = '<span class="calibration-na">Not available for this dataset</span>';
+    }
+    if (runbookCalibrationDetails) runbookCalibrationDetails.hidden = true;
     return;
   }
-
-  // Show card for museum dataset
-  runbookCalibrationCard.hidden = false;
 
   // No alignment data yet
   if (!cachedAlignment) {
@@ -878,6 +890,19 @@ function renderRunbookCalibrationCard(dataset: DemoDataset): void {
   // Display RMS
   if (runbookCalibrationRms) {
     runbookCalibrationRms.textContent = formatResidual(rms);
+  }
+
+  // Show warning if RMS exceeds threshold
+  if (runbookCalibrationWarning) {
+    if (rms > CALIBRATION_RMS_WARNING_THRESHOLD_MM) {
+      // Find top residual anchor for the warning message
+      const sortedForWarning = [...residuals].sort((a, b) => b.residual_mm - a.residual_mm);
+      const topAnchor = sortedForWarning[0]?.anchor_id || "unknown";
+      runbookCalibrationWarning.innerHTML = `Calibration high — re-check anchor pairing (e.g., ${topAnchor}).`;
+      runbookCalibrationWarning.hidden = false;
+    } else {
+      runbookCalibrationWarning.hidden = true;
+    }
   }
 
   // Sort residuals high to low
