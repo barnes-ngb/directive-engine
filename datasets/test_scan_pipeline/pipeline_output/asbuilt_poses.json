@@ -1,0 +1,66 @@
+{
+  "schema_version": "v0.1",
+  "dataset_id": "test_scan_pipeline_20260104_asbuilt",
+  "frame_id": "world",
+  "units": {
+    "length": "mm",
+    "rotation": "quaternion_xyzw"
+  },
+  "measured_at": "2026-01-04T09:45:08.520Z",
+  "parts": [
+    {
+      "part_id": "MULLION_PASS_WITHIN_TOL",
+      "T_world_part_asBuilt": {
+        "translation_mm": [
+          501.96181929654676,
+          501.2914477448467,
+          2500.6061568462055
+        ],
+        "rotation_quat_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "pose_confidence": 0.9615554267252825,
+      "confidence_notes": "Good fit quality"
+    },
+    {
+      "part_id": "MULLION_NEEDS_CORRECTION",
+      "T_world_part_asBuilt": {
+        "translation_mm": [
+          209.10437765698475,
+          206.7757095660192,
+          2500.4463880219946
+        ],
+        "rotation_quat_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "pose_confidence": 0.966214339353483,
+      "confidence_notes": "Good fit quality"
+    },
+    {
+      "part_id": "MULLION_LARGE_ERROR",
+      "T_world_part_asBuilt": {
+        "translation_mm": [
+          829.1181093223944,
+          824.1447964067384,
+          2499.9813165889354
+        ],
+        "rotation_quat_xyzw": [
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      "pose_confidence": 0.9620654464222009,
+      "confidence_notes": "Good fit quality"
+    }
+  ]
+}

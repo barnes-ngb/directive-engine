@@ -1,0 +1,212 @@
+{
+  "schema_version": "v0.1",
+  "dataset_id": "test_scan_pipeline_20260104_nominal",
+  "engine_version": "directive-engine/0.2.0-scan",
+  "generated_at": "2026-01-04T09:45:09.520Z",
+  "inputs": {
+    "nominal_poses": "generated",
+    "as_built_poses": "generated",
+    "constraints": "museum_constraints.json",
+    "confidence_threshold": 0.5
+  },
+  "summary": {
+    "counts_by_status": {
+      "ok": 1,
+      "pending": 1,
+      "clamped": 1,
+      "blocked": 0,
+      "needs_review": 0
+    }
+  },
+  "steps": [
+    {
+      "step_id": "S1",
+      "part_id": "MULLION_PASS_WITHIN_TOL",
+      "status": "ok",
+      "reason_codes": [
+        "within_tolerance"
+      ],
+      "pose_confidence": 0.9615554267252825,
+      "computed_errors": {
+        "translation_error_mm_vec": [
+          -1.9618192965467642,
+          -1.291447744846721,
+          -0.606156846205522
+        ],
+        "translation_error_norm_mm": 2.4256954368128634,
+        "rotation_error_deg": 0
+      },
+      "actions": [
+        {
+          "action_id": "A1",
+          "type": "noop",
+          "description": "No adjustment required; as-built pose is within tolerance.",
+          "delta": {
+            "translation_mm": [
+              0,
+              0,
+              0
+            ],
+            "rotation_quat_xyzw": [
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        }
+      ],
+      "verification": [
+        {
+          "verification_id": "V1",
+          "type": "measure_pose",
+          "acceptance": {
+            "translation_mm": 5,
+            "rotation_deg": 0.5
+          },
+          "expected_residual": {
+            "translation_mm_vec": [
+              0,
+              0,
+              0
+            ],
+            "rotation_deg": 0
+          },
+          "expected_result": "expected_pass"
+        }
+      ]
+    },
+    {
+      "step_id": "S2",
+      "part_id": "MULLION_NEEDS_CORRECTION",
+      "status": "pending",
+      "reason_codes": [
+        "translation_out_of_tolerance",
+        "translate_only"
+      ],
+      "pose_confidence": 0.966214339353483,
+      "computed_errors": {
+        "translation_error_mm_vec": [
+          -9.104377656984752,
+          -6.775709566019202,
+          -0.4463880219946077
+        ],
+        "translation_error_norm_mm": 11.357781249444256,
+        "rotation_error_deg": 0
+      },
+      "actions": [
+        {
+          "action_id": "A2",
+          "type": "translate",
+          "description": "Translate MULLION_NEEDS_CORRECTION to nominal (rotation locked). Apply delta in world frame.",
+          "delta": {
+            "translation_mm": [
+              -9.104377656984752,
+              -6.775709566019202,
+              -0.4463880219946077
+            ],
+            "rotation_quat_xyzw": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "clamp_applied": false
+        }
+      ],
+      "verification": [
+        {
+          "verification_id": "V2",
+          "type": "measure_pose",
+          "acceptance": {
+            "translation_mm": 5,
+            "rotation_deg": 0.5
+          },
+          "expected_residual": {
+            "translation_mm_vec": [
+              0,
+              0,
+              0
+            ],
+            "rotation_deg": 0
+          },
+          "expected_result": "expected_pass"
+        }
+      ]
+    },
+    {
+      "step_id": "S3",
+      "part_id": "MULLION_LARGE_ERROR",
+      "status": "clamped",
+      "reason_codes": [
+        "translation_out_of_tolerance",
+        "clamped_to_limits",
+        "translate_clamped"
+      ],
+      "pose_confidence": 0.9620654464222009,
+      "computed_errors": {
+        "translation_error_mm_vec": [
+          -29.11810932239439,
+          -24.14479640673835,
+          0.01868341106455773
+        ],
+        "translation_error_norm_mm": 37.82639069622696,
+        "rotation_error_deg": 0
+      },
+      "actions": [
+        {
+          "action_id": "A3",
+          "type": "translate",
+          "description": "Translate MULLION_LARGE_ERROR toward nominal but clamp to per-axis max abs limits.",
+          "delta": {
+            "translation_mm": [
+              -25,
+              -24.14479640673835,
+              0.01868341106455773
+            ],
+            "rotation_quat_xyzw": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "clamp_applied": true,
+          "original_delta": {
+            "translation_mm": [
+              -29.11810932239439,
+              -24.14479640673835,
+              0.01868341106455773
+            ],
+            "rotation_quat_xyzw": [
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        }
+      ],
+      "verification": [
+        {
+          "verification_id": "V3",
+          "type": "measure_pose",
+          "acceptance": {
+            "translation_mm": 5,
+            "rotation_deg": 0.5
+          },
+          "expected_residual": {
+            "translation_mm_vec": [
+              -4.118109322394389,
+              0,
+              0
+            ],
+            "rotation_deg": 0
+          },
+          "expected_result": "expected_pass"
+        }
+      ]
+    }
+  ]
+}

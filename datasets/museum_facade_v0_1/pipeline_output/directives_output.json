@@ -1,0 +1,184 @@
+{
+  "schema_version": "v0.1",
+  "dataset_id": "museum_dataset_20251229_073643_nominal",
+  "engine_version": "directive-engine/0.2.0-scan",
+  "generated_at": "2026-01-04T09:42:20.251Z",
+  "inputs": {
+    "nominal_poses": "generated",
+    "as_built_poses": "generated",
+    "constraints": "museum_constraints.json",
+    "confidence_threshold": 0.5
+  },
+  "summary": {
+    "counts_by_status": {
+      "ok": 0,
+      "pending": 0,
+      "clamped": 1,
+      "blocked": 0,
+      "needs_review": 2
+    }
+  },
+  "steps": [
+    {
+      "step_id": "S1",
+      "part_id": "MULLION_0001",
+      "status": "needs_review",
+      "reason_codes": [
+        "missing_input_data"
+      ],
+      "computed_errors": {
+        "translation_error_mm_vec": [
+          0,
+          0,
+          0
+        ],
+        "translation_error_norm_mm": 0,
+        "rotation_error_deg": 0
+      },
+      "actions": [
+        {
+          "action_id": "A1",
+          "type": "noop",
+          "description": "Missing nominal/as-built/constraints input. Cannot issue directive."
+        }
+      ],
+      "verification": [
+        {
+          "verification_id": "V1",
+          "type": "re_scan",
+          "acceptance": {
+            "translation_mm": 0,
+            "rotation_deg": 0
+          },
+          "expected_residual": {
+            "translation_mm_vec": [
+              0,
+              0,
+              0
+            ],
+            "rotation_deg": 0
+          },
+          "expected_result": "unknown",
+          "notes": "Resolve missing inputs."
+        }
+      ]
+    },
+    {
+      "step_id": "S2",
+      "part_id": "MULLION_0002",
+      "status": "clamped",
+      "reason_codes": [
+        "translation_out_of_tolerance",
+        "clamped_to_limits",
+        "translate_clamped"
+      ],
+      "pose_confidence": 0.6998823560598705,
+      "computed_errors": {
+        "translation_error_mm_vec": [
+          33.836221660880256,
+          -9.76723058837888,
+          248.5126115074163
+        ],
+        "translation_error_norm_mm": 250.99563097370202,
+        "rotation_error_deg": 0
+      },
+      "actions": [
+        {
+          "action_id": "A2",
+          "type": "translate",
+          "description": "Translate MULLION_0002 toward nominal but clamp to per-axis max abs limits.",
+          "delta": {
+            "translation_mm": [
+              25,
+              -9.76723058837888,
+              25
+            ],
+            "rotation_quat_xyzw": [
+              0,
+              0,
+              0,
+              1
+            ]
+          },
+          "clamp_applied": true,
+          "original_delta": {
+            "translation_mm": [
+              33.836221660880256,
+              -9.76723058837888,
+              248.5126115074163
+            ],
+            "rotation_quat_xyzw": [
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        }
+      ],
+      "verification": [
+        {
+          "verification_id": "V2",
+          "type": "measure_pose",
+          "acceptance": {
+            "translation_mm": 2,
+            "rotation_deg": 0.5
+          },
+          "expected_residual": {
+            "translation_mm_vec": [
+              8.836221660880256,
+              0,
+              223.5126115074163
+            ],
+            "rotation_deg": 0
+          },
+          "expected_result": "expected_pass"
+        }
+      ]
+    },
+    {
+      "step_id": "S3",
+      "part_id": "MULLION_0003",
+      "status": "needs_review",
+      "reason_codes": [
+        "missing_input_data"
+      ],
+      "computed_errors": {
+        "translation_error_mm_vec": [
+          0,
+          0,
+          0
+        ],
+        "translation_error_norm_mm": 0,
+        "rotation_error_deg": 0
+      },
+      "actions": [
+        {
+          "action_id": "A3",
+          "type": "noop",
+          "description": "Missing nominal/as-built/constraints input. Cannot issue directive."
+        }
+      ],
+      "verification": [
+        {
+          "verification_id": "V3",
+          "type": "re_scan",
+          "acceptance": {
+            "translation_mm": 0,
+            "rotation_deg": 0
+          },
+          "expected_residual": {
+            "translation_mm_vec": [
+              0,
+              0,
+              0
+            ],
+            "rotation_deg": 0
+          },
+          "expected_result": "unknown",
+          "notes": "Resolve missing inputs."
+        }
+      ]
+    }
+  ]
+}
