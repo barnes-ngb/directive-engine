@@ -86,6 +86,51 @@ const result = simulateStep({
 // result: { beforeError, directiveDelta, afterError, pass, canSimulate }
 ```
 
+### Phone Overlay Mode (mode=overlay)
+Camera-backed 2D overlay for per-part directives on mobile devices.
+
+**Location:** `demo/overlay.ts` + CSS in `demo/style.css`
+
+**Features:**
+- **Camera Video Background:** Requests camera permission and shows live video feed
+- **Neutral Background Fallback:** Displays gradient background if camera access is denied
+- **Part Info Header:** Shows part_id, part_name, and status badge
+- **Translation Delta Arrow:** Screen-space arrow indicating direction + magnitude of translation error
+- **Simulation Status:** PASS/FAIL badge if simulation exists; otherwise shows "Run simulation" prompt
+- **Mark Complete:** Requires simulation pass OR a note to mark part as completed
+
+**Buttons:**
+1. **Back to Step** - Returns to the main demo view
+2. **Simulate Apply** - Runs the simulation for the current part
+3. **Mark Complete** - Marks the part as completed (requires sim pass or note)
+
+**Behavior:**
+- No world tracking or WebXR - simple 2D overlay only
+- Responsive layout adapts to portrait/landscape orientation
+- Safe area insets for notched devices
+- Camera stream is stopped when overlay closes
+- Completed parts persist in session and show "Done" button in part list
+
+**Entry Point:** Click the "Overlay" button next to any part in the Part List
+
+**API:**
+```typescript
+import { initOverlay, openOverlay, closeOverlay } from "./demo/overlay.js";
+
+// Initialize with callbacks
+initOverlay({
+  onSimulate: (partId) => runSimulation(partId),
+  onClose: () => { /* refresh UI */ },
+  onMarkComplete: (partId, note, simPassed) => { /* handle completion */ }
+});
+
+// Open for a specific part
+openOverlay(partId, partName, step, cachedSimResult);
+
+// Close programmatically
+closeOverlay();
+```
+
 ## Change control
 Any proposal that changes semantics or schemas must:
 1) increment contract version OR clearly state it remains v0.1,

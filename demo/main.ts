@@ -33,6 +33,11 @@ import {
   type PrintRunSheetContext
 } from "./export.js";
 import {
+  initOverlay,
+  openOverlay,
+  isOverlayOpen,
+  getCompletedParts
+} from "./overlay.js";
   parseRouteFromUrl,
   updateUrlFromState,
   type DemoDataset,
@@ -240,6 +245,19 @@ async function runGenerateDirectives(
   }
 }
 
+function handleOpenOverlay(partId: string) {
+  if (!cachedDirectives || !cachedNominal) return;
+
+  const step = cachedDirectives.steps.find((s) => s.part_id === partId);
+  const nominalPart = cachedNominal.parts.find((p) => p.part_id === partId);
+  if (!step || !nominalPart) return;
+
+  const partName = nominalPart.part_name;
+  const cachedResult = cachedSimulationResults.get(partId) ?? null;
+
+  openOverlay(partId, partName, step, cachedResult);
+}
+
 function renderParts(
   parts: ReturnType<typeof extractPartSummaries>,
   partNames: Map<string, string>
@@ -251,6 +269,7 @@ function renderParts(
     return;
   }
 
+  const completedParts = getCompletedParts();
   const showCheckmarks = selectedMode === "runbook";
 
   partList.innerHTML = `
@@ -259,6 +278,7 @@ function renderParts(
         .map((part) => {
           const name = partNames.get(part.id) ?? part.id;
           const isSelected = part.id === selectedPartId;
+          const isCompleted = completedParts.has(part.id);
           const isCompleted = runState.completed_steps[part.id]?.completed ?? false;
           const completedClass = isCompleted ? "is-completed" : "";
           const checkmark = showCheckmarks
@@ -274,6 +294,9 @@ function renderParts(
                 </span>
                 <span class="badge ${part.status}">${formatStatusLabel(part.status)}</span>
               </button>
+              <button class="part-overlay-button ${isCompleted ? "completed" : ""}" type="button" data-part-id="${part.id}" title="Open overlay mode">
+                ${isCompleted ? "Done" : "Overlay"}
+              </button>
             </li>
           `;
         })
@@ -287,6 +310,16 @@ function renderParts(
       updateUrlState();
       renderSelection();
       renderParts(parts, partNames);
+    });
+  });
+
+  partList.querySelectorAll<HTMLButtonElement>(".part-overlay-button").forEach((button) => {
+    button.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const partId = button.dataset.partId;
+      if (partId) {
+        handleOpenOverlay(partId);
+      }
       renderModeView();
     });
   });
@@ -1330,6 +1363,23 @@ if (exportPrintButton) {
   exportPrintButton.addEventListener("click", handlePrint);
 }
 
+// Initialize overlay mode
+initOverlay({
+  onSimulate: (partId: string) => {
+    return runSimulation(partId);
+  },
+  onClose: () => {
+    // Re-render the current selection when overlay closes
+    if (selectedPartId) {
+      renderSelection();
+    }
+  },
+  onMarkComplete: (partId: string, note: string | null, simPassed: boolean) => {
+    console.log(`Part ${partId} marked complete. Sim passed: ${simPassed}, Note: ${note ?? "(none)"}`);
+  }
+});
+
+runDemo().catch(() => undefined);
 // Initialize mode on page load
 setMode(selectedMode);
 
