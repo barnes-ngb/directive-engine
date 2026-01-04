@@ -532,3 +532,191 @@ body {
   background: #fef2f2;
   border-color: #fca5a5;
 }
+
+/* Export Panel Styles */
+.export-panel {
+  border-left: 3px solid #059669;
+}
+
+.export-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.export-button {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: #ffffff;
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.export-button:hover:not([disabled]) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.export-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.export-button.export-print {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.export-button.export-print:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* Print Styles */
+@media print {
+  /* Hide interactive elements when printing */
+  .page-header,
+  .header-actions,
+  .run-button,
+  .dataset-select,
+  .export-panel,
+  .simulate-button,
+  .reset-button,
+  .reset-all-button,
+  .part-button,
+  .raw-json,
+  .error-banner {
+    display: none !important;
+  }
+
+  /* Reset body/page styles for print */
+  body {
+    background: #ffffff;
+    color: #000000;
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+
+  .page-content {
+    display: block;
+    padding: 0;
+    gap: 0;
+  }
+
+  /* Panel print styles */
+  .panel {
+    border: 1px solid #cccccc;
+    border-radius: 0;
+    margin-bottom: 16pt;
+    page-break-inside: avoid;
+    box-shadow: none;
+    min-height: auto;
+  }
+
+  .panel-body {
+    border: none;
+    background: #ffffff;
+    padding: 8pt;
+  }
+
+  .panel h2 {
+    font-size: 14pt;
+    margin-bottom: 8pt;
+    border-bottom: 1px solid #cccccc;
+    padding-bottom: 4pt;
+  }
+
+  /* Badge print styles */
+  .badge {
+    border: 1px solid #000000;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 2pt 6pt;
+    font-size: 9pt;
+  }
+
+  .badge.ok { border-color: #166534; }
+  .badge.pending { border-color: #1d4ed8; }
+  .badge.clamped { border-color: #92400e; }
+  .badge.blocked { border-color: #b91c1c; }
+  .badge.needs_review { border-color: #6d28d9; }
+
+  /* Simulation badge print styles */
+  .simulation-badge {
+    border: 1px solid #000000;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .simulation-badge.pass { border-color: #166534; }
+  .simulation-badge.fail { border-color: #b91c1c; }
+
+  /* Table print styles */
+  .alignment-table {
+    font-size: 10pt;
+  }
+
+  .alignment-table th,
+  .alignment-table td {
+    padding: 4pt 6pt;
+    border: 1px solid #cccccc;
+  }
+
+  .alignment-table th {
+    background: #f0f0f0;
+  }
+
+  /* Part list print - show as static list */
+  .part-list {
+    list-style: disc;
+    padding-left: 20pt;
+  }
+
+  .part-list li {
+    margin-bottom: 4pt;
+  }
+
+  /* Status details print */
+  .status-details {
+    font-size: 10pt;
+  }
+
+  /* Constraints print */
+  .constraints-grid,
+  .simulation-grid {
+    gap: 8pt;
+  }
+
+  .constraints-section,
+  .simulation-section {
+    border: 1px solid #cccccc;
+    border-radius: 0;
+  }
+
+  /* Placeholder text */
+  .placeholder {
+    color: #666666;
+    font-style: italic;
+  }
+
+  /* Print header - add title */
+  body::before {
+    content: "Directive Engine Report";
+    display: block;
+    font-size: 18pt;
+    font-weight: bold;
+    margin-bottom: 12pt;
+    text-align: center;
+  }
+
+  /* Page break hints */
+  .alignment-panel,
+  .simulation-panel {
+    page-break-before: auto;
+  }
+}

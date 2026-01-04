@@ -24,6 +24,13 @@ import {
   loadMuseumDataset,
   normalizeMuseumAnchors
 } from "./museum.js";
+import {
+  downloadDirectivesJson,
+  downloadRunSummaryMd,
+  downloadDirectivesCsv,
+  printView,
+  type ExportContext
+} from "./export.js";
 
 type DatasetPaths = {
   nominal: string;
@@ -51,6 +58,10 @@ const rawJson = document.querySelector<HTMLPreElement>("#raw-json");
 const errorBanner = document.querySelector<HTMLDivElement>("#error-banner");
 const constraintsPanel = document.querySelector<HTMLDivElement>("#constraints-panel");
 const simulationPanel = document.querySelector<HTMLDivElement>("#simulation-panel");
+const exportJsonButton = document.querySelector<HTMLButtonElement>("#export-json");
+const exportSummaryButton = document.querySelector<HTMLButtonElement>("#export-summary");
+const exportCsvButton = document.querySelector<HTMLButtonElement>("#export-csv");
+const exportPrintButton = document.querySelector<HTMLButtonElement>("#export-print");
 
 let cachedDirectives: DirectivesOutput | null = null;
 let cachedNominal: NominalPosesDataset | null = null;
@@ -740,6 +751,44 @@ function resetResults(dataset: DemoDataset) {
   if (rawJson) {
     rawJson.textContent = "";
   }
+  updateExportButtons(false);
+}
+
+function updateExportButtons(enabled: boolean) {
+  if (exportJsonButton) exportJsonButton.disabled = !enabled;
+  if (exportSummaryButton) exportSummaryButton.disabled = !enabled;
+  if (exportCsvButton) exportCsvButton.disabled = !enabled;
+}
+
+function getExportContext(): ExportContext | null {
+  if (!cachedDirectives || !cachedConstraints) return null;
+  return {
+    directives: cachedDirectives,
+    alignment: cachedAlignment,
+    simulationResults: cachedSimulationResults,
+    constraints: cachedConstraints
+  };
+}
+
+function handleExportJson() {
+  if (!cachedDirectives) return;
+  downloadDirectivesJson(cachedDirectives);
+}
+
+function handleExportSummary() {
+  const context = getExportContext();
+  if (!context) return;
+  downloadRunSummaryMd(context);
+}
+
+function handleExportCsv() {
+  const context = getExportContext();
+  if (!context) return;
+  downloadDirectivesCsv(context);
+}
+
+function handlePrint() {
+  printView();
 }
 
 async function runDemo(): Promise<void> {
@@ -813,6 +862,7 @@ async function runDemo(): Promise<void> {
     renderSelection();
     renderAlignmentQuality(dataset);
     renderRawJson({ nominal, asBuilt, constraints, directives });
+    updateExportButtons(true);
   } catch (error) {
     const dataset = selectedDataset;
     const message =
@@ -843,6 +893,7 @@ async function runDemo(): Promise<void> {
       simulationPanel.innerHTML = `<p class="placeholder">Unable to load simulation.</p>`;
     }
     renderAlignmentQuality(dataset);
+    updateExportButtons(false);
   } finally {
     if (runButton) runButton.disabled = false;
   }
@@ -860,6 +911,23 @@ if (datasetSelect) {
     resetResults(selectedDataset);
     runDemo().catch(() => undefined);
   });
+}
+
+// Export button handlers
+if (exportJsonButton) {
+  exportJsonButton.addEventListener("click", handleExportJson);
+}
+
+if (exportSummaryButton) {
+  exportSummaryButton.addEventListener("click", handleExportSummary);
+}
+
+if (exportCsvButton) {
+  exportCsvButton.addEventListener("click", handleExportCsv);
+}
+
+if (exportPrintButton) {
+  exportPrintButton.addEventListener("click", handlePrint);
 }
 
 runDemo().catch(() => undefined);
