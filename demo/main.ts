@@ -35,9 +35,9 @@ import {
 import {
   initOverlay,
   openOverlay,
-  isOverlayOpen,
-  getCompletedParts
+  isOverlayOpen
 } from "./overlay.js";
+import {
   parseRouteFromUrl,
   updateUrlFromState,
   type DemoDataset,
@@ -269,7 +269,6 @@ function renderParts(
     return;
   }
 
-  const completedParts = getCompletedParts();
   const showCheckmarks = selectedMode === "runbook";
 
   partList.innerHTML = `
@@ -278,7 +277,6 @@ function renderParts(
         .map((part) => {
           const name = partNames.get(part.id) ?? part.id;
           const isSelected = part.id === selectedPartId;
-          const isCompleted = completedParts.has(part.id);
           const isCompleted = runState.completed_steps[part.id]?.completed ?? false;
           const completedClass = isCompleted ? "is-completed" : "";
           const checkmark = showCheckmarks
