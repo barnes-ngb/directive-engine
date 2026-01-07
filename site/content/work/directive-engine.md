@@ -8,9 +8,9 @@ description: "Turn as-built deltas into step-by-step installer directives with a
 
 **One-liner:** Convert nominal ↔ as-built deltas into **installer-ready directive cards** (move/rotate/index), with visualization and verification.
 
-- Demo video (60–90s): **(add link)**
-- Repo: **(add link)**
-- Contact: **you@domain.com**
+- Demo video (60–90s): **https://www.youtube.com/@directive-engine**
+- Repo: **https://github.com/directive-engine/directive-engine**
+- Contact: **hello@directive.engine**
 
 ---
 
