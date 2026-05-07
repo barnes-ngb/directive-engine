@@ -89,11 +89,17 @@ All fixture data lives under `datasets/`:
    - visualize correction gizmo
    - simulate apply + show before/after metric
 
+## Tech stack
+- **TypeScript** (strict, ES2022, bundler resolution)
+- **Vite** (dev server + build) — see `vite.config.ts`. The demo is the build root.
+- **Vitest** (unit tests) — see `vitest.config.ts`.
+- **Three.js** (r160) — 3D viewer scaffolding under `src/viewer/`. Imported as ES modules; `OrbitControls` is loaded from `three/examples/jsm/controls/OrbitControls.js`.
+
 ## Commands
 ```bash
 npm install
 npm test
-npm run dev
+npm run dev      # serves /index.html (data tables) and /viewer.html (3D scene)
 npm run build
 ```
 
