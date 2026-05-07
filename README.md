@@ -18,14 +18,31 @@ When reality capture shows deviations, teams still need **field-executable instr
 - `datasets/` — fixture datasets + golden expected outputs
 - `site/` — markdown “website bones” (content-only)
 
-## Core API usage (v0.1)
+## Core API usage (v0.1 / v0.2-features)
 `generateDirectives` is the canonical entry point for producing installer-ready directives.
-The v0.1 contract assumes:
+The contract assumes:
 - **Units**: millimeters
 - **Pose**: `T_world_part` (pose of part frame in world)
 - **Rotation**: quaternion `[x, y, z, w]`
 - **Statuses**: `ok | pending | clamped | blocked | needs_review`
 - **Actions**: `translate | rotate | rotate_to_index | noop`
+
+### Named kinematic features (optional, additive)
+A `PartConstraint` may carry an optional `features` array declaring named
+joints, slots, and indexed bolt patterns in part frame. Features are pure
+**presentation metadata** — `generateDirectives` does not read them; the
+engine output is identical with or without features declared. The
+presentation layer (`src/presentation/format-directive.ts`) uses them to
+render directives in installer language:
+
+```
+With features:    "Pivot +0.4° about J1 (CCW from outside face).
+                   Translate +3.2mm along S2. Status: pending. Tolerance: ±2.0mm."
+Without features: "Translate +3.2mm along part-frame Y. Status: pending. ..."
+```
+
+See `docs/02_data_contract.md` for the feature shape and
+`src/presentation/format-directive.ts` for `formatDirective(step, constraint?)`.
 
 ```ts
 import { generateDirectives } from "./src/core/index.js";
