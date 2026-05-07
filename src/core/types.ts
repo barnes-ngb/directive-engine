@@ -57,6 +57,55 @@ export interface Tolerances {
   rotation_deg: number;
 }
 
+/**
+ * Named kinematic feature on a part. Used by the presentation layer to render
+ * directives in installer language (e.g., "Pivot 0.4° about J1"). Ignored by
+ * the engine — engine output is the same regardless of features.
+ *
+ * Coordinates are in part frame (mm). Axes need not be unit length;
+ * formatters normalize as needed.
+ */
+export interface JointFeature {
+  /** Short identifier, e.g. "J1". */
+  id: string;
+  kind: "joint";
+  /** Pivot point in part frame (mm). */
+  position_mm: Vec3;
+  /** Rotation axis in part frame. */
+  axis: Vec3;
+  /** Optional human-readable note (e.g., "CCW from outside face"). */
+  description?: string;
+}
+
+/** Linear slot (single translation DOF) named for the installer. */
+export interface SlotFeature {
+  /** Short identifier, e.g. "S2". */
+  id: string;
+  kind: "slot";
+  /** Reference point on the slot in part frame (mm). */
+  position_mm: Vec3;
+  /** Translation axis in part frame; sign defines positive direction. */
+  axis: Vec3;
+  description?: string;
+}
+
+/** Indexed bolt pattern (discrete rotational positions). */
+export interface IndexFeature {
+  /** Short identifier, e.g. "I1". */
+  id: string;
+  kind: "index";
+  /** Center of bolt pattern in part frame (mm). */
+  position_mm: Vec3;
+  /** Rotation axis of the pattern in part frame. */
+  axis: Vec3;
+  /** Number of indexed positions around the axis. */
+  count: number;
+  description?: string;
+}
+
+export type Feature = JointFeature | SlotFeature | IndexFeature;
+export type FeatureKind = Feature["kind"];
+
 export interface PartConstraint {
   part_id: string;
   allowed_translation_axes: AxisMask;
@@ -67,6 +116,11 @@ export interface PartConstraint {
   rotation_max_abs_deg?: PerAxisLimitDeg;
   index_rotation?: IndexRotation;
   tolerances: Tolerances;
+  /**
+   * Optional named kinematic features. Pure presentation metadata —
+   * `generateDirectives` does not read this field.
+   */
+  features?: Feature[];
   verification?: { method: "measure_pose" | "re_scan" | "manual_inspection"; notes?: string };
 }
 

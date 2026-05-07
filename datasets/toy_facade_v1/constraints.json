@@ -21,6 +21,22 @@
         "translationMm": 2.0,
         "rotationDeg": 1.0
       },
+      "features": [
+        {
+          "id": "S1",
+          "kind": "slot",
+          "position_mm": [0, 0, 0],
+          "axis": [1, 0, 0],
+          "description": "Lateral mounting slot along part X."
+        },
+        {
+          "id": "S2",
+          "kind": "slot",
+          "position_mm": [0, 0, 0],
+          "axis": [0, 1, 0],
+          "description": "Vertical mounting slot along part Y."
+        }
+      ],
       "notes": [
         "Loosen anchors A/B",
         "Shim behind bracket if needed",
@@ -50,6 +66,23 @@
         "translationMm": 2.0,
         "rotationDeg": 1.0
       },
+      "features": [
+        {
+          "id": "S3",
+          "kind": "slot",
+          "position_mm": [0, 0, 0],
+          "axis": [1, 0, 0],
+          "description": "Lateral slot along part X."
+        },
+        {
+          "id": "I1",
+          "kind": "index",
+          "position_mm": [0, 0, 0],
+          "axis": [0, 0, 1],
+          "count": 4,
+          "description": "Four-position detent about part Z."
+        }
+      ],
       "notes": [
         "Rotate to nearest index",
         "Verify plumb after adjustment"

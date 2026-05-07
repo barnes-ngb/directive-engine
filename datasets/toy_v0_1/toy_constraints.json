@@ -21,6 +21,22 @@
       "allowed_rotation_axes": { "x": false, "y": false, "z": false },
       "translation_max_abs_mm": { "x": 10, "y": 10, "z": 0 },
       "tolerances": { "translation_mm": 1.0, "rotation_deg": 1.0 },
+      "features": [
+        {
+          "id": "S1",
+          "kind": "slot",
+          "position_mm": [0, 0, 0],
+          "axis": [1, 0, 0],
+          "description": "Lateral slot along part X."
+        },
+        {
+          "id": "S2",
+          "kind": "slot",
+          "position_mm": [0, 0, 0],
+          "axis": [0, 1, 0],
+          "description": "Vertical slot along part Y."
+        }
+      ],
       "verification": { "method": "measure_pose", "notes": "Translate-only alignment; rotation should remain unchanged." }
     },
     {
@@ -30,6 +46,15 @@
       "allowed_rotation_axes": { "x": false, "y": false, "z": false },
       "translation_max_abs_mm": { "x": 5, "y": 5, "z": 0 },
       "tolerances": { "translation_mm": 5.0, "rotation_deg": 2.0 },
+      "features": [
+        {
+          "id": "S3",
+          "kind": "slot",
+          "position_mm": [0, 0, 0],
+          "axis": [1, 0, 0],
+          "description": "Bracket slot along part X."
+        }
+      ],
       "verification": { "method": "measure_pose", "notes": "Clamped adjustment permitted; boundary is acceptable." }
     },
     {
@@ -45,6 +70,16 @@
         "nominal_index": 0
       },
       "tolerances": { "translation_mm": 1.0, "rotation_deg": 2.0 },
+      "features": [
+        {
+          "id": "I1",
+          "kind": "index",
+          "position_mm": [0, 0, 0],
+          "axis": [0, 0, 1],
+          "count": 4,
+          "description": "Four-position detent about part Z."
+        }
+      ],
       "verification": { "method": "manual_inspection", "notes": "Confirm detent at target index." }
     },
     {
@@ -73,6 +108,15 @@
       "allowed_rotation_axes": { "x": true, "y": false, "z": false },
       "rotation_max_abs_deg": { "x": 10, "y": 0, "z": 0 },
       "tolerances": { "translation_mm": 1.0, "rotation_deg": 1.0 },
+      "features": [
+        {
+          "id": "J1",
+          "kind": "joint",
+          "position_mm": [0, 0, 0],
+          "axis": [1, 0, 0],
+          "description": "Hinge joint about part X (CCW from outside face)."
+        }
+      ],
       "verification": { "method": "measure_pose", "notes": "Rotate latch about hinge axis only." }
     }
   ]

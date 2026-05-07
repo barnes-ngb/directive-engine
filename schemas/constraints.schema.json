@@ -89,6 +89,78 @@
         }
       }
     },
+    "Vec3": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "type": "number" }
+    },
+    "Feature": {
+      "oneOf": [
+        { "$ref": "#/$defs/JointFeature" },
+        { "$ref": "#/$defs/SlotFeature" },
+        { "$ref": "#/$defs/IndexFeature" }
+      ]
+    },
+    "JointFeature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "position_mm", "axis"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Short identifier, e.g. \"J1\"." },
+        "kind": { "type": "string", "const": "joint" },
+        "position_mm": {
+          "$ref": "#/$defs/Vec3",
+          "description": "Pivot point in part frame (mm)."
+        },
+        "axis": {
+          "$ref": "#/$defs/Vec3",
+          "description": "Rotation axis in part frame; need not be unit-length."
+        },
+        "description": { "type": "string" }
+      }
+    },
+    "SlotFeature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "position_mm", "axis"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Short identifier, e.g. \"S2\"." },
+        "kind": { "type": "string", "const": "slot" },
+        "position_mm": {
+          "$ref": "#/$defs/Vec3",
+          "description": "Reference point on the slot in part frame (mm)."
+        },
+        "axis": {
+          "$ref": "#/$defs/Vec3",
+          "description": "Slot translation axis in part frame; sign defines positive direction."
+        },
+        "description": { "type": "string" }
+      }
+    },
+    "IndexFeature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "position_mm", "axis", "count"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "description": "Short identifier, e.g. \"I1\"." },
+        "kind": { "type": "string", "const": "index" },
+        "position_mm": {
+          "$ref": "#/$defs/Vec3",
+          "description": "Center of indexed bolt pattern in part frame (mm)."
+        },
+        "axis": {
+          "$ref": "#/$defs/Vec3",
+          "description": "Rotation axis of the indexed pattern in part frame."
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Number of indexed positions around the axis."
+        },
+        "description": { "type": "string" }
+      }
+    },
     "Tolerances": {
       "type": "object",
       "additionalProperties": false,
@@ -131,6 +203,11 @@
           "description": "Required when rotation_mode='index'."
         },
         "tolerances": { "$ref": "#/$defs/Tolerances" },
+        "features": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Feature" },
+          "description": "Optional named kinematic features (joints, slots, indexed bolt patterns) used by the presentation layer to render directives in installer language. Ignored by the engine."
+        },
         "verification": {
           "type": "object",
           "additionalProperties": false,
