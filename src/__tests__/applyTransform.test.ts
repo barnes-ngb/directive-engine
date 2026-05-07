@@ -4,7 +4,8 @@ import {
   applyTransformToLine,
   applyTransformToPoint,
 } from "../core/index.js";
-import type { Line3, Transform, Vec3 } from "../types.js";
+import type { Transform, Vec3 } from "../types.js";
+import type { Line3 } from "../core/align/apply.js";
 
 const EPS = 1e-6;
 

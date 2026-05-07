@@ -602,7 +602,8 @@ export function generateDirectives({
       actions.push(rotResult.action);
     }
     reasonCodes.push(...rotResult.reasons);
-    if (rotResult.clamped && status !== "blocked") {
+    if (rotResult.clamped) {
+      // status here is "pending" | "clamped"; "blocked" is set below.
       status = "clamped";
     }
     if (rotResult.blocked) {

@@ -27,7 +27,7 @@ describe("simulateStep", () => {
       step_id: "S1",
       part_id: "P1",
       status: "blocked",
-      reason_codes: ["blocked"],
+      reason_codes: ["outside_limits_blocked"],
       computed_errors: {
         translation_error_mm_vec: [10, 0, 0],
         translation_error_norm_mm: 10,
