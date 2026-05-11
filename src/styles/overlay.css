@@ -1,31 +1,83 @@
 /*
  * Overlay styles for the directive-engine demo viewer.
  *
- * Class names match the portfolio site's existing primitives
- * (`directive-card`, `verification-panel`, `metric-card`, `chip`, `callout`)
- * so visuals stay consistent. Phase 4 may reconcile values against the
- * canonical site CSS; until then this is the source of truth for the demo.
+ * ---------------------------------------------------------------------------
+ * CSS reconciliation (Phase 4, v0.2)
+ * ---------------------------------------------------------------------------
+ * Class names below match the systemsforge.build portfolio site's primitives:
+ *
+ *   directive-card, verification-panel, metric-card, chip (variants:
+ *   --ok / --pass / --pending / --clamped / --blocked), callout
+ *
+ * For v0.2 the demo and the site keep duplicate copies, synced by hand. If a
+ * value drifts, the site is the source of truth — update this file to match.
+ *
+ *   Site source-of-truth path (when site repo is cloned alongside):
+ *     ../systemsforge-site/src/styles/components/{cards,chips,callout}.css
+ *
+ * Revisit shared-package extraction after v0.2 ships.
+ * ---------------------------------------------------------------------------
+ *
+ * Tokens (`--de-*`) are scoped to the demo so they don't collide with site
+ * tokens; component class names stay unscoped so the markup is portable.
  */
 
 :root {
+  /* Surfaces */
   --de-bg: rgba(20, 22, 27, 0.92);
+  --de-bg-solid: #14161b;
+  --de-bg-elevated: rgba(255, 255, 255, 0.04);
   --de-border: rgba(255, 255, 255, 0.12);
+  --de-border-strong: rgba(255, 255, 255, 0.22);
+
+  /* Foreground */
   --de-fg: #e8eaed;
-  --de-fg-dim: #9aa0a6;
+  --de-fg-dim: #b3b8c0; /* WCAG AA ≥ 4.5 against --de-bg-solid */
+  --de-fg-muted: #9aa0a6;
+
+  /* Accent + status (AA-compliant against --de-bg-solid) */
   --de-accent: #6ea8ff;
+  --de-accent-ink: #0a0d12;
 
   --de-ok: #4ade80;
   --de-pass: #22c55e;
   --de-pending: #facc15;
-  --de-clamped: #f97316;
-  --de-blocked: #ef4444;
+  --de-clamped: #fb923c;
+  --de-blocked: #f87171;
+  --de-review: #facc15;
 
+  /* Focus indicator (high-contrast outline; matches site) */
+  --de-focus-ring: 2px solid #ffd166;
+  --de-focus-offset: 2px;
+
+  /* Geometry */
   --de-radius: 10px;
   --de-radius-sm: 6px;
   --de-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 
+  /* Typography scale */
   --de-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --de-fs-headline: 17px;
+  --de-fs-subhead: 13px;
+  --de-fs-body: 14px;
+  --de-fs-card-title: 18px;
+  --de-fs-metric: 22px;
+  --de-fs-chip: 11px;
+  --de-fs-eyebrow: 11px;
+  --de-fs-label: 12px;
+
+  /* Spacing scale */
+  --de-space-1: 4px;
+  --de-space-2: 8px;
+  --de-space-3: 12px;
+  --de-space-4: 16px;
+  --de-space-5: 24px;
+  --de-space-6: 32px;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Root container                                                     */
+/* ------------------------------------------------------------------ */
 
 .de-overlay {
   position: absolute;
@@ -33,10 +85,33 @@
   pointer-events: none;
   font-family: var(--de-font);
   color: var(--de-fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .de-overlay > * {
   pointer-events: auto;
+}
+
+/* Global keyboard focus indicator — applies to every interactive element. */
+.de-overlay :focus-visible,
+.de-fallback :focus-visible {
+  outline: var(--de-focus-ring);
+  outline-offset: var(--de-focus-offset);
+  border-radius: var(--de-radius-sm);
+}
+
+/* Off-screen utility for screen-reader-only text. */
+.de-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -45,7 +120,7 @@
 
 .de-overlay__headline {
   position: absolute;
-  top: 24px;
+  top: var(--de-space-5);
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
@@ -55,20 +130,23 @@
   border: 1px solid var(--de-border);
   border-radius: var(--de-radius);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   box-shadow: var(--de-shadow);
 }
 
 .de-overlay__headline h1 {
   margin: 0;
-  font-size: 17px;
+  font-size: var(--de-fs-headline);
   font-weight: 600;
   letter-spacing: 0.01em;
+  line-height: 1.3;
 }
 
 .de-overlay__headline p {
-  margin: 4px 0 0 0;
-  font-size: 13px;
+  margin: var(--de-space-1) 0 0 0;
+  font-size: var(--de-fs-subhead);
   color: var(--de-fg-dim);
+  line-height: 1.45;
 }
 
 .de-overlay__beat-indicator {
@@ -90,7 +168,7 @@
 }
 
 .de-overlay__beat-dot.is-done {
-  background: rgba(110, 168, 255, 0.45);
+  background: rgba(110, 168, 255, 0.55);
 }
 
 /* ------------------------------------------------------------------ */
@@ -100,18 +178,19 @@
 .directive-card {
   position: absolute;
   bottom: 96px;
-  left: 32px;
+  left: var(--de-space-6);
   width: 360px;
   background: var(--de-bg);
   border: 1px solid var(--de-border);
   border-radius: var(--de-radius);
   padding: 18px 20px;
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   box-shadow: var(--de-shadow);
 }
 
 .directive-card__eyebrow {
-  font-size: 11px;
+  font-size: var(--de-fs-eyebrow);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--de-fg-dim);
@@ -119,16 +198,20 @@
 }
 
 .directive-card__part {
-  font-size: 18px;
+  font-size: var(--de-fs-card-title);
   font-weight: 600;
-  margin: 0 0 12px 0;
+  margin: 0 0 var(--de-space-3) 0;
+  line-height: 1.25;
 }
 
 .directive-card__body {
-  font-size: 14px;
+  font-size: var(--de-fs-body);
   line-height: 1.55;
   color: var(--de-fg);
   margin: 0 0 14px 0;
+  /* Soft hyphenation so the directive sentence doesn't orphan ugly tokens. */
+  hyphens: auto;
+  text-wrap: pretty;
 }
 
 .directive-card__chips {
@@ -140,24 +223,28 @@
 
 .directive-card__actions {
   display: flex;
-  gap: 8px;
+  gap: var(--de-space-2);
 }
 
 .directive-card__apply {
   background: var(--de-accent);
-  color: #0a0d12;
-  border: none;
+  color: var(--de-accent-ink);
+  border: 1px solid transparent;
   border-radius: var(--de-radius-sm);
   padding: 9px 16px;
   font-weight: 600;
   font-size: 13px;
   font-family: inherit;
   cursor: pointer;
-  transition: filter 0.15s ease;
+  transition: filter 0.15s ease, transform 0.05s ease;
 }
 
 .directive-card__apply:hover:not(:disabled) {
   filter: brightness(1.08);
+}
+
+.directive-card__apply:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .directive-card__apply:disabled {
@@ -167,6 +254,9 @@
 
 /* ------------------------------------------------------------------ */
 /*  Chip variants                                                      */
+/*                                                                     */
+/*  Status is conveyed by colour AND label text (e.g. "pending",       */
+/*  "pass"). The leading dot is decorative — never the sole signal.    */
 /* ------------------------------------------------------------------ */
 
 .chip {
@@ -175,13 +265,14 @@
   gap: 6px;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--de-fs-chip);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   background: rgba(255, 255, 255, 0.08);
   color: var(--de-fg);
   border: 1px solid var(--de-border);
+  white-space: nowrap;
 }
 
 .chip::before {
@@ -190,6 +281,7 @@
   height: 6px;
   border-radius: 50%;
   background: currentColor;
+  flex: 0 0 auto;
 }
 
 .chip--ok { color: var(--de-ok); }
@@ -205,18 +297,19 @@
 .verification-panel {
   position: absolute;
   bottom: 96px;
-  right: 32px;
+  right: var(--de-space-6);
   width: 360px;
   background: var(--de-bg);
   border: 1px solid var(--de-border);
   border-radius: var(--de-radius);
   padding: 18px 20px;
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   box-shadow: var(--de-shadow);
 }
 
 .verification-panel__eyebrow {
-  font-size: 11px;
+  font-size: var(--de-fs-eyebrow);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--de-fg-dim);
@@ -227,18 +320,18 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: var(--de-space-3);
 }
 
 .metric-card {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--de-bg-elevated);
   border: 1px solid var(--de-border);
   border-radius: var(--de-radius-sm);
   padding: 10px 12px;
 }
 
 .metric-card__label {
-  font-size: 11px;
+  font-size: var(--de-fs-eyebrow);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--de-fg-dim);
@@ -246,10 +339,11 @@
 }
 
 .metric-card__value {
-  font-size: 22px;
+  font-size: var(--de-fs-metric);
   font-weight: 600;
   margin: 0;
   font-variant-numeric: tabular-nums;
+  line-height: 1.15;
 }
 
 .metric-card__unit {
@@ -260,7 +354,7 @@
 }
 
 .verification-panel__callout {
-  margin-top: 8px;
+  margin-top: var(--de-space-2);
 }
 
 /* ------------------------------------------------------------------ */
@@ -274,6 +368,7 @@
   border-left: 2px solid var(--de-accent);
   padding: 6px 0 6px 10px;
   margin: 0;
+  text-wrap: pretty;
 }
 
 /* ------------------------------------------------------------------ */
@@ -282,16 +377,17 @@
 
 .de-beat-nav {
   position: absolute;
-  bottom: 24px;
+  bottom: var(--de-space-5);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 8px;
-  padding: 8px;
+  gap: var(--de-space-2);
+  padding: var(--de-space-2);
   background: var(--de-bg);
   border: 1px solid var(--de-border);
   border-radius: 999px;
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   box-shadow: var(--de-shadow);
 }
 
@@ -319,7 +415,7 @@
 
 .de-beat-nav__button--primary {
   background: var(--de-accent);
-  color: #0a0d12;
+  color: var(--de-accent-ink);
 }
 
 .de-beat-nav__button--primary:hover:not(:disabled) {
@@ -329,8 +425,208 @@
 
 .de-beat-nav__label {
   align-self: center;
-  padding: 0 8px;
-  font-size: 12px;
+  padding: 0 var(--de-space-2);
+  font-size: var(--de-fs-label);
   color: var(--de-fg-dim);
   font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Loading + error states                                             */
+/* ------------------------------------------------------------------ */
+
+.de-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--de-space-3);
+  background: var(--de-bg-solid);
+  color: var(--de-fg-dim);
+  font-family: var(--de-font);
+  font-size: var(--de-fs-subhead);
+  z-index: 10;
+}
+
+.de-loading__spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--de-border);
+  border-top-color: var(--de-accent);
+  border-radius: 50%;
+  animation: de-spin 0.9s linear infinite;
+}
+
+@keyframes de-spin {
+  to { transform: rotate(360deg); }
+}
+
+.de-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--de-space-6);
+  background: var(--de-bg-solid);
+  color: var(--de-fg);
+  font-family: var(--de-font);
+  z-index: 11;
+}
+
+.de-error__card {
+  max-width: 480px;
+  text-align: center;
+  background: var(--de-bg-elevated);
+  border: 1px solid var(--de-border-strong);
+  border-radius: var(--de-radius);
+  padding: var(--de-space-5);
+}
+
+.de-error__title {
+  margin: 0 0 var(--de-space-2) 0;
+  font-size: var(--de-fs-card-title);
+  font-weight: 600;
+}
+
+.de-error__body {
+  margin: 0;
+  font-size: var(--de-fs-body);
+  color: var(--de-fg-dim);
+  line-height: 1.55;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Text-only summary view (corner link → modal section)               */
+/*                                                                     */
+/*  Accessibility fallback for low-power devices and screen readers.   */
+/*  The 3D scene and its overlays are aria-hidden when this view is    */
+/*  open.                                                              */
+/* ------------------------------------------------------------------ */
+
+.de-fallback-link {
+  position: absolute;
+  top: var(--de-space-5);
+  right: var(--de-space-5);
+  font-size: var(--de-fs-label);
+  color: var(--de-fg-dim);
+  background: var(--de-bg);
+  border: 1px solid var(--de-border);
+  border-radius: var(--de-radius-sm);
+  padding: 6px 10px;
+  text-decoration: none;
+  font-family: var(--de-font);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.de-fallback-link:hover {
+  color: var(--de-fg);
+  border-color: var(--de-border-strong);
+}
+
+.de-fallback {
+  position: fixed;
+  inset: 0;
+  background: var(--de-bg-solid);
+  color: var(--de-fg);
+  font-family: var(--de-font);
+  z-index: 100;
+  overflow-y: auto;
+  padding: var(--de-space-6);
+}
+
+.de-fallback[hidden] {
+  display: none;
+}
+
+.de-fallback__inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.de-fallback__close {
+  position: sticky;
+  top: 0;
+  float: right;
+  background: transparent;
+  color: var(--de-fg);
+  border: 1px solid var(--de-border);
+  border-radius: var(--de-radius-sm);
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: var(--de-fs-label);
+  cursor: pointer;
+}
+
+.de-fallback__close:hover {
+  border-color: var(--de-border-strong);
+}
+
+.de-fallback h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0 0 var(--de-space-2) 0;
+}
+
+.de-fallback__lede {
+  font-size: 15px;
+  color: var(--de-fg-dim);
+  line-height: 1.55;
+  margin: 0 0 var(--de-space-5) 0;
+}
+
+.de-fallback h2 {
+  font-size: var(--de-fs-card-title);
+  font-weight: 600;
+  margin: var(--de-space-5) 0 var(--de-space-2) 0;
+}
+
+.de-fallback p,
+.de-fallback li {
+  font-size: var(--de-fs-body);
+  color: var(--de-fg);
+  line-height: 1.55;
+}
+
+.de-fallback ol.de-fallback__beats {
+  padding-left: 1.25em;
+  margin: 0;
+}
+
+.de-fallback ol.de-fallback__beats li {
+  margin-bottom: var(--de-space-3);
+}
+
+.de-fallback ol.de-fallback__beats li strong {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+.de-fallback__metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--de-space-3);
+  margin-top: var(--de-space-3);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Reduce-motion: snap every overlay transition.                      */
+/*  Phase 3 tweens are handled in the AnimRunner; this block covers   */
+/*  the CSS-driven micro-transitions on chips, buttons, dots.          */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .de-overlay *,
+  .de-overlay *::before,
+  .de-overlay *::after,
+  .de-fallback *,
+  .de-loading__spinner {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

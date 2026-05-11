@@ -113,7 +113,19 @@ export function mountViewer(container: HTMLElement): MountedViewer {
 
   // ---- Animation runner -----------------------------------------------------
 
-  const animRunner = new AnimRunner();
+  // Respect prefers-reduced-motion at construction, and listen for changes so
+  // a user toggling the OS setting mid-session is honoured.
+  const reduceMotionQuery =
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)")
+      : null;
+  const animRunner = new AnimRunner(undefined, {
+    reduceMotion: reduceMotionQuery?.matches ?? false,
+  });
+  const onReduceMotionChange = (e: MediaQueryListEvent) => {
+    animRunner.setReduceMotion(e.matches);
+  };
+  reduceMotionQuery?.addEventListener?.("change", onReduceMotionChange);
   const unsubscribeTick = scene.onBeforeRender(() => animRunner.tick());
 
   // Cancel any active camera tween if the user grabs the orbit controls.
@@ -165,6 +177,7 @@ export function mountViewer(container: HTMLElement): MountedViewer {
     dispose: () => {
       animRunner.cancelAll();
       unsubscribeTick();
+      reduceMotionQuery?.removeEventListener?.("change", onReduceMotionChange);
       scene.controls.removeEventListener("start", onUserOrbitStart);
       arrows.dispose();
       featureMarkers?.dispose();
@@ -460,7 +473,13 @@ function pickCameraWaypoint(
   // Beat 3: tiny pull-back to make room for the directive card.
   // Beat 4: hold position to read the panel tween cleanly.
   const radiusScale = state.beat === 2 ? 1.0 : state.beat === 3 ? 1.15 : 1.1;
-  const radius = baseRadius * radiusScale;
+  // Portrait viewports need extra room so the directive card (bottom sheet)
+  // doesn't overlap the focused panel.
+  const aspectFactor =
+    typeof window !== "undefined" && window.innerHeight > window.innerWidth
+      ? 1.35
+      : 1.0;
+  const radius = baseRadius * radiusScale * aspectFactor;
 
   return {
     position: new THREE.Vector3(
@@ -540,7 +559,13 @@ function computePanelBounds(fixture: FacadeFixture): PanelBounds {
 }
 
 function deriveCameraPosition(bounds: PanelBounds): THREE.Vector3 {
-  const radius = Math.max(bounds.spanX, bounds.spanY) * 1.8 + 2500;
+  // Pull back further when the viewport is portrait (mobile) so the whole
+  // facade fits within the canvas's narrower horizontal field of view.
+  const aspectFactor =
+    typeof window !== "undefined" && window.innerHeight > window.innerWidth
+      ? 1.55
+      : 1.0;
+  const radius = (Math.max(bounds.spanX, bounds.spanY) * 1.8 + 2500) * aspectFactor;
   return new THREE.Vector3(
     bounds.center.x + radius * 0.7,
     bounds.center.y + radius * 0.4,

@@ -25,9 +25,11 @@ export function createVerificationPanel(): VerificationPanelHandle {
   const root = document.createElement("section");
   root.className = "verification-panel";
   root.style.display = "none";
+  root.setAttribute("aria-labelledby", "de-verify-eyebrow");
 
   const eyebrow = document.createElement("p");
   eyebrow.className = "verification-panel__eyebrow";
+  eyebrow.id = "de-verify-eyebrow";
   eyebrow.textContent = "Verification";
   root.appendChild(eyebrow);
 
@@ -45,6 +47,8 @@ export function createVerificationPanel(): VerificationPanelHandle {
   const passChip = document.createElement("span");
   passChip.className = "chip chip--pass";
   passChip.textContent = "pass";
+  passChip.setAttribute("role", "status");
+  passChip.setAttribute("aria-label", "Verification status: pass");
   chipRow.appendChild(passChip);
   root.appendChild(chipRow);
 
@@ -61,6 +65,10 @@ export function createVerificationPanel(): VerificationPanelHandle {
       metrics.beforeMaxDeviationMm > metrics.toleranceMm;
     passChip.className = passed ? "chip chip--pass" : "chip chip--pending";
     passChip.textContent = passed ? "pass" : "review";
+    passChip.setAttribute(
+      "aria-label",
+      `Verification status: ${passed ? "pass" : "review"}`,
+    );
   }
 
   function setVisible(visible: boolean): void {

@@ -25,12 +25,14 @@ export interface DirectiveCardHandle {
 
 /** Build the directive-card root element + behaviour. */
 export function createDirectiveCard(opts: DirectiveCardOptions): DirectiveCardHandle {
-  const root = document.createElement("div");
+  const root = document.createElement("section");
   root.className = "directive-card";
   root.style.display = "none";
+  root.setAttribute("aria-labelledby", "de-directive-eyebrow");
 
   const eyebrow = document.createElement("p");
   eyebrow.className = "directive-card__eyebrow";
+  eyebrow.id = "de-directive-eyebrow";
   eyebrow.textContent = "Directive";
   root.appendChild(eyebrow);
 
@@ -95,7 +97,11 @@ export function createDirectiveCard(opts: DirectiveCardOptions): DirectiveCardHa
 function buildStatusChip(status: Status): HTMLElement {
   const chip = document.createElement("span");
   chip.className = `chip chip--${status === "ok" ? "ok" : status}`;
-  chip.textContent = status.replace("_", " ");
+  const label = status.replace("_", " ");
+  chip.textContent = label;
+  // The label itself communicates state — but make it explicit for AT.
+  chip.setAttribute("role", "status");
+  chip.setAttribute("aria-label", `Status: ${label}`);
   return chip;
 }
 

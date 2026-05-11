@@ -1,0 +1,198 @@
+/*
+ * Responsive layout rules for the directive-engine viewer overlay.
+ *
+ * Breakpoints:
+ *   ≥1024px  — desktop (defaults in overlay.css)
+ *   768–1023 — tablet  (compressed type, smaller cards)
+ *   <768px   — mobile  (full-width bottom sheet, vertical stack)
+ *
+ * The 3D canvas is always full-bleed; the overlay floats above it. On mobile
+ * the directive card and verification panel collapse into the bottom sheet
+ * region so the canvas keeps the top 60% of the viewport.
+ */
+
+/* ------------------------------------------------------------------ */
+/*  Tablet — 768px to 1023px                                           */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  :root {
+    --de-fs-headline: 16px;
+    --de-fs-card-title: 17px;
+    --de-fs-metric: 20px;
+  }
+
+  .de-overlay__headline {
+    max-width: 600px;
+    padding: 12px 18px;
+    top: 16px;
+  }
+
+  .directive-card,
+  .verification-panel {
+    width: 320px;
+    bottom: 88px;
+    padding: 16px 18px;
+  }
+
+  .directive-card {
+    left: 20px;
+  }
+
+  .verification-panel {
+    right: 20px;
+  }
+
+  .de-fallback-link {
+    top: 16px;
+    right: 16px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Mobile — under 768px                                               */
+/*                                                                     */
+/*  Bottom-sheet layout: headline pinned to the top, beat-nav + cards  */
+/*  stack at the bottom (~42vh) so the 3D canvas keeps the top ~58vh.  */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 767px) {
+  :root {
+    --de-fs-headline: 15px;
+    --de-fs-subhead: 12px;
+    --de-fs-body: 13.5px;
+    --de-fs-card-title: 16px;
+    --de-fs-metric: 19px;
+    --de-fs-chip: 10.5px;
+  }
+
+  /* Headline shrinks to a single line strip at the very top. */
+  .de-overlay__headline {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    transform: none;
+    max-width: none;
+    padding: 10px 14px;
+    border-radius: var(--de-radius-sm);
+  }
+
+  .de-overlay__headline h1 {
+    font-size: var(--de-fs-headline);
+  }
+
+  .de-overlay__headline p {
+    font-size: var(--de-fs-subhead);
+  }
+
+  .de-overlay__beat-indicator {
+    margin-top: 6px;
+  }
+
+  /* Directive card occupies the full-width bottom sheet, sitting above the
+     nav. Position via inset rather than width so it fluidly resizes. */
+  .directive-card {
+    left: 8px;
+    right: 8px;
+    bottom: 76px;
+    width: auto;
+    padding: 14px 16px;
+    border-radius: var(--de-radius);
+    max-height: 38vh;
+    overflow-y: auto;
+  }
+
+  .directive-card__body {
+    font-size: var(--de-fs-body);
+    margin-bottom: 10px;
+  }
+
+  .directive-card__chips {
+    margin-bottom: 10px;
+  }
+
+  /* Verification panel takes the same bottom-sheet slot as the directive
+     card (only one is visible at a time per beat). */
+  .verification-panel {
+    left: 8px;
+    right: 8px;
+    bottom: 76px;
+    width: auto;
+    padding: 14px 16px;
+    max-height: 38vh;
+    overflow-y: auto;
+  }
+
+  .verification-panel__metrics {
+    gap: 8px;
+  }
+
+  /* Beat nav pinned to the very bottom, full-width pill. */
+  .de-beat-nav {
+    bottom: 12px;
+    left: 8px;
+    right: 8px;
+    transform: none;
+    justify-content: space-between;
+    padding: 6px;
+  }
+
+  .de-beat-nav__button {
+    padding: 10px 16px;
+    /* Minimum 44x44 hit target for touch. */
+    min-height: 40px;
+  }
+
+  .de-beat-nav__label {
+    font-size: 11px;
+    padding: 0 6px;
+  }
+
+  .directive-card__apply {
+    /* Beefier hit target on touch. */
+    padding: 12px 18px;
+    width: 100%;
+  }
+
+  .de-fallback-link {
+    top: 8px;
+    right: 8px;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .de-fallback {
+    padding: var(--de-space-4);
+  }
+
+  .de-fallback h1 {
+    font-size: 22px;
+  }
+
+  .de-fallback__metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Very small / landscape phones — keep the canvas readable.          */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 767px) and (max-height: 480px) {
+  .directive-card,
+  .verification-panel {
+    max-height: 50vh;
+  }
+
+  .de-overlay__headline {
+    padding: 6px 12px;
+  }
+
+  .de-overlay__headline p {
+    display: none; /* hide subhead in landscape phones — title only */
+  }
+
+  .de-overlay__beat-indicator {
+    margin-top: 4px;
+  }
+}

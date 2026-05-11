@@ -83,6 +83,33 @@ means the panel is in its corrected pose. This keeps Back/Restart trivial:
 the scene listener inspects `state.beat` and either snaps to corrected or
 as-built poses.
 
+## Phase 4 polish and accessibility
+
+- **Responsive layout.** Desktop (≥1024px) keeps the canonical layout; tablet
+  (768–1023px) compresses the cards; mobile (<768px) switches to a bottom
+  sheet — the directive card and verification panel each occupy the full
+  width above the beat-nav pill. Camera framing pulls back automatically when
+  the viewport is portrait so the facade fits the narrower aspect.
+- **Reduce motion.** When `prefers-reduced-motion: reduce` is set, every
+  camera, panel, and arrow tween snaps directly to its end state (the
+  `AnimRunner` short-circuits `start()` to `onUpdate(1)`). CSS transitions on
+  chips and buttons collapse to ~0ms. End-state correctness is preserved.
+- **Text-only fallback.** A "Text summary" link in the top-right corner of
+  the viewer opens a dialog rendering the five beats, the focused directive,
+  and the before/after metrics — no WebGL required. Escape or the Close
+  button dismisses it and returns focus to the link.
+- **ARIA model.** The headline region uses `aria-live="polite"` so beat
+  transitions are announced; status chips carry explicit `aria-label`s; the
+  canvas is `aria-hidden` because the overlay carries the meaning.
+
+## CSS source-of-truth
+
+For v0.2 the demo's overlay CSS is duplicated from the systemsforge.build
+portfolio site. Class names match exactly so a visitor moving between
+`/work/directive-engine/` and the demo sees continuity. See the header
+comment in `src/styles/overlay.css` for the canonical-file path; revisit a
+shared-package extraction after v0.2 ships.
+
 ## Open UX decisions (Phase 2)
 
 - **Apply == Continue at beat 3.** Single button; clicking *Apply* in the

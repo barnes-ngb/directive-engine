@@ -207,6 +207,35 @@ describe("AnimRunner", () => {
     expect(runner.has("k")).toBe(false);
   });
 
+  it("reduceMotion: tweens snap to t=1 immediately", () => {
+    let t = 0;
+    const runner = new AnimRunner(() => t, { reduceMotion: true });
+    const samples: number[] = [];
+    let completed = false;
+    runner.start({
+      key: "k",
+      durationMs: 1000,
+      onUpdate: (v) => samples.push(v),
+      onComplete: () => (completed = true),
+    });
+    expect(samples).toEqual([1]);
+    expect(completed).toBe(true);
+    expect(runner.has("k")).toBe(false);
+  });
+
+  it("setReduceMotion(true) toggles snap behaviour at runtime", () => {
+    let t = 0;
+    const runner = new AnimRunner(() => t);
+    runner.setReduceMotion(true);
+    let lastT = -1;
+    runner.start({
+      key: "k",
+      durationMs: 1000,
+      onUpdate: (v) => (lastT = v),
+    });
+    expect(lastT).toBe(1);
+  });
+
   it("cancel() drops a tween without finalizing", () => {
     const runner = new AnimRunner(() => 0);
     let completed = false;

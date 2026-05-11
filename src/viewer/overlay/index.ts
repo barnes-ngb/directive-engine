@@ -8,12 +8,13 @@ import type { Step, PartConstraint } from "../../core/types.js";
 import { type Beat, BeatController } from "../beat-controller.js";
 import type { EngineBundle } from "../engine-bridge.js";
 import { createDirectiveCard, type DirectiveCardHandle } from "./directive-card.js";
-import { createHeadline, type HeadlineHandle } from "./headline.js";
+import { createHeadline } from "./headline.js";
 import {
   createVerificationPanel,
   type VerificationPanelHandle,
 } from "./verification-panel.js";
-import { createBeatNav, type BeatNavHandle } from "./beat-nav.js";
+import { createBeatNav } from "./beat-nav.js";
+import { createFallbackView, type FallbackHandle } from "./fallback-view.js";
 
 export interface OverlayHandle {
   element: HTMLElement;
@@ -38,6 +39,8 @@ export interface OverlayOptions {
 export function mountOverlay(opts: OverlayOptions): OverlayHandle {
   const root = document.createElement("div");
   root.className = "de-overlay";
+  root.setAttribute("role", "region");
+  root.setAttribute("aria-label", "Directive engine walkthrough");
 
   const headline = createHeadline();
   const card = createDirectiveCard({
@@ -51,11 +54,17 @@ export function mountOverlay(opts: OverlayOptions): OverlayHandle {
     onRestart: () => triggerRestart(),
   });
 
+  const fallback: FallbackHandle = createFallbackView(buildFallbackContent(opts));
+
+  root.appendChild(fallback.link);
   root.appendChild(headline.element);
   root.appendChild(card.element);
   root.appendChild(verification.element);
   root.appendChild(nav.element);
   opts.host.appendChild(root);
+  // The dialog is fixed-positioned and lives at document level so it can
+  // overlay the entire page (including the 3D canvas).
+  document.body.appendChild(fallback.panel);
 
   function triggerApply(): void {
     opts.onApply();
@@ -83,7 +92,25 @@ export function mountOverlay(opts: OverlayOptions): OverlayHandle {
     element: root,
     dispose() {
       unsubscribe();
+      fallback.dispose();
+      if (fallback.panel.parentElement) {
+        fallback.panel.parentElement.removeChild(fallback.panel);
+      }
     },
+  };
+}
+
+function buildFallbackContent(opts: OverlayOptions) {
+  const partId = opts.controller.current.focusedPartId;
+  const step = partId ? opts.bundle.stepByPartId.get(partId) : undefined;
+  const constraint = partId ? opts.bundle.constraintById.get(partId) : undefined;
+  const first = opts.bundle.constraints.parts[0];
+  return {
+    focusedStep: step,
+    focusedConstraint: constraint,
+    beforeMaxDeviationMm: opts.bundle.beforeMaxDeviationMm,
+    afterMaxDeviationMm: opts.bundle.afterMaxDeviationMm,
+    toleranceMm: first?.tolerances.translation_mm ?? 2.0,
   };
 }
 

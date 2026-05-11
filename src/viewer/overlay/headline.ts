@@ -41,11 +41,20 @@ export interface HeadlineHandle {
 export function createHeadline(): HeadlineHandle {
   const root = document.createElement("div");
   root.className = "de-overlay__headline";
+  // Polite announcements so screen-reader users hear beat transitions
+  // without interrupting their current focus.
+  root.setAttribute("role", "region");
+  root.setAttribute("aria-live", "polite");
+  root.setAttribute("aria-atomic", "true");
+  root.setAttribute("aria-label", "Walkthrough beat");
 
   const title = document.createElement("h1");
   const subtitle = document.createElement("p");
+
   const dotsRow = document.createElement("div");
   dotsRow.className = "de-overlay__beat-indicator";
+  // Dots are decorative; the heading + subhead carry the meaning.
+  dotsRow.setAttribute("aria-hidden", "true");
 
   const dots: HTMLElement[] = [];
   for (let i = 1; i <= LAST_BEAT; i++) {
@@ -55,15 +64,21 @@ export function createHeadline(): HeadlineHandle {
     dotsRow.appendChild(dot);
   }
 
+  // Off-screen text — the beat number for screen readers.
+  const srBeat = document.createElement("span");
+  srBeat.className = "de-sr-only";
+
   root.appendChild(title);
   root.appendChild(subtitle);
   root.appendChild(dotsRow);
+  root.appendChild(srBeat);
 
   function render(beat: Beat): void {
     const copy = COPY[beat];
     title.textContent = copy.title;
     subtitle.textContent = copy.subtitle ?? "";
     subtitle.style.display = copy.subtitle ? "" : "none";
+    srBeat.textContent = `Beat ${beat} of ${LAST_BEAT}.`;
     for (let i = 0; i < dots.length; i++) {
       const idx = (i + 1) as Beat;
       dots[i].classList.toggle("is-active", idx === beat);
