@@ -16,10 +16,12 @@ will layer in animation, deviation arrows, and DOF ghost geometry.
 
 ### Beat 1 — Detection
 
-- **Scene.** All facade panels rendered at their as-built (deviated) pose.
-  Panels within tolerance render in the base material. Panels outside
-  tolerance are tinted: yellow for moderate deviation, red for severe
-  (≥5 mm).
+- **Scene.** A 3×3 facade subsection — nine panels arranged on a 1.55 × 1.05 m
+  pitch — rendered at their as-built (deviated) poses. Seven panels sit within
+  tolerance and read as the base material. Two panels are visibly off:
+  P-04 is mildly translated along its S2 slot (yellow), and P-05 — the
+  hero panel — is both shifted and rotated about its P3 index pattern (red,
+  ≥5 mm).
 - **Camera.** Wide 3/4 view framing the whole subsection.
 - **Headline.** "Reality doesn't match the model."
 - **Action.** Click *Continue*.

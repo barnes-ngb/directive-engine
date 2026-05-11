@@ -6,46 +6,85 @@
   "units": "mm",
   "parts": [
     {
-      "partId": "P-0001",
+      "partId": "P-01",
       "T_world_part_asBuilt": {
-        "t": [
-          1000,
-          0,
-          0
-        ],
-        "q": [
-          0,
-          0,
-          0,
-          1
-        ]
+        "t": [-1549.7, 1049.5, 0.0],
+        "q": [0.0, 0.0, 0.0, 1.0]
       },
-      "confidence": 0.92,
-      "source": {
-        "type": "scan",
-        "id": "scan_001"
-      }
+      "confidence": 0.94,
+      "source": { "type": "scan", "id": "scan_001" }
     },
     {
-      "partId": "P-0002",
+      "partId": "P-02",
       "T_world_part_asBuilt": {
-        "t": [
-          2000,
-          5,
-          0
-        ],
-        "q": [
-          0,
-          0,
-          0,
-          1
-        ]
+        "t": [-0.2, 1050.4, 0.0],
+        "q": [0.0, 0.0, 0.0, 1.0]
       },
-      "confidence": 0.88,
-      "source": {
-        "type": "scan",
-        "id": "scan_001"
-      }
+      "confidence": 0.93,
+      "source": { "type": "scan", "id": "scan_001" }
+    },
+    {
+      "partId": "P-03",
+      "T_world_part_asBuilt": {
+        "t": [1550.5, 1050.1, 0.0],
+        "q": [0.0, 0.0, 0.0, 1.0]
+      },
+      "confidence": 0.95,
+      "source": { "type": "scan", "id": "scan_001" }
+    },
+    {
+      "partId": "P-04",
+      "T_world_part_asBuilt": {
+        "t": [-1546.5, 0.0, 0.0],
+        "q": [0.0, 0.0, 0.0, 1.0]
+      },
+      "confidence": 0.91,
+      "source": { "type": "scan", "id": "scan_001" }
+    },
+    {
+      "partId": "P-05",
+      "T_world_part_asBuilt": {
+        "t": [6.5, -1.0, 0.0],
+        "q": [0.0, 0.0261769, 0.0, 0.9996573]
+      },
+      "confidence": 0.89,
+      "source": { "type": "scan", "id": "scan_001" }
+    },
+    {
+      "partId": "P-06",
+      "T_world_part_asBuilt": {
+        "t": [1549.7, -0.4, 0.0],
+        "q": [0.0, 0.0, 0.0, 1.0]
+      },
+      "confidence": 0.94,
+      "source": { "type": "scan", "id": "scan_001" }
+    },
+    {
+      "partId": "P-07",
+      "T_world_part_asBuilt": {
+        "t": [-1549.6, -1049.5, 0.0],
+        "q": [0.0, 0.0, 0.0, 1.0]
+      },
+      "confidence": 0.93,
+      "source": { "type": "scan", "id": "scan_001" }
+    },
+    {
+      "partId": "P-08",
+      "T_world_part_asBuilt": {
+        "t": [0.1, -1050.3, 0.0],
+        "q": [0.0, 0.0, 0.0, 1.0]
+      },
+      "confidence": 0.92,
+      "source": { "type": "scan", "id": "scan_001" }
+    },
+    {
+      "partId": "P-09",
+      "T_world_part_asBuilt": {
+        "t": [1550.6, -1050.2, 0.0],
+        "q": [0.0, 0.0, 0.0, 1.0]
+      },
+      "confidence": 0.94,
+      "source": { "type": "scan", "id": "scan_001" }
     }
   ]
 }

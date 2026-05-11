@@ -1,67 +1,181 @@
 {
   "jobId": "toy_facade_v1",
-  "generatedAt": "2025-12-26T00:00:00Z",
+  "generatedAt": "2025-01-01T00:00:01.000Z",
+  "countsByStatus": {
+    "ok": 7,
+    "pending": 2,
+    "clamped": 0,
+    "blocked": 0,
+    "needs_review": 0
+  },
   "metrics": {
-    "beforeMaxDeviationMm": 3.2,
-    "afterMaxDeviationMm": 0.5
+    "beforeMaxDeviationMm": 6.6,
+    "afterMaxDeviationMm": 0
   },
   "steps": [
     {
       "stepId": "S-0001",
-      "partId": "P-0001",
+      "partId": "P-01",
       "priority": 1,
       "status": "ok",
+      "computedDeviationMm": 0.6,
       "actions": [
         {
-          "type": "translate",
-          "frame": "part",
-          "vectorMm": [
-            -3.0,
-            1.0,
-            0.0
-          ]
+          "type": "noop"
         }
       ],
       "verification": {
-        "type": "measure",
-        "passIfMaxDeviationMm": 2.0
-      },
-      "notes": [
-        "Loosen anchors A/B",
-        "Shim behind bracket if needed",
-        "Re-torque to spec"
-      ]
+        "type": "measure_pose",
+        "passIfMaxDeviationMm": 2
+      }
     },
     {
       "stepId": "S-0002",
-      "partId": "P-0002",
+      "partId": "P-02",
       "priority": 2,
       "status": "ok",
+      "computedDeviationMm": 0.4,
+      "actions": [
+        {
+          "type": "noop"
+        }
+      ],
+      "verification": {
+        "type": "measure_pose",
+        "passIfMaxDeviationMm": 2
+      }
+    },
+    {
+      "stepId": "S-0003",
+      "partId": "P-03",
+      "priority": 3,
+      "status": "ok",
+      "computedDeviationMm": 0.5,
+      "actions": [
+        {
+          "type": "noop"
+        }
+      ],
+      "verification": {
+        "type": "measure_pose",
+        "passIfMaxDeviationMm": 2
+      }
+    },
+    {
+      "stepId": "S-0004",
+      "partId": "P-04",
+      "priority": 4,
+      "status": "pending",
+      "computedDeviationMm": 3.5,
       "actions": [
         {
           "type": "translate",
           "frame": "part",
           "vectorMm": [
-            -1.5,
-            -0.5,
-            0.0
-          ]
-        },
-        {
-          "type": "rotate_index",
-          "frame": "part",
-          "axis": "z",
-          "index": 1
+            -3.5,
+            0,
+            0
+          ],
+          "clampApplied": false
         }
       ],
       "verification": {
-        "type": "rescan",
-        "passIfMaxDeviationMm": 2.0
-      },
-      "notes": [
-        "Rotate to nearest index",
-        "Verify plumb after adjustment"
-      ]
+        "type": "measure_pose",
+        "passIfMaxDeviationMm": 2
+      }
+    },
+    {
+      "stepId": "S-0005",
+      "partId": "P-05",
+      "priority": 5,
+      "status": "pending",
+      "computedDeviationMm": 6.6,
+      "actions": [
+        {
+          "type": "translate",
+          "frame": "part",
+          "vectorMm": [
+            -6.5,
+            1,
+            0
+          ],
+          "clampApplied": false
+        },
+        {
+          "type": "rotate_to_index",
+          "frame": "part",
+          "axis": "y",
+          "targetIndex": 0
+        }
+      ],
+      "verification": {
+        "type": "measure_pose",
+        "passIfMaxDeviationMm": 2
+      }
+    },
+    {
+      "stepId": "S-0006",
+      "partId": "P-06",
+      "priority": 6,
+      "status": "ok",
+      "computedDeviationMm": 0.5,
+      "actions": [
+        {
+          "type": "noop"
+        }
+      ],
+      "verification": {
+        "type": "measure_pose",
+        "passIfMaxDeviationMm": 2
+      }
+    },
+    {
+      "stepId": "S-0007",
+      "partId": "P-07",
+      "priority": 7,
+      "status": "ok",
+      "computedDeviationMm": 0.6,
+      "actions": [
+        {
+          "type": "noop"
+        }
+      ],
+      "verification": {
+        "type": "measure_pose",
+        "passIfMaxDeviationMm": 2
+      }
+    },
+    {
+      "stepId": "S-0008",
+      "partId": "P-08",
+      "priority": 8,
+      "status": "ok",
+      "computedDeviationMm": 0.3,
+      "actions": [
+        {
+          "type": "noop"
+        }
+      ],
+      "verification": {
+        "type": "measure_pose",
+        "passIfMaxDeviationMm": 2
+      }
+    },
+    {
+      "stepId": "S-0009",
+      "partId": "P-09",
+      "priority": 9,
+      "status": "ok",
+      "computedDeviationMm": 0.6,
+      "actions": [
+        {
+          "type": "noop"
+        }
+      ],
+      "verification": {
+        "type": "measure_pose",
+        "passIfMaxDeviationMm": 2
+      }
     }
   ]
 }
