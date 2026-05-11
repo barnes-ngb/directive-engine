@@ -5,37 +5,14 @@
   },
   "units": "mm",
   "parts": [
-    {
-      "partId": "P-0001",
-      "T_world_part_nominal": {
-        "t": [
-          997,
-          1,
-          0
-        ],
-        "q": [
-          0,
-          0,
-          0,
-          1
-        ]
-      }
-    },
-    {
-      "partId": "P-0002",
-      "T_world_part_nominal": {
-        "t": [
-          1998.5,
-          4.5,
-          0
-        ],
-        "q": [
-          0,
-          0,
-          0.7071068,
-          0.7071068
-        ]
-      }
-    }
+    { "partId": "P-01", "T_world_part_nominal": { "t": [0,    2100, 0], "q": [0, 0, 0, 1] } },
+    { "partId": "P-02", "T_world_part_nominal": { "t": [1550, 2100, 0], "q": [0, 0, 0, 1] } },
+    { "partId": "P-03", "T_world_part_nominal": { "t": [3100, 2100, 0], "q": [0, 0, 0, 1] } },
+    { "partId": "P-04", "T_world_part_nominal": { "t": [0,    1050, 0], "q": [0, 0, 0, 1] } },
+    { "partId": "P-05", "T_world_part_nominal": { "t": [1550, 1050, 0], "q": [0, 0, 0, 1] } },
+    { "partId": "P-06", "T_world_part_nominal": { "t": [3100, 1050, 0], "q": [0, 0, 0, 1] } },
+    { "partId": "P-07", "T_world_part_nominal": { "t": [0,    0,    0], "q": [0, 0, 0, 1] } },
+    { "partId": "P-08", "T_world_part_nominal": { "t": [1550, 0,    0], "q": [0, 0, 0, 1] } },
+    { "partId": "P-09", "T_world_part_nominal": { "t": [3100, 0,    0], "q": [0, 0, 0, 1] } }
   ]
 }

@@ -16,11 +16,14 @@ will layer in animation, deviation arrows, and DOF ghost geometry.
 
 ### Beat 1 — Detection
 
-- **Scene.** All facade panels rendered at their as-built (deviated) pose.
-  Panels within tolerance render in the base material. Panels outside
-  tolerance are tinted: yellow for moderate deviation, red for severe
-  (≥5 mm).
-- **Camera.** Wide 3/4 view framing the whole subsection.
+- **Scene.** A 3 × 3 grid of facade panels (P-01 … P-09) at their as-built
+  poses. Six panels read nominal, one mild deviation (yellow), one hero
+  deviation (red), and one clamped failure (red). See
+  `datasets/toy_facade_v1/README.md` for the panel role table.
+- **Camera.** Wide 3/4 view framing the whole 4600 × 3100 mm grid. Camera
+  position derives from the actual world-space AABB and the current
+  viewport's FOV/aspect (see `src/viewer/camera-framing.ts`); the framing
+  re-snaps on viewport resize.
 - **Headline.** "Reality doesn't match the model."
 - **Action.** Click *Continue*.
 
@@ -88,8 +91,10 @@ as-built poses.
 - **Responsive layout.** Desktop (≥1024px) keeps the canonical layout; tablet
   (768–1023px) compresses the cards; mobile (<768px) switches to a bottom
   sheet — the directive card and verification panel each occupy the full
-  width above the beat-nav pill. Camera framing pulls back automatically when
-  the viewport is portrait so the facade fits the narrower aspect.
+  width above the beat-nav pill. Camera distance is computed from the
+  rendered AABB and the viewport's FOV/aspect, so portrait viewports get
+  the extra pull-back they need without per-orientation tuning constants
+  (Phase 6 — see `docs/camera-fix-diagnosis.md` for the prior bug).
 - **Reduce motion.** When `prefers-reduced-motion: reduce` is set, every
   camera, panel, and arrow tween snaps directly to its end state (the
   `AnimRunner` short-circuits `start()` to `onUpdate(1)`). CSS transitions on

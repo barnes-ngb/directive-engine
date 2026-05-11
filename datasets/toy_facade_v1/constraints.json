@@ -4,88 +4,96 @@
     "toleranceMm": 2.0,
     "confidenceThreshold": 0.85
   },
+  "_features_doc": "Every panel shares one canonical kinematic feature set: J1 (vertical pivot at right edge), S2 (vertical-slot), P3 (4-position index about Z).",
   "parts": {
-    "P-0001": {
-      "allowedTranslations": {
-        "axes": [
-          "x",
-          "y",
-          "z"
-        ],
-        "maxMm": 15
-      },
-      "allowedRotation": {
-        "type": "none"
-      },
-      "tolerances": {
-        "translationMm": 2.0,
-        "rotationDeg": 1.0
-      },
+    "P-01": {
+      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
+      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
       "features": [
-        {
-          "id": "S1",
-          "kind": "slot",
-          "position_mm": [0, 0, 0],
-          "axis": [1, 0, 0],
-          "description": "Lateral mounting slot along part X."
-        },
-        {
-          "id": "S2",
-          "kind": "slot",
-          "position_mm": [0, 0, 0],
-          "axis": [0, 1, 0],
-          "description": "Vertical mounting slot along part Y."
-        }
-      ],
-      "notes": [
-        "Loosen anchors A/B",
-        "Shim behind bracket if needed",
-        "Re-torque to spec"
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
+        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
       ]
     },
-    "P-0002": {
-      "allowedTranslations": {
-        "axes": [
-          "x",
-          "y"
-        ],
-        "maxMm": 10
-      },
-      "allowedRotation": {
-        "type": "index",
-        "axis": "z",
-        "stepDegrees": 90,
-        "allowedIndices": [
-          0,
-          1,
-          2,
-          3
-        ]
-      },
-      "tolerances": {
-        "translationMm": 2.0,
-        "rotationDeg": 1.0
-      },
+    "P-02": {
+      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
+      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
       "features": [
-        {
-          "id": "S3",
-          "kind": "slot",
-          "position_mm": [0, 0, 0],
-          "axis": [1, 0, 0],
-          "description": "Lateral slot along part X."
-        },
-        {
-          "id": "I1",
-          "kind": "index",
-          "position_mm": [0, 0, 0],
-          "axis": [0, 0, 1],
-          "count": 4,
-          "description": "Four-position detent about part Z."
-        }
-      ],
-      "notes": [
-        "Rotate to nearest index",
-        "Verify plumb after adjustment"
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
+        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
+      ]
+    },
+    "P-03": {
+      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
+      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
+      "features": [
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
+        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
+      ]
+    },
+    "P-04": {
+      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
+      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
+      "features": [
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
+        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
+      ]
+    },
+    "P-05": {
+      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
+      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
+      "features": [
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
+        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
+      ]
+    },
+    "P-06": {
+      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
+      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
+      "features": [
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
+        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
+      ]
+    },
+    "P-07": {
+      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
+      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
+      "features": [
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
+        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
+      ]
+    },
+    "P-08": {
+      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
+      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
+      "features": [
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
+        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
+      ]
+    },
+    "P-09": {
+      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
+      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
+      "features": [
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
+        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
       ]
     }
   }
