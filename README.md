@@ -95,6 +95,24 @@ All fixture data lives under `datasets/`:
 - **Vitest** (unit tests) — see `vitest.config.ts`.
 - **Three.js** (r160) — 3D viewer scaffolding under `src/viewer/`. Imported as ES modules; `OrbitControls` is loaded from `three/examples/jsm/controls/OrbitControls.js`.
 
+## Viewer overlay styling
+The 3D viewer's overlay (`/viewer.html`) uses portfolio-site class names
+(`directive-card`, `verification-panel`, `metric-card`, `chip`, `callout`) so
+markup is portable. Demo-scoped tokens (`--de-*`) live in
+`src/styles/overlay.css`; responsive breakpoint rules live in
+`src/styles/responsive.css`. For v0.2 the demo's CSS is duplicated from the
+systemsforge.build site and synced by hand — see the header comment in
+`overlay.css` for the source-of-truth file path.
+
+## Accessibility
+- Beat transitions are announced via `aria-live="polite"`.
+- `prefers-reduced-motion` snaps every tween to its end state.
+- A "Text summary" link in the top-right opens a static dialog mirroring the
+  5-beat narrative + the generated directive + verification metrics. Useful
+  for screen readers, low-power devices, and share previews.
+- The Three.js canvas is marked `aria-hidden`; semantic copy lives in the
+  overlay.
+
 ## Commands
 ```bash
 npm install

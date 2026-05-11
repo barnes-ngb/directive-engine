@@ -21,10 +21,12 @@ export interface BeatNavHandle {
 }
 
 export function createBeatNav(cb: BeatNavCallbacks): BeatNavHandle {
-  const root = document.createElement("div");
+  const root = document.createElement("nav");
   root.className = "de-beat-nav";
+  root.setAttribute("aria-label", "Walkthrough navigation");
 
   const backBtn = button("Back", () => cb.onBack());
+  backBtn.setAttribute("aria-label", "Back to previous beat");
   const label = document.createElement("span");
   label.className = "de-beat-nav__label";
   const forwardBtn = button("Continue", () => cb.onContinue());
@@ -39,14 +41,17 @@ export function createBeatNav(cb: BeatNavCallbacks): BeatNavHandle {
     backBtn.disabled = beat <= FIRST_BEAT;
     if (beat === 3) {
       forwardBtn.textContent = "Apply";
+      forwardBtn.setAttribute("aria-label", "Apply directive and advance");
       forwardBtn.onclick = () => cb.onApply();
       forwardBtn.disabled = false;
     } else if (beat === LAST_BEAT) {
       forwardBtn.textContent = "Restart";
+      forwardBtn.setAttribute("aria-label", "Restart walkthrough");
       forwardBtn.onclick = () => cb.onRestart();
       forwardBtn.disabled = false;
     } else {
       forwardBtn.textContent = "Continue";
+      forwardBtn.setAttribute("aria-label", "Continue to next beat");
       forwardBtn.onclick = () => cb.onContinue();
       forwardBtn.disabled = false;
     }

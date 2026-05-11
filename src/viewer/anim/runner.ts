@@ -30,20 +30,40 @@ export interface AnimRunStartOptions {
   onComplete?: () => void;
 }
 
+export interface AnimRunnerOptions {
+  /**
+   * If true, every tween snaps to its end state immediately. Set when the
+   * user has `prefers-reduced-motion: reduce`. End-state correctness is
+   * preserved because every tween's `onUpdate(1)` is the final pose.
+   */
+  reduceMotion?: boolean;
+}
+
 export class AnimRunner {
   private readonly active = new Map<string, ActiveAnim>();
   private readonly now: () => number;
+  private reduceMotion: boolean;
 
-  constructor(nowFn: () => number = () => performance.now()) {
+  constructor(
+    nowFn: () => number = () => performance.now(),
+    options: AnimRunnerOptions = {},
+  ) {
     this.now = nowFn;
+    this.reduceMotion = options.reduceMotion ?? false;
+  }
+
+  /** Toggle reduce-motion behaviour at runtime (e.g., media-query change). */
+  setReduceMotion(reduce: boolean): void {
+    this.reduceMotion = reduce;
   }
 
   /**
-   * Start (or replace) a tween. If `durationMs <= 0`, the tween runs once at
-   * t=1 and completes immediately — useful for "snap" fallbacks.
+   * Start (or replace) a tween. If `durationMs <= 0` or reduce-motion is on,
+   * the tween runs once at t=1 and completes immediately — useful for "snap"
+   * fallbacks.
    */
   start(opts: AnimRunStartOptions): void {
-    if (opts.durationMs <= 0) {
+    if (opts.durationMs <= 0 || this.reduceMotion) {
       opts.onUpdate(1);
       opts.onComplete?.();
       this.active.delete(opts.key);

@@ -60,6 +60,10 @@ export function createScene(options: SceneOptions): SceneHandle {
   } else {
     renderer.setClearColor(0xeef0f3, 1);
   }
+  // The canvas is decorative — the overlay region carries the semantic copy.
+  // Marking it hidden keeps assistive tech focused on the textual narrative.
+  renderer.domElement.setAttribute("aria-hidden", "true");
+  renderer.domElement.setAttribute("role", "presentation");
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
