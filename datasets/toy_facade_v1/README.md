@@ -1,55 +1,76 @@
 # toy_facade_v1
 
-Synthetic fixture for the 5-beat directive-engine walkthrough. Tuned to
-narrate the thesis end-to-end on a single static dataset.
+Tiny synthetic dataset that drives the directive-engine viewer demo. The
+viewer reads the three JSONs below on mount, maps them to the engine's v0.1
+schema via `src/viewer/engine-bridge.ts`, and runs `generateDirectives()`
+once per session.
 
-## Layout
+## Files
 
-3 × 3 panel grid, viewed head-on (facing +Z):
+- `nominal.json` — `T_world_part_nominal` for each panel.
+- `as_built.json` — `T_world_part_asBuilt` for each panel, plus a scan
+  `confidence` score.
+- `constraints.json` — allowed DOF (translations / index rotation),
+  tolerances, and named features (`J1` joint, `S2` slot, `P3` index pattern).
+- `expected_directives.json` — concise reference of the engine's output for
+  this fixture. **Generated**, not hand-edited. Regenerate after edits to the
+  inputs by running:
 
-```
-   P-01  P-02  P-03      ← y = 2100 mm (top row)
-   P-04  P-05  P-06      ← y = 1050 mm (middle row, hero band)
-   P-07  P-08  P-09      ← y =    0 mm (bottom row)
-   x=0   x=1550 x=3100
-```
+  ```sh
+  node scripts/gen-toy-facade-expected.mjs
+  ```
 
-Panel dimensions: 1500 mm × 1000 mm × 50 mm.
-Reveal gap: 50 mm horizontal and vertical.
-Facade footprint: 4600 mm × 3100 mm.
+## Design
 
-## Panel roles
+The fixture is a 3×3 facade subsection — nine panels (`P-01` … `P-09`) on a
+1.55 × 1.05 m pitch (1500 × 1000 × 50 mm panels with ~50 mm reveal gaps).
+The grid is laid out in the world XY plane (Y up in the viewer scene); rows
+top-to-bottom are y = +1050, 0, −1050; columns left-to-right are
+x = −1550, 0, +1550.
 
-| partId | role            | as-built deviation                                         | engine status     |
-|--------|-----------------|------------------------------------------------------------|-------------------|
-| P-01   | nominal         | ≤ 0.6 mm noise                                             | `ok`              |
-| P-02   | **mild**        | +3.5 mm along S2 (vertical slot)                           | `pending` → `ok`  |
-| P-03   | nominal         | ≤ 0.7 mm noise                                             | `ok`              |
-| P-04   | nominal         | ≤ 0.5 mm noise                                             | `ok`              |
-| P-05   | **hero**        | −1.0 mm X, +6.0 mm Y, +2.0° about J1                       | `pending` → `ok`  |
-| P-06   | nominal         | ≤ 0.4 mm noise                                             | `ok`              |
-| P-07   | **clamped**     | +8.0° about J1 (exceeds allowed sweep of ±5°)              | `clamped`         |
-| P-08   | nominal         | ≤ 0.4 mm noise                                             | `ok`              |
-| P-09   | nominal         | ≤ 0.7 mm noise                                             | `ok`              |
+Each panel declares three features in part frame:
 
-P-05 is the hero panel — beat 2 dollies in on it; beat 4's apply animation
-runs against its pose. P-07 demonstrates honest failure: the engine clamps
-the correction to the allowed range and reports a residual outside
-tolerance, so the chip flips `pending → clamped` rather than `ok`.
+- **`J1`** — joint at the panel's right edge (hinge pivot about +Y).
+- **`S2`** — slot along the panel's width (±10 mm along part X).
+- **`P3`** — four-position indexed bolt pattern about +Y (the locking bolt).
 
-## Kinematic features
+The deviation distribution is deliberate:
 
-Every panel carries the same canonical feature set so the demo doesn't have
-to explain per-panel variation:
+| Panel | Role     | Deviation                            |
+|-------|----------|--------------------------------------|
+| P-01  | nominal  | sub-1 mm scan noise                  |
+| P-02  | nominal  | sub-1 mm scan noise                  |
+| P-03  | nominal  | sub-1 mm scan noise                  |
+| P-04  | **mild** | +3.5 mm along S2 (pure translation)  |
+| P-05  | **hero** | +6.5 / −1.0 mm + 3° about P3         |
+| P-06  | nominal  | sub-1 mm scan noise                  |
+| P-07  | nominal  | sub-1 mm scan noise                  |
+| P-08  | nominal  | sub-1 mm scan noise                  |
+| P-09  | nominal  | sub-1 mm scan noise                  |
 
-- **J1** — vertical pivot at the right edge (CCW from outside face).
-  Axis = +Z, position = (750, 0, 0) in part frame.
-- **S2** — vertical mounting slot, ±10 mm travel.
-  Axis = +Y in part frame.
-- **P3** — four-position bolt index about Z (0°, 90°, 180°, 270°).
+P-05 is the **hero** panel that beats 2-4 focus on; `pickFocusedPart()`
+selects it because it has the largest non-`ok` deviation. P-04 reads as
+context — "the engine also generates directives for these smaller
+deviations, the demo just centers on one." The remaining seven panels read
+as a populated facade where most work is already correct, so the deviations
+that do exist stand out.
 
-Allowed motion per panel:
-- Translation: any axis, ≤ 10 mm norm.
-- Rotation: free about Z, ≤ ±5° sweep.
+The previous 2-panel fixture left the scene feeling sparse; this version
+gives the wide shot something to anchor on (see Phase 2 retrospective +
+Phase 6 brief in `docs/`).
 
-Tolerances: 2 mm translation, 1° rotation.
+## What is **not** here
+
+- No clamped or blocked panel. The engine's clamp behavior is exercised
+  separately by the museum/scan integration tests; the demo prioritizes a
+  clean before/after read. (Phase 6 surfaced this as an open decision —
+  current call is to skip the clamped panel until the demo script wants the
+  honesty signal more than the clean read.)
+
+## Schema note
+
+This fixture uses a compact legacy shape (`{ t: [...], q: [...] }`) that
+differs from the v0.1 contract's full schema. The viewer's
+`engine-bridge.ts` maps it into `NominalPosesDataset` /
+`AsBuiltPosesDataset` / `ConstraintsDataset` before calling the engine.
+`scripts/validate-datasets.mjs` skips this directory for that reason.

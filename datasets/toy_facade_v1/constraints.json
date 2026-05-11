@@ -4,97 +4,173 @@
     "toleranceMm": 2.0,
     "confidenceThreshold": 0.85
   },
-  "_features_doc": "Every panel shares one canonical kinematic feature set: J1 (vertical pivot at right edge), S2 (vertical-slot), P3 (4-position index about Z).",
   "parts": {
     "P-01": {
-      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
-      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "allowedTranslations": { "axes": ["x", "y"], "maxMm": 10 },
+      "allowedRotation": {
+        "type": "index",
+        "axis": "y",
+        "stepDegrees": 90,
+        "allowedIndices": [0, 1, 2, 3]
+      },
       "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
       "features": [
-        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
-        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
-        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
+        {
+          "id": "J1",
+          "kind": "joint",
+          "position_mm": [750, 0, 0],
+          "axis": [0, 1, 0],
+          "description": "Hinge joint at right edge, vertical axis."
+        },
+        {
+          "id": "S2",
+          "kind": "slot",
+          "position_mm": [0, 0, 0],
+          "axis": [1, 0, 0],
+          "description": "Lateral mounting slot along panel width (±10 mm)."
+        },
+        {
+          "id": "P3",
+          "kind": "index",
+          "position_mm": [0, 0, 0],
+          "axis": [0, 1, 0],
+          "count": 4,
+          "description": "Four-position bolt pattern about vertical axis."
+        }
+      ],
+      "notes": [
+        "Loosen anchors at J1",
+        "Slide along S2 to spec",
+        "Re-torque bolt P3"
       ]
     },
     "P-02": {
-      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
-      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "allowedTranslations": { "axes": ["x", "y"], "maxMm": 10 },
+      "allowedRotation": {
+        "type": "index",
+        "axis": "y",
+        "stepDegrees": 90,
+        "allowedIndices": [0, 1, 2, 3]
+      },
       "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
       "features": [
-        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
-        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
-        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
-      ]
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 1, 0], "description": "Hinge joint at right edge, vertical axis." },
+        { "id": "S2", "kind": "slot", "position_mm": [0, 0, 0], "axis": [1, 0, 0], "description": "Lateral mounting slot along panel width (±10 mm)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0], "axis": [0, 1, 0], "count": 4, "description": "Four-position bolt pattern about vertical axis." }
+      ],
+      "notes": ["Loosen anchors at J1", "Slide along S2 to spec", "Re-torque bolt P3"]
     },
     "P-03": {
-      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
-      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "allowedTranslations": { "axes": ["x", "y"], "maxMm": 10 },
+      "allowedRotation": {
+        "type": "index",
+        "axis": "y",
+        "stepDegrees": 90,
+        "allowedIndices": [0, 1, 2, 3]
+      },
       "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
       "features": [
-        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
-        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
-        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
-      ]
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 1, 0], "description": "Hinge joint at right edge, vertical axis." },
+        { "id": "S2", "kind": "slot", "position_mm": [0, 0, 0], "axis": [1, 0, 0], "description": "Lateral mounting slot along panel width (±10 mm)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0], "axis": [0, 1, 0], "count": 4, "description": "Four-position bolt pattern about vertical axis." }
+      ],
+      "notes": ["Loosen anchors at J1", "Slide along S2 to spec", "Re-torque bolt P3"]
     },
     "P-04": {
-      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
-      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "allowedTranslations": { "axes": ["x", "y"], "maxMm": 10 },
+      "allowedRotation": {
+        "type": "index",
+        "axis": "y",
+        "stepDegrees": 90,
+        "allowedIndices": [0, 1, 2, 3]
+      },
       "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
       "features": [
-        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
-        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
-        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
-      ]
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 1, 0], "description": "Hinge joint at right edge, vertical axis." },
+        { "id": "S2", "kind": "slot", "position_mm": [0, 0, 0], "axis": [1, 0, 0], "description": "Lateral mounting slot along panel width (±10 mm)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0], "axis": [0, 1, 0], "count": 4, "description": "Four-position bolt pattern about vertical axis." }
+      ],
+      "notes": ["Loosen anchors at J1", "Slide along S2 to spec", "Re-torque bolt P3"]
     },
     "P-05": {
-      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
-      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "allowedTranslations": { "axes": ["x", "y"], "maxMm": 10 },
+      "allowedRotation": {
+        "type": "index",
+        "axis": "y",
+        "stepDegrees": 90,
+        "allowedIndices": [0, 1, 2, 3]
+      },
       "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
       "features": [
-        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
-        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
-        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
-      ]
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 1, 0], "description": "Hinge joint at right edge, vertical axis." },
+        { "id": "S2", "kind": "slot", "position_mm": [0, 0, 0], "axis": [1, 0, 0], "description": "Lateral mounting slot along panel width (±10 mm)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0], "axis": [0, 1, 0], "count": 4, "description": "Four-position bolt pattern about vertical axis." }
+      ],
+      "notes": ["Loosen anchors at J1", "Slide along S2 to spec", "Re-torque bolt P3"]
     },
     "P-06": {
-      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
-      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "allowedTranslations": { "axes": ["x", "y"], "maxMm": 10 },
+      "allowedRotation": {
+        "type": "index",
+        "axis": "y",
+        "stepDegrees": 90,
+        "allowedIndices": [0, 1, 2, 3]
+      },
       "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
       "features": [
-        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
-        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
-        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
-      ]
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 1, 0], "description": "Hinge joint at right edge, vertical axis." },
+        { "id": "S2", "kind": "slot", "position_mm": [0, 0, 0], "axis": [1, 0, 0], "description": "Lateral mounting slot along panel width (±10 mm)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0], "axis": [0, 1, 0], "count": 4, "description": "Four-position bolt pattern about vertical axis." }
+      ],
+      "notes": ["Loosen anchors at J1", "Slide along S2 to spec", "Re-torque bolt P3"]
     },
     "P-07": {
-      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
-      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "allowedTranslations": { "axes": ["x", "y"], "maxMm": 10 },
+      "allowedRotation": {
+        "type": "index",
+        "axis": "y",
+        "stepDegrees": 90,
+        "allowedIndices": [0, 1, 2, 3]
+      },
       "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
       "features": [
-        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
-        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
-        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
-      ]
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 1, 0], "description": "Hinge joint at right edge, vertical axis." },
+        { "id": "S2", "kind": "slot", "position_mm": [0, 0, 0], "axis": [1, 0, 0], "description": "Lateral mounting slot along panel width (±10 mm)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0], "axis": [0, 1, 0], "count": 4, "description": "Four-position bolt pattern about vertical axis." }
+      ],
+      "notes": ["Loosen anchors at J1", "Slide along S2 to spec", "Re-torque bolt P3"]
     },
     "P-08": {
-      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
-      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "allowedTranslations": { "axes": ["x", "y"], "maxMm": 10 },
+      "allowedRotation": {
+        "type": "index",
+        "axis": "y",
+        "stepDegrees": 90,
+        "allowedIndices": [0, 1, 2, 3]
+      },
       "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
       "features": [
-        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
-        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
-        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
-      ]
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 1, 0], "description": "Hinge joint at right edge, vertical axis." },
+        { "id": "S2", "kind": "slot", "position_mm": [0, 0, 0], "axis": [1, 0, 0], "description": "Lateral mounting slot along panel width (±10 mm)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0], "axis": [0, 1, 0], "count": 4, "description": "Four-position bolt pattern about vertical axis." }
+      ],
+      "notes": ["Loosen anchors at J1", "Slide along S2 to spec", "Re-torque bolt P3"]
     },
     "P-09": {
-      "allowedTranslations": { "axes": ["x", "y", "z"], "maxMm": 10 },
-      "allowedRotation": { "type": "free", "axes": ["z"], "maxDeg": 5 },
+      "allowedTranslations": { "axes": ["x", "y"], "maxMm": 10 },
+      "allowedRotation": {
+        "type": "index",
+        "axis": "y",
+        "stepDegrees": 90,
+        "allowedIndices": [0, 1, 2, 3]
+      },
       "tolerances": { "translationMm": 2.0, "rotationDeg": 1.0 },
       "features": [
-        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 0, 1], "description": "Vertical pivot at right edge (CCW from outside face)." },
-        { "id": "S2", "kind": "slot",  "position_mm": [0, 0, 0],   "axis": [0, 1, 0], "description": "Vertical mounting slot (±10mm travel)." },
-        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0],   "axis": [0, 0, 1], "count": 4, "description": "Four-position bolt index about Z." }
-      ]
+        { "id": "J1", "kind": "joint", "position_mm": [750, 0, 0], "axis": [0, 1, 0], "description": "Hinge joint at right edge, vertical axis." },
+        { "id": "S2", "kind": "slot", "position_mm": [0, 0, 0], "axis": [1, 0, 0], "description": "Lateral mounting slot along panel width (±10 mm)." },
+        { "id": "P3", "kind": "index", "position_mm": [0, 0, 0], "axis": [0, 1, 0], "count": 4, "description": "Four-position bolt pattern about vertical axis." }
+      ],
+      "notes": ["Loosen anchors at J1", "Slide along S2 to spec", "Re-torque bolt P3"]
     }
   }
 }

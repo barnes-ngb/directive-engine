@@ -61,3 +61,36 @@ Without features: "Translate +3.2mm along part-frame Y. Status: pending. ..."
 
 Backward compat: `features` is optional throughout. Existing fixtures without
 the field validate and produce directives with the part-frame fallback wording.
+
+## `toy_facade_v1` — fixture composition
+
+The viewer demo (`datasets/toy_facade_v1/`) ships a 3×3 panel grid (P-01..P-09)
+on a 1.55 × 1.05 m pitch, panel size 1500 × 1000 × 50 mm. Each panel declares
+three named features in part frame: `J1` (hinge joint at the right edge), `S2`
+(lateral slot along panel width, ±10 mm), and `P3` (four-position indexed bolt
+pattern about the vertical axis).
+
+Roles by panel:
+
+| Panel | Role     | Deviation                              | Post-apply status |
+|-------|----------|----------------------------------------|-------------------|
+| P-01  | nominal  | ≤1 mm scan noise                       | `ok` (noop)       |
+| P-02  | nominal  | ≤1 mm scan noise                       | `ok` (noop)       |
+| P-03  | nominal  | ≤1 mm scan noise                       | `ok` (noop)       |
+| P-04  | **mild** | +3.5 mm along S2                       | `pending` → `ok`  |
+| P-05  | **hero** | +6.5 mm / −1.0 mm + 3° about P3 axis   | `pending` → `ok`  |
+| P-06  | nominal  | ≤1 mm scan noise                       | `ok` (noop)       |
+| P-07  | nominal  | ≤1 mm scan noise                       | `ok` (noop)       |
+| P-08  | nominal  | ≤1 mm scan noise                       | `ok` (noop)       |
+| P-09  | nominal  | ≤1 mm scan noise                       | `ok` (noop)       |
+
+`pickFocusedPart()` selects P-05 as the hero for beats 2-4 because it has the
+largest non-`ok` deviation (~6.6 mm). The remaining 7 panels still appear in
+the engine output as `ok`/noop steps; the viewer dims them during beats 2-3
+and surfaces all of them in the wide shot at beats 1 and 5.
+
+To regenerate `expected_directives.json` after editing inputs, run:
+
+```sh
+node scripts/gen-toy-facade-expected.mjs
+```
