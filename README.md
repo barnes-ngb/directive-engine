@@ -1,9 +1,14 @@
-# Directive Engine (Starter Kit)
-**As-built deltas → installer-ready directives** (move / rotate / index) with visualization + verification.
+# Directive Engine
+**Pixels to atoms — as-built deviations → installer-ready directives** (pivot / translate / index) with a 5-beat 3D walkthrough and pass/fail verification.
 
-This repo is a **contracts-first** scaffold for the project:
-- You can implement the engine in **Python, C#, or TypeScript** (or mix).
-- You can implement the viewer in any web stack you like.
+- **Live demo:** [directive-engine.vercel.app](https://directive-engine.vercel.app)
+- **Case study:** [systemsforge.build/work/directive-engine](https://systemsforge.build/work/directive-engine)
+- **Demo video (60–90s):** *(link added when capture lands)*
+
+This repo is a **contracts-first** TypeScript implementation:
+- Engine in `src/core/` (`generateDirectives()` is the canonical entry point).
+- Presentation layer in `src/presentation/` (installer-language formatter).
+- Three.js viewer in `src/viewer/` with a 5-beat guided walkthrough.
 
 ## What this solves
 When reality capture shows deviations, teams still need **field-executable instructions**:
@@ -13,10 +18,14 @@ When reality capture shows deviations, teams still need **field-executable instr
 - and how to verify closure.
 
 ## What’s included
-- `docs/` — overview, demo script, data contract
+- `src/core/` — engine: `generateDirectives()`, DOF projection, status logic
+- `src/presentation/` — installer-language directive formatter
+- `src/viewer/` — Three.js scene, beat controller, animations, deviation arrows, DOF ghosts
+- `src/styles/` — overlay CSS using portfolio-site class names
+- `docs/` — demo script, data contract, capture checklist
 - `schemas/` — JSON Schemas for inputs/outputs
 - `datasets/` — fixture datasets + golden expected outputs
-- `site/` — markdown “website bones” (content-only)
+- `site/` — markdown “website bones” mirrored to the portfolio site
 
 ## Core API usage (v0.1 / v0.2-features)
 `generateDirectives` is the canonical entry point for producing installer-ready directives.
@@ -67,27 +76,42 @@ All fixture data lives under `datasets/`:
 - `datasets/toy_facade_v1/` — primary v0.1 reference fixtures.
 - `datasets/toy_v0_1/` — additional v0.1 variants for regression checks.
 
-## Quickstart (high-level)
-1. Start by validating the dataset schemas:
-   - `datasets/toy_facade_v1/as_built.json` against `schemas/as_built.schema.json`
-   - `datasets/toy_facade_v1/constraints.json` against `schemas/constraints.schema.json`
-   - (optional) `datasets/toy_facade_v1/nominal.json` against the nominal schema you choose (see docs)
+## Quickstart
 
-2. Implement the core loop:
-   - load nominal + as-built
-   - compute correction deltas
-   - project onto constraints (allowed DOF)
-   - quantize indexed rotations
-   - emit directives JSON
+```bash
+npm install
+npm test                    # unit tests + golden-output regression
+npm run validate            # validate datasets against JSON Schemas
+npm run dev                 # /index.html (data tables) and /viewer.html (3D)
+npm run gen                 # regenerate out/directives.json from the CLI
+```
 
-3. Compare output to golden file:
-   - `datasets/toy_facade_v1/expected_directives.json`
+The engine entry point is `generateDirectives()` in `src/core/`. The viewer
+at `/viewer.html` reads `datasets/toy_facade_v1/`, runs the engine once on
+mount, and drives the 5-beat walkthrough. See `docs/demo-script.md` for the
+narrative and `docs/02_data_contract.md` for the schema shape.
 
-4. Build a minimal viewer:
-   - list parts
-   - show directive card
-   - visualize correction gizmo
-   - simulate apply + show before/after metric
+Engine output is regression-tested against
+`datasets/toy_facade_v1/expected_directives.json` (and the `toy_v0_1` golden
+files).
+
+## The 5-beat demo
+
+`/viewer.html` walks the user through the engine end-to-end on
+`datasets/toy_facade_v1/`:
+
+1. **Detection** — facade rendered at as-built poses; deviated panels tinted
+   yellow/red with arrows pointing toward nominal.
+2. **Constraint** — camera dollies in; ghost geometry shows the focused
+   panel's named DOF (joint, slot, indexed pattern).
+3. **Directive** — `directive-card` overlay renders `formatDirective()` output
+   in installer language (*"Pivot +0.4° about J1. Translate +3.2mm along S2."*).
+4. **Apply** — the panel animates to its corrected pose. Status flips
+   `pending → ok`.
+5. **Verify** — `verification-panel` shows before/after deviation metrics with
+   a `pass` chip when within tolerance.
+
+See `docs/demo-script.md` for the full narrative and state machine.
 
 ## Tech stack
 - **TypeScript** (strict, ES2022, bundler resolution)
@@ -113,13 +137,11 @@ systemsforge.build site and synced by hand — see the header comment in
 - The Three.js canvas is marked `aria-hidden`; semantic copy lives in the
   overlay.
 
-## Commands
-```bash
-npm install
-npm test
-npm run dev      # serves /index.html (data tables) and /viewer.html (3D scene)
-npm run build
-```
+## Recording the demo video
+
+See `docs/capture-checklist.md` for the take procedure, browser setup,
+compression, and self-hosting plan. Output assets live in the
+systemsforge.build site repo under `site/static/video/`.
 
 ## License
 Add MIT or Apache-2.0 (or your preference) once you’re ready to publish widely.

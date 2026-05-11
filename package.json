@@ -1,6 +1,6 @@
 {
-  "name": "directive-engine-v0.1-impl",
-  "version": "0.1.0",
+  "name": "directive-engine",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
