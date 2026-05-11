@@ -1,9 +1,16 @@
 {
   "jobId": "toy_facade_v1",
-  "generatedAt": "2026-05-11T22:58:56.142Z",
+  "generatedAt": "2025-01-01T00:00:01.000Z",
+  "countsByStatus": {
+    "ok": 7,
+    "pending": 2,
+    "clamped": 0,
+    "blocked": 0,
+    "needs_review": 0
+  },
   "metrics": {
-    "beforeMaxDeviationMm": 6.083,
-    "afterMaxDeviationMm": 0.583
+    "beforeMaxDeviationMm": 6.6,
+    "afterMaxDeviationMm": 0
   },
   "steps": [
     {
@@ -11,265 +18,164 @@
       "partId": "P-01",
       "priority": 1,
       "status": "ok",
+      "computedDeviationMm": 0.6,
       "actions": [
         {
-          "action_id": "A1",
-          "type": "noop",
-          "description": "No adjustment required; as-built pose is within tolerance.",
-          "delta": {
-            "translation_mm": [
-              0,
-              0,
-              0
-            ],
-            "rotation_quat_xyzw": [
-              0,
-              0,
-              0,
-              1
-            ]
-          }
+          "type": "noop"
         }
       ],
       "verification": {
-        "type": "rescan",
+        "type": "measure_pose",
         "passIfMaxDeviationMm": 2
-      },
-      "notes": []
+      }
     },
     {
       "stepId": "S-0002",
       "partId": "P-02",
       "priority": 2,
-      "status": "pending",
+      "status": "ok",
+      "computedDeviationMm": 0.4,
       "actions": [
         {
-          "type": "translate",
-          "frame": "part",
-          "vectorMm": [
-            0,
-            -3.5,
-            0
-          ]
+          "type": "noop"
         }
       ],
       "verification": {
-        "type": "rescan",
+        "type": "measure_pose",
         "passIfMaxDeviationMm": 2
-      },
-      "notes": []
+      }
     },
     {
       "stepId": "S-0003",
       "partId": "P-03",
       "priority": 3,
       "status": "ok",
+      "computedDeviationMm": 0.5,
       "actions": [
         {
-          "action_id": "A3",
-          "type": "noop",
-          "description": "No adjustment required; as-built pose is within tolerance.",
-          "delta": {
-            "translation_mm": [
-              0,
-              0,
-              0
-            ],
-            "rotation_quat_xyzw": [
-              0,
-              0,
-              0,
-              1
-            ]
-          }
+          "type": "noop"
         }
       ],
       "verification": {
-        "type": "rescan",
+        "type": "measure_pose",
         "passIfMaxDeviationMm": 2
-      },
-      "notes": []
+      }
     },
     {
       "stepId": "S-0004",
       "partId": "P-04",
       "priority": 4,
-      "status": "ok",
+      "status": "pending",
+      "computedDeviationMm": 3.5,
       "actions": [
         {
-          "action_id": "A4",
-          "type": "noop",
-          "description": "No adjustment required; as-built pose is within tolerance.",
-          "delta": {
-            "translation_mm": [
-              0,
-              0,
-              0
-            ],
-            "rotation_quat_xyzw": [
-              0,
-              0,
-              0,
-              1
-            ]
-          }
+          "type": "translate",
+          "frame": "part",
+          "vectorMm": [
+            -3.5,
+            0,
+            0
+          ],
+          "clampApplied": false
         }
       ],
       "verification": {
-        "type": "rescan",
+        "type": "measure_pose",
         "passIfMaxDeviationMm": 2
-      },
-      "notes": []
+      }
     },
     {
       "stepId": "S-0005",
       "partId": "P-05",
       "priority": 5,
       "status": "pending",
+      "computedDeviationMm": 6.6,
       "actions": [
         {
           "type": "translate",
           "frame": "part",
           "vectorMm": [
+            -6.5,
             1,
-            -6,
             0
-          ]
+          ],
+          "clampApplied": false
         },
         {
-          "type": "rotate",
+          "type": "rotate_to_index",
           "frame": "part",
-          "axis": "z",
-          "quaternionXYZW": [
-            0,
-            0,
-            -0.017452,
-            0.999848
-          ]
+          "axis": "y",
+          "targetIndex": 0
         }
       ],
       "verification": {
-        "type": "rescan",
+        "type": "measure_pose",
         "passIfMaxDeviationMm": 2
-      },
-      "notes": []
+      }
     },
     {
       "stepId": "S-0006",
       "partId": "P-06",
       "priority": 6,
       "status": "ok",
+      "computedDeviationMm": 0.5,
       "actions": [
         {
-          "action_id": "A7",
-          "type": "noop",
-          "description": "No adjustment required; as-built pose is within tolerance.",
-          "delta": {
-            "translation_mm": [
-              0,
-              0,
-              0
-            ],
-            "rotation_quat_xyzw": [
-              0,
-              0,
-              0,
-              1
-            ]
-          }
+          "type": "noop"
         }
       ],
       "verification": {
-        "type": "rescan",
+        "type": "measure_pose",
         "passIfMaxDeviationMm": 2
-      },
-      "notes": []
+      }
     },
     {
       "stepId": "S-0007",
       "partId": "P-07",
       "priority": 7,
-      "status": "clamped",
+      "status": "ok",
+      "computedDeviationMm": 0.6,
       "actions": [
         {
-          "type": "rotate",
-          "frame": "part",
-          "axis": "z",
-          "quaternionXYZW": [
-            0,
-            0,
-            -0.043619,
-            0.999048
-          ]
+          "type": "noop"
         }
       ],
       "verification": {
-        "type": "rescan",
+        "type": "measure_pose",
         "passIfMaxDeviationMm": 2
-      },
-      "notes": []
+      }
     },
     {
       "stepId": "S-0008",
       "partId": "P-08",
       "priority": 8,
       "status": "ok",
+      "computedDeviationMm": 0.3,
       "actions": [
         {
-          "action_id": "A9",
-          "type": "noop",
-          "description": "No adjustment required; as-built pose is within tolerance.",
-          "delta": {
-            "translation_mm": [
-              0,
-              0,
-              0
-            ],
-            "rotation_quat_xyzw": [
-              0,
-              0,
-              0,
-              1
-            ]
-          }
+          "type": "noop"
         }
       ],
       "verification": {
-        "type": "rescan",
+        "type": "measure_pose",
         "passIfMaxDeviationMm": 2
-      },
-      "notes": []
+      }
     },
     {
       "stepId": "S-0009",
       "partId": "P-09",
       "priority": 9,
       "status": "ok",
+      "computedDeviationMm": 0.6,
       "actions": [
         {
-          "action_id": "A10",
-          "type": "noop",
-          "description": "No adjustment required; as-built pose is within tolerance.",
-          "delta": {
-            "translation_mm": [
-              0,
-              0,
-              0
-            ],
-            "rotation_quat_xyzw": [
-              0,
-              0,
-              0,
-              1
-            ]
-          }
+          "type": "noop"
         }
       ],
       "verification": {
-        "type": "rescan",
+        "type": "measure_pose",
         "passIfMaxDeviationMm": 2
-      },
-      "notes": []
+      }
     }
   ]
 }
