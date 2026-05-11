@@ -82,13 +82,13 @@ All fixture data lives under `datasets/`:
 npm install
 npm test                    # unit tests + golden-output regression
 npm run validate            # validate datasets against JSON Schemas
-npm run dev                 # /index.html (data tables) and /viewer.html (3D)
+npm run dev                 # serves the 5-beat 3D viewer at /
 npm run gen                 # regenerate out/directives.json from the CLI
 ```
 
 The engine entry point is `generateDirectives()` in `src/core/`. The viewer
-at `/viewer.html` reads `datasets/toy_facade_v1/`, runs the engine once on
-mount, and drives the 5-beat walkthrough. See `docs/demo-script.md` for the
+at `/` reads `datasets/toy_facade_v1/`, runs the engine once on mount, and
+drives the 5-beat walkthrough. See `docs/demo-script.md` for the
 narrative and `docs/02_data_contract.md` for the schema shape.
 
 Engine output is regression-tested against
@@ -97,7 +97,7 @@ files).
 
 ## The 5-beat demo
 
-`/viewer.html` walks the user through the engine end-to-end on
+The viewer at `/` walks the user through the engine end-to-end on
 `datasets/toy_facade_v1/`:
 
 1. **Detection** — facade rendered at as-built poses; deviated panels tinted
@@ -120,7 +120,7 @@ See `docs/demo-script.md` for the full narrative and state machine.
 - **Three.js** (r160) — 3D viewer scaffolding under `src/viewer/`. Imported as ES modules; `OrbitControls` is loaded from `three/examples/jsm/controls/OrbitControls.js`.
 
 ## Viewer overlay styling
-The 3D viewer's overlay (`/viewer.html`) uses portfolio-site class names
+The 3D viewer's overlay uses portfolio-site class names
 (`directive-card`, `verification-panel`, `metric-card`, `chip`, `callout`) so
 markup is portable. Demo-scoped tokens (`--de-*`) live in
 `src/styles/overlay.css`; responsive breakpoint rules live in

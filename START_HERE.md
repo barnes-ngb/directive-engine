@@ -11,7 +11,7 @@ New to the repo? Three things to read, in this order:
 ```bash
 npm install
 npm test
-npm run dev      # serves /index.html (data tables) and /viewer.html (3D scene)
+npm run dev      # serves the 5-beat 3D viewer at /
 ```
 
 `npm run gen` regenerates `out/directives.json` from the `toy_v0_1` fixture

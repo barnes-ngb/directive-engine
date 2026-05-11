@@ -2,296 +2,75 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Directive Engine Demo</title>
-    <link rel="stylesheet" href="./style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#14161b" />
+    <meta name="color-scheme" content="dark" />
+
+    <title>Directive Engine — pixels to atoms</title>
+    <meta
+      name="description"
+      content="Five-beat walkthrough turning as-built deviations into installer-ready directives, with DOF-aware constraints and pass/fail verification."
+    />
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Directive Engine — pixels to atoms" />
+    <meta
+      property="og:description"
+      content="From reality capture to installer-ready directives. A 3D walkthrough on toy_facade_v1."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Directive Engine — pixels to atoms" />
+    <meta
+      name="twitter:description"
+      content="From reality capture to installer-ready directives. A 3D walkthrough on toy_facade_v1."
+    />
+
+    <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%2314161b'/><circle cx='16' cy='16' r='6' fill='%236ea8ff'/></svg>" />
+
+    <link rel="preconnect" href="https://rsms.me" crossorigin />
+    <link rel="stylesheet" href="../src/styles/overlay.css" />
+    <link rel="stylesheet" href="../src/styles/responsive.css" />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #14161b;
+        overscroll-behavior: none;
+      }
+      body {
+        font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color: #e8eaed;
+      }
+      #viewer {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        /* Suppress browser touch gestures so OrbitControls can take over. */
+        touch-action: none;
+      }
+      #viewer canvas { display: block; }
+    </style>
   </head>
   <body>
-    <header class="page-header">
-      <div>
-        <h1>Directive Engine Demo</h1>
-        <p class="subtitle">Minimal shell for browser-based runs</p>
-      </div>
-      <div class="header-actions">
-        <label class="dataset-select" for="dataset-select">
-          <span>Dataset</span>
-          <select id="dataset-select">
-            <option value="toy" selected>Toy</option>
-            <option value="museum">Museum</option>
-          </select>
-        </label>
-        <label class="mode-select" for="mode-select">
-          <span>Mode</span>
-          <select id="mode-select">
-            <option value="viewer" selected>Viewer</option>
-            <option value="runbook">Runbook</option>
-            <option value="step">Step</option>
-            <option value="overlay">Overlay</option>
-          </select>
-        </label>
-        <button class="run-button" type="button">Run</button>
-      </div>
-    </header>
-
-    <div class="error-banner" id="error-banner" role="alert" hidden></div>
-
-    <!-- Runbook Mode Progress Bar -->
-    <div class="runbook-progress" id="runbook-progress" hidden>
-      <div class="progress-header">
-        <span class="progress-label">Run Progress</span>
-        <span class="progress-count" id="progress-count">0 / 0</span>
-        <span class="progress-percent" id="progress-percent">0%</span>
-        <button class="reset-run-btn" id="reset-run-btn" type="button" title="Reset entire run">Reset Run</button>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
-      </div>
-    </div>
-
-    <!-- Runbook Mode Calibration Card -->
-    <div class="runbook-calibration-card" id="runbook-calibration-card" hidden>
-      <div class="calibration-header">
-        <span class="calibration-label">Calibration</span>
-        <span class="calibration-rms" id="runbook-calibration-rms">—</span>
-        <span class="calibration-rms-unit">mm RMS</span>
-      </div>
-      <div class="calibration-rms-comparison" id="runbook-calibration-comparison">
-        <div class="rms-before">
-          <span class="rms-label">Before</span>
-          <span class="rms-value" id="runbook-rms-before">—</span>
-          <span class="rms-unit">mm</span>
-        </div>
-        <span class="rms-arrow">→</span>
-        <div class="rms-after">
-          <span class="rms-label">After</span>
-          <span class="rms-value" id="runbook-rms-after">—</span>
-          <span class="rms-unit">mm</span>
-        </div>
-        <div class="rms-improvement" id="runbook-rms-improvement">
-          <!-- Improvement percentage -->
-        </div>
-        <div class="rms-tolerance" id="runbook-rms-tolerance">
-          <span class="rms-tolerance-label">Target:</span>
-          <span class="rms-tolerance-value">5 mm</span>
+    <div id="viewer" aria-label="Directive engine 3D walkthrough"></div>
+    <noscript>
+      <div class="de-error">
+        <div class="de-error__card">
+          <h1 class="de-error__title">JavaScript required</h1>
+          <p class="de-error__body">
+            This is an interactive 3D walkthrough. Enable JavaScript to view
+            the demo, or read the
+            <a href="https://github.com/barnes-ngb/directive-engine" style="color: #6ea8ff;">
+              source on GitHub
+            </a>.
+          </p>
         </div>
       </div>
-      <div class="calibration-warning" id="runbook-calibration-warning" hidden>
-        <!-- Warning message when RMS > threshold -->
-      </div>
-      <div class="calibration-top-anchors" id="runbook-calibration-top-anchors">
-        <!-- Top 1-3 anchors by residual -->
-      </div>
-      <div class="calibration-error" id="runbook-calibration-error" hidden>
-        <!-- Error message when fewer than 3 anchors included -->
-      </div>
-      <details class="calibration-details" id="runbook-calibration-details">
-        <summary class="calibration-toggle">Show all residuals</summary>
-        <div class="calibration-table-wrapper">
-          <table class="calibration-table">
-            <thead>
-              <tr>
-                <th class="include-col">Include</th>
-                <th>Anchor</th>
-                <th class="numeric">Residual (mm)</th>
-              </tr>
-            </thead>
-            <tbody id="runbook-calibration-residuals">
-              <!-- Full residual table with include checkboxes -->
-            </tbody>
-          </table>
-        </div>
-      </details>
-    </div>
-
-    <!-- Runbook Mode Step Table + Detail Layout -->
-    <div class="runbook-layout" id="runbook-layout" hidden>
-      <div class="runbook-step-table-container">
-        <table class="runbook-step-table" id="runbook-step-table">
-          <thead>
-            <tr>
-              <th>Part ID</th>
-              <th>Engine Status</th>
-              <th>Sim</th>
-              <th>Done</th>
-            </tr>
-          </thead>
-          <tbody id="runbook-step-tbody">
-            <!-- Filled dynamically -->
-          </tbody>
-        </table>
-      </div>
-      <div class="runbook-detail" id="runbook-detail">
-        <div class="runbook-detail-header">
-          <h3 class="runbook-detail-part" id="runbook-detail-part">Select a step</h3>
-          <span class="badge" id="runbook-detail-status">—</span>
-        </div>
-        <div class="runbook-detail-body" id="runbook-detail-body">
-          <p class="placeholder">Click a row to see step details.</p>
-        </div>
-        <div class="runbook-detail-actions" id="runbook-detail-actions" hidden>
-          <div class="runbook-completion-controls" id="runbook-completion-controls">
-            <!-- Filled dynamically based on status -->
-          </div>
-          <div class="runbook-notes-section">
-            <label for="runbook-notes">Notes:</label>
-            <textarea id="runbook-notes" rows="2" placeholder="Add notes for this step..."></textarea>
-          </div>
-          <div class="runbook-step-actions">
-            <button class="runbook-reset-step-btn" id="runbook-reset-step" type="button">Reset Step</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Step Mode Single Part Display -->
-    <div class="step-view" id="step-view" hidden>
-      <div class="step-card">
-        <div class="step-header">
-          <h2 class="step-part-name" id="step-part-name">Part Name</h2>
-          <span class="badge" id="step-status-badge">Status</span>
-        </div>
-        <div class="step-content" id="step-content">
-          <!-- Filled dynamically -->
-        </div>
-        <div class="step-actions-bar">
-          <button class="step-complete-btn" id="step-complete-btn" type="button">Mark Complete</button>
-          <button class="nav-button" id="step-prev" type="button">&larr; Prev</button>
-          <button class="nav-button" id="step-next" type="button">Next &rarr;</button>
-        </div>
-        <div class="step-notes">
-          <label for="step-notes-input">Notes:</label>
-          <textarea id="step-notes-input" rows="2" placeholder="Add notes for this step..."></textarea>
-        </div>
-      </div>
-    </div>
-
-    <!-- Overlay Mode Minimal View -->
-    <div class="overlay-view" id="overlay-view" hidden>
-      <div class="overlay-card" id="overlay-card">
-        <div class="overlay-header">
-          <span class="overlay-part" id="overlay-part">PART_ID</span>
-          <span class="badge" id="overlay-badge">Status</span>
-        </div>
-        <div class="overlay-action" id="overlay-action">Action description</div>
-        <div class="overlay-delta" id="overlay-delta">Translation: [0, 0, 0] mm</div>
-        <div class="overlay-nav">
-          <button class="overlay-nav-btn" id="overlay-prev">&larr;</button>
-          <button class="overlay-complete-btn" id="overlay-complete">&#10003;</button>
-          <button class="overlay-nav-btn" id="overlay-next">&rarr;</button>
-        </div>
-      </div>
-    </div>
-
-    <main class="page-content">
-      <section class="panel" aria-labelledby="parts-title">
-        <h2 id="parts-title">Part List</h2>
-        <div class="panel-body" id="part-list">
-          <p class="placeholder">Parts will appear here.</p>
-        </div>
-      </section>
-
-      <section class="panel" aria-labelledby="status-title">
-        <div class="panel-header">
-          <h2 id="status-title">Status</h2>
-          <span class="badge" id="status-badge">Idle</span>
-        </div>
-        <div class="panel-body" id="status-details">
-          <p class="placeholder">Status details will appear here.</p>
-        </div>
-      </section>
-
-      <section class="panel" aria-labelledby="actions-title">
-        <h2 id="actions-title">Selected Part Actions</h2>
-        <div class="panel-body" id="action-list">
-          <p class="placeholder">Actions will appear here.</p>
-        </div>
-      </section>
-
-      <section class="panel" aria-labelledby="verification-title">
-        <h2 id="verification-title">Expected Residual</h2>
-        <div class="panel-body" id="verification-residual">
-          <p class="placeholder">Expected residual output will appear here.</p>
-        </div>
-      </section>
-
-      <section class="panel simulation-panel" aria-labelledby="simulation-title">
-        <h2 id="simulation-title">Apply Simulation</h2>
-        <div class="panel-body" id="simulation-panel">
-          <p class="placeholder">Select a part to simulate applying its directive.</p>
-        </div>
-      </section>
-
-      <section class="panel" aria-labelledby="constraints-title">
-        <h2 id="constraints-title">Constraints / DOF</h2>
-        <div class="panel-body" id="constraints-panel">
-          <p class="placeholder">Constraints will appear here.</p>
-        </div>
-      </section>
-
-      <section class="panel" id="alignment-panel" aria-labelledby="alignment-title" hidden>
-        <h2 id="alignment-title">Alignment Quality</h2>
-        <div class="panel-body alignment-quality">
-          <div class="alignment-summary">
-            <div class="alignment-rms">
-              <span class="alignment-label">RMS (mm)</span>
-              <strong class="alignment-rms-value" id="alignment-rms">—</strong>
-            </div>
-          </div>
-          <div class="alignment-view-container">
-            <canvas id="alignment-view-canvas" class="alignment-view-canvas"></canvas>
-          </div>
-          <div class="alignment-table-wrapper">
-            <table class="alignment-table">
-              <thead>
-                <tr>
-                  <th>Anchor</th>
-                  <th class="numeric">Residual (mm)</th>
-                  <th class="numeric">dx (mm)</th>
-                  <th class="numeric">dy (mm)</th>
-                  <th class="numeric">dz (mm)</th>
-                </tr>
-              </thead>
-              <tbody id="alignment-residuals">
-                <tr>
-                  <td class="placeholder-cell" colspan="5">Residuals will appear here.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel export-panel" aria-labelledby="export-title">
-        <h2 id="export-title">Export / Share</h2>
-        <div class="panel-body" id="export-panel">
-          <div class="export-buttons">
-            <button class="export-button" id="export-json" type="button" disabled>
-              Download directives.json
-            </button>
-            <button class="export-button" id="export-summary" type="button" disabled>
-              Download run_summary.md
-            </button>
-            <button class="export-button" id="export-csv" type="button" disabled>
-              Download directives.csv
-            </button>
-            <button class="export-button export-print" id="export-print" type="button">
-              Print / Save as PDF
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel" aria-labelledby="raw-json-title">
-        <h2 id="raw-json-title">Raw JSON</h2>
-        <div class="panel-body">
-          <details class="raw-json">
-            <summary>Toggle raw payloads</summary>
-            <pre id="raw-json"></pre>
-          </details>
-        </div>
-      </section>
-    </main>
-
-    <script type="module" src="./main.ts"></script>
+    </noscript>
+    <script type="module" src="./viewer-main.ts"></script>
   </body>
 </html>
