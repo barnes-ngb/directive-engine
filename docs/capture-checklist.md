@@ -8,7 +8,7 @@ Breadcrumbs for recording the directive-engine demo video. This file exists so a
 
 ## What to demonstrate
 
-Open `/viewer.html` (production build or vercel deploy) and walk the 5 beats in order. Target ~75s total, ~15s per beat. Let camera moves breathe; don't rush.
+Open `/` (production build or vercel deploy) and walk the 5 beats in order. Target ~75s total, ~15s per beat. Let camera moves breathe; don't rush.
 
 ### Beat 1 — Detection (~12–15s)
 1. Land on the wide 3/4 view with all panels at their as-built poses.
