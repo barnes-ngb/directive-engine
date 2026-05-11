@@ -2,18 +2,47 @@
 
 Breadcrumbs for recording the directive-engine demo video. This file exists so a single take session has everything in one place; no hunting through other docs.
 
-> **Status:** This checklist is content-agnostic on purpose. It does **not** prescribe a 5-beat narrative vs. the current Runbook-mode demo — that decision belongs to the Track A copy work, which is paused. Once the demo's canonical narrative is locked, fill in "What to demonstrate" below.
+> **Status:** Track A is complete; the locked narrative is the 5-beat walkthrough in `docs/demo-script.md`. The sequence below mirrors that doc — if the two diverge, `demo-script.md` is canonical.
 
 ---
 
 ## What to demonstrate
 
-**TODO — populate after Track A inventory.** This section names the on-screen sequence the take should follow. Until that's locked, do not record final takes.
+Open `/viewer.html` (production build or vercel deploy) and walk the 5 beats in order. Target ~75s total, ~15s per beat. Let camera moves breathe; don't rush.
 
-Candidate sources for the script once direction is set:
-- `docs/01_demo_script.md` — original v0.1 sprint script (likely stale)
-- The 5-beat narrative in `SESSION_HANDOFF.md` — only valid if/when the 5-beat build ships
-- A new script reflecting Runbook mode + Alignment View + Museum calibration as currently shipped
+### Beat 1 — Detection (~12–15s)
+1. Land on the wide 3/4 view with all panels at their as-built poses.
+2. Allow ~2s of stillness so the tinted (yellow/red) panels and deviation arrows are legible.
+3. Hover briefly near the worst panel to draw the eye (no click yet).
+4. Click *Continue* in the beat-nav pill.
+
+### Beat 2 — Constraint (~15s)
+1. Camera dollies in on the focused panel; non-focused panels dim.
+2. Wait for the DOF ghost geometry to render — translucent joint sphere, slot capsule, hatched forbidden volumes.
+3. Let the subhead "Every part has constraints" read fully on screen.
+4. Click *Continue*.
+
+### Beat 3 — Directive (~15s)
+1. `directive-card` overlay slides in bottom-left with the installer-language directive ("Pivot +0.4° about J1… Translate +3.2mm along S2.").
+2. Hold long enough for a viewer to read the card and notice the `pending` chip + tolerance band.
+3. Click *Apply* (the card button, not the beat-nav).
+
+### Beat 4 — Apply (~12s)
+1. Watch the focused panel animate from as-built to corrected pose.
+2. Tints clear, deviation arrows shrink to ~0.
+3. Status chip flips `pending → ok`.
+4. Click *Continue*.
+
+### Beat 5 — Verify (~15s)
+1. Camera returns to the wide shot; all panels in corrected pose.
+2. `verification-panel` bottom-right shows the two `metric-card`s — Before and After — with a `pass` chip on the after-metric.
+3. Let the closing callout read: *"This demo runs the v0.1 contract on `toy_facade_v1`…"*
+4. Hold ~1.5s of stillness on the final frame for a clean cut-to-poster.
+
+### Things to avoid mid-take
+- Don't open the Text-summary dialog (that's an accessibility surface, not a narrative beat).
+- Don't click *Restart* while recording — that re-emits a state change and creates an awkward snap.
+- Don't navigate with *Back* during a take; if a beat misfires, restart the take.
 
 ---
 

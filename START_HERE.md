@@ -1,27 +1,36 @@
 # Start Here
 
-You can treat this like a 2–3 day sprint to get to “shareable demo”.
+New to the repo? Three things to read, in this order:
 
-## Day 0 (1–2 hours)
-- [ ] Replace placeholders in site content (`site/content/home.md`, `site/content/work/directive-engine.md`)
-- [ ] Push repo to GitHub
-- [ ] Deploy the site (any stack) so you have a stable link
+1. **[README.md](./README.md)** — what the project is, how to install and run, the v0.1 engine contract.
+2. **Live demo** — [directive-engine.vercel.app](https://directive-engine.vercel.app). The viewer walks five beats: Detection → Constraint → Directive → Apply → Verify.
+3. **[docs/demo-script.md](./docs/demo-script.md)** — the canonical 5-beat narrative the viewer performs.
 
-## Day 1 (engine loop)
-- [ ] Load toy dataset (`datasets/toy_facade_v1/*`)
-- [ ] Hardcode or load nominal transforms (`nominal.json`)
-- [ ] Compute correction:
-      `T_correction = inverse(T_asBuilt) * T_nominal`
-- [ ] Project correction onto allowed DOF + quantize indexed rotations
-- [ ] Emit directives JSON in `schemas/directives.schema.json` format
+## Running locally
 
-## Day 2 (viewer loop)
-- [ ] Build minimal 3D viewer (axes + proxy geometry is fine)
-- [ ] Part list → directive card UI
-- [ ] “Apply” button (simulated) + show before/after metric
-- [ ] Record 60–90s screen video and link it from:
-    - repo README
-    - `/work/directive-engine` page
+```bash
+npm install
+npm test
+npm run dev      # serves /index.html (data tables) and /viewer.html (3D scene)
+```
 
-## Outreach trigger
-Once the website page exists and the video is recorded: you can start outreach.
+`npm run gen` regenerates `out/directives.json` from the `toy_v0_1` fixture
+via the CLI in `src/cli/`.
+
+## Where things live
+
+- `src/core/` — engine: `generateDirectives()`, DOF projection, status logic. Don't change behavior here without a reason.
+- `src/presentation/` — installer-language directive formatter (`formatDirective`).
+- `src/viewer/` — Three.js scene, beat controller, animation, deviation arrows, DOF ghost geometry.
+- `src/styles/` — overlay CSS using the portfolio-site class names.
+- `datasets/toy_facade_v1/` — primary fixture the demo runs against.
+- `schemas/` — JSON Schemas for inputs/outputs.
+- `docs/demo-script.md` — 5-beat narrative.
+- `docs/02_data_contract.md` — pose / constraint / directive shapes.
+- `docs/capture-checklist.md` — instructions for recording the demo video.
+
+## History
+
+The original v0.1 sprint plan that bootstrapped the engine and a minimal table
+viewer lives at `docs/archive/START_HERE-v0.1.md`. The v0.2 build replaced the
+shell with the 5-beat 3D walkthrough described above.
