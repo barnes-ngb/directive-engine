@@ -1,0 +1,336 @@
+/*
+ * Overlay styles for the directive-engine demo viewer.
+ *
+ * Class names match the portfolio site's existing primitives
+ * (`directive-card`, `verification-panel`, `metric-card`, `chip`, `callout`)
+ * so visuals stay consistent. Phase 4 may reconcile values against the
+ * canonical site CSS; until then this is the source of truth for the demo.
+ */
+
+:root {
+  --de-bg: rgba(20, 22, 27, 0.92);
+  --de-border: rgba(255, 255, 255, 0.12);
+  --de-fg: #e8eaed;
+  --de-fg-dim: #9aa0a6;
+  --de-accent: #6ea8ff;
+
+  --de-ok: #4ade80;
+  --de-pass: #22c55e;
+  --de-pending: #facc15;
+  --de-clamped: #f97316;
+  --de-blocked: #ef4444;
+
+  --de-radius: 10px;
+  --de-radius-sm: 6px;
+  --de-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  --de-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.de-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--de-font);
+  color: var(--de-fg);
+}
+
+.de-overlay > * {
+  pointer-events: auto;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Headline + beat indicator (top centre)                             */
+/* ------------------------------------------------------------------ */
+
+.de-overlay__headline {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  max-width: 720px;
+  padding: 14px 22px;
+  background: var(--de-bg);
+  border: 1px solid var(--de-border);
+  border-radius: var(--de-radius);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--de-shadow);
+}
+
+.de-overlay__headline h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.de-overlay__headline p {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: var(--de-fg-dim);
+}
+
+.de-overlay__beat-indicator {
+  display: inline-flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.de-overlay__beat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  transition: background 0.2s ease;
+}
+
+.de-overlay__beat-dot.is-active {
+  background: var(--de-accent);
+}
+
+.de-overlay__beat-dot.is-done {
+  background: rgba(110, 168, 255, 0.45);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Directive card (bottom-left)                                       */
+/* ------------------------------------------------------------------ */
+
+.directive-card {
+  position: absolute;
+  bottom: 96px;
+  left: 32px;
+  width: 360px;
+  background: var(--de-bg);
+  border: 1px solid var(--de-border);
+  border-radius: var(--de-radius);
+  padding: 18px 20px;
+  backdrop-filter: blur(8px);
+  box-shadow: var(--de-shadow);
+}
+
+.directive-card__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--de-fg-dim);
+  margin: 0 0 6px 0;
+}
+
+.directive-card__part {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.directive-card__body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--de-fg);
+  margin: 0 0 14px 0;
+}
+
+.directive-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.directive-card__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.directive-card__apply {
+  background: var(--de-accent);
+  color: #0a0d12;
+  border: none;
+  border-radius: var(--de-radius-sm);
+  padding: 9px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.directive-card__apply:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.directive-card__apply:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Chip variants                                                      */
+/* ------------------------------------------------------------------ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--de-fg);
+  border: 1px solid var(--de-border);
+}
+
+.chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.chip--ok { color: var(--de-ok); }
+.chip--pass { color: var(--de-pass); }
+.chip--pending { color: var(--de-pending); }
+.chip--clamped { color: var(--de-clamped); }
+.chip--blocked { color: var(--de-blocked); }
+
+/* ------------------------------------------------------------------ */
+/*  Verification panel (bottom-right, beat 5)                          */
+/* ------------------------------------------------------------------ */
+
+.verification-panel {
+  position: absolute;
+  bottom: 96px;
+  right: 32px;
+  width: 360px;
+  background: var(--de-bg);
+  border: 1px solid var(--de-border);
+  border-radius: var(--de-radius);
+  padding: 18px 20px;
+  backdrop-filter: blur(8px);
+  box-shadow: var(--de-shadow);
+}
+
+.verification-panel__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--de-fg-dim);
+  margin: 0 0 10px 0;
+}
+
+.verification-panel__metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--de-border);
+  border-radius: var(--de-radius-sm);
+  padding: 10px 12px;
+}
+
+.metric-card__label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--de-fg-dim);
+  margin: 0 0 4px 0;
+}
+
+.metric-card__value {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-card__unit {
+  font-size: 13px;
+  color: var(--de-fg-dim);
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+.verification-panel__callout {
+  margin-top: 8px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Callout (closing line, used in verification panel)                 */
+/* ------------------------------------------------------------------ */
+
+.callout {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--de-fg-dim);
+  border-left: 2px solid var(--de-accent);
+  padding: 6px 0 6px 10px;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Beat navigation (bottom centre)                                    */
+/* ------------------------------------------------------------------ */
+
+.de-beat-nav {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  background: var(--de-bg);
+  border: 1px solid var(--de-border);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  box-shadow: var(--de-shadow);
+}
+
+.de-beat-nav__button {
+  background: transparent;
+  color: var(--de-fg);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border 0.15s ease;
+}
+
+.de-beat-nav__button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.de-beat-nav__button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.de-beat-nav__button--primary {
+  background: var(--de-accent);
+  color: #0a0d12;
+}
+
+.de-beat-nav__button--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  background: var(--de-accent);
+}
+
+.de-beat-nav__label {
+  align-self: center;
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--de-fg-dim);
+  font-variant-numeric: tabular-nums;
+}

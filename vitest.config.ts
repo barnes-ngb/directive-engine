@@ -7,6 +7,7 @@ export default defineConfig({
       "demo/**/*.test.ts",
       "src/__tests__/**/*.test.ts",
       "src/presentation/**/*.test.ts",
+      "src/viewer/**/*.test.ts",
       "src/test/**/*.test.ts",
       "test/**/*.test.ts"
     ]

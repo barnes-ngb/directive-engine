@@ -4,10 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Directive Engine — 3D Viewer</title>
+    <link rel="stylesheet" href="../src/styles/overlay.css" />
     <style>
       html, body { margin: 0; padding: 0; height: 100%; background: #1a1d22; }
       body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-      #viewer { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+      #viewer {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
       #viewer canvas { display: block; }
     </style>
   </head>
