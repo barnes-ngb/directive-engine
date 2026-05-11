@@ -17,6 +17,12 @@ export interface SceneHandle {
   controls: OrbitControls;
   /** Container into which panels and other content should be added. */
   contentRoot: THREE.Group;
+  /**
+   * Register a per-frame callback invoked just before each render. Returns
+   * an unsubscribe function. Used by the animation runner so tweens share
+   * the scene's single render loop.
+   */
+  onBeforeRender: (fn: () => void) => () => void;
   /** Tear down GPU resources, listeners, and the animation loop. */
   dispose: () => void;
 }
@@ -106,10 +112,20 @@ export function createScene(options: SceneOptions): SceneHandle {
   contentRoot.name = "contentRoot";
   scene.add(contentRoot);
 
+  // Per-frame callbacks (animation runner subscribes here).
+  const beforeRenderCallbacks = new Set<() => void>();
+  const onBeforeRender = (fn: () => void): (() => void) => {
+    beforeRenderCallbacks.add(fn);
+    return () => {
+      beforeRenderCallbacks.delete(fn);
+    };
+  };
+
   // Animation loop.
   let running = true;
   const tick = () => {
     if (!running) return;
+    for (const cb of beforeRenderCallbacks) cb();
     controls.update();
     renderer.render(scene, camera);
     animationFrameId = requestAnimationFrame(tick);
@@ -137,7 +153,15 @@ export function createScene(options: SceneOptions): SceneHandle {
     }
   };
 
-  return { renderer, scene, camera, controls, contentRoot, dispose };
+  return {
+    renderer,
+    scene,
+    camera,
+    controls,
+    contentRoot,
+    onBeforeRender,
+    dispose,
+  };
 }
 
 function readContainerSize(container: HTMLElement): { width: number; height: number } {
