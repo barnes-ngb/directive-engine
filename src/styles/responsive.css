@@ -2,13 +2,19 @@
  * Responsive layout rules for the directive-engine viewer overlay.
  *
  * Breakpoints:
- *   ≥1024px  — desktop (defaults in overlay.css)
- *   768–1023 — tablet  (compressed type, smaller cards)
- *   <768px   — mobile  (full-width bottom sheet, vertical stack)
+ *   ≥1024px  — desktop (defaults in overlay.css): canvas full-bleed, overlay
+ *              cards floated bottom-left / bottom-right.
+ *   768–1023 — tablet  (compressed type, smaller cards, canvas full-bleed)
+ *   <768px   — mobile portrait: SPLIT LAYOUT — canvas occupies the top
+ *              60vh, the directive card / verification panel / beat nav
+ *              sit in a 40vh bottom sheet *below* the canvas. The two
+ *              regions are visually distinct, and one-finger drag is
+ *              guaranteed to land on the canvas inside the top 60vh
+ *              region because the overlay cards no longer cover it.
  *
- * The 3D canvas is always full-bleed; the overlay floats above it. On mobile
- * the directive card and verification panel collapse into the bottom sheet
- * region so the canvas keeps the top 60% of the viewport.
+ * The .de-canvas-wrap element (created in mountViewer) is the canvas
+ * region's layout box. Resizing it on mobile is what drives the camera
+ * re-framing (the scene's ResizeObserver is wired to that element).
  */
 
 /* ------------------------------------------------------------------ */
@@ -47,6 +53,11 @@
     top: 16px;
     right: 16px;
   }
+
+  .de-reset-view {
+    top: 56px;
+    right: 16px;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -66,7 +77,31 @@
     --de-fs-chip: 10.5px;
   }
 
-  /* Headline shrinks to a single line strip at the very top. */
+  /* Canvas region: top 60vh on mobile portrait. The overlay cards live
+     in the remaining 40vh below. */
+  .de-canvas-wrap {
+    inset: 0 0 auto 0;
+    height: 60vh;
+  }
+
+  /* Bottom-sheet region for the cards/nav: a visual band below the canvas
+     so the overlay doesn't have to overlap the 3D view. The overlay itself
+     keeps inset:0 (it's a positioning context); each child re-anchors to
+     this region via its own bottom: rule below. A soft top border separates
+     the canvas from the sheet. */
+  .de-overlay::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 60vh;
+    bottom: 0;
+    background: linear-gradient(to bottom, rgba(20, 22, 27, 0.0) 0%, rgba(20, 22, 27, 0.55) 12%, rgba(20, 22, 27, 0.85) 100%);
+    border-top: 1px solid var(--de-border);
+    pointer-events: none;
+  }
+
+  /* Headline overlays the canvas at top — unchanged anchoring, smaller pad. */
   .de-overlay__headline {
     top: 8px;
     left: 8px;
@@ -90,16 +125,19 @@
   }
 
   /* Directive card occupies the full-width bottom sheet, sitting above the
-     nav. Position via inset rather than width so it fluidly resizes. */
+     nav. Position via inset rather than width so it fluidly resizes.
+     `touch-action: pan-y` lets the card scroll internally on touch even
+     though its ancestor canvas-wrap suppresses gestures. */
   .directive-card {
     left: 8px;
     right: 8px;
-    bottom: 76px;
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
     width: auto;
-    padding: 14px 16px;
+    padding: 12px 14px;
     border-radius: var(--de-radius);
-    max-height: 38vh;
+    max-height: calc(40vh - 72px);
     overflow-y: auto;
+    touch-action: pan-y;
   }
 
   .directive-card__body {
@@ -116,20 +154,22 @@
   .verification-panel {
     left: 8px;
     right: 8px;
-    bottom: 76px;
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
     width: auto;
-    padding: 14px 16px;
-    max-height: 38vh;
+    padding: 12px 14px;
+    max-height: calc(40vh - 72px);
     overflow-y: auto;
+    touch-action: pan-y;
   }
 
   .verification-panel__metrics {
     gap: 8px;
   }
 
-  /* Beat nav pinned to the very bottom, full-width pill. */
+  /* Beat nav pinned to the very bottom of the sheet, full-width pill.
+     env(safe-area-inset-bottom) keeps it above the iOS Safari URL bar. */
   .de-beat-nav {
-    bottom: 12px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     left: 8px;
     right: 8px;
     transform: none;
@@ -159,6 +199,16 @@
     right: 8px;
     font-size: 11px;
     padding: 4px 8px;
+  }
+
+  /* Reset-view button: tucked in the top-right corner of the canvas region,
+     below the fallback link. Smaller hit target on mobile to free up
+     headline space. */
+  .de-reset-view {
+    top: 38px;
+    right: 8px;
+    font-size: 11px;
+    padding: 5px 9px;
   }
 
   .de-fallback {

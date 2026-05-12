@@ -49,8 +49,8 @@
         width: 100vw;
         height: 100vh;
         overflow: hidden;
-        /* Suppress browser touch gestures so OrbitControls can take over. */
-        touch-action: none;
+        /* No global touch-action here — scope it to the canvas wrapper below
+           so the page and scrollable overlay cards keep working on touch. */
       }
       #viewer canvas { display: block; }
     </style>

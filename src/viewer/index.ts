@@ -54,6 +54,7 @@ import {
   expandForContext,
   frameBox,
   objectWorldBox,
+  paddingForAspect,
   unionWorldBox,
 } from "./camera-framing.js";
 
@@ -93,11 +94,19 @@ export function mountViewer(container: HTMLElement): MountedViewer {
   const bundle = buildEngineBundle(fixture);
   const focusedPartId = pickFocusedPart(bundle);
 
+  // Canvas region sits as the first child so the overlay (added later by
+  // mountOverlay) paints on top. The wrapper has its own touch-action: none
+  // (set in CSS) and its own layout box, which lets the responsive CSS shrink
+  // it to 60vh on mobile portrait without affecting overlay positioning.
+  const canvasWrap = document.createElement("div");
+  canvasWrap.className = "de-canvas-wrap";
+  container.appendChild(canvasWrap);
+
   // Scene is created with a placeholder camera; we recompute position once
   // the panels are mounted (so we can read the true world-space AABB rather
   // than a centroid-based guess).
   const scene = createScene({
-    container,
+    container: canvasWrap,
     transparent: true,
   });
 
@@ -118,7 +127,7 @@ export function mountViewer(container: HTMLElement): MountedViewer {
     facadeBox,
     scene.camera.fov,
     scene.camera.aspect,
-    WIDE_SHOT_PADDING,
+    paddingForAspect(WIDE_SHOT_PADDING, scene.camera.aspect),
   );
   scene.camera.position.copy(initialWide.position);
   scene.controls.target.copy(initialWide.target);
@@ -195,7 +204,7 @@ export function mountViewer(container: HTMLElement): MountedViewer {
     scene.controls.target.copy(target.target);
     scene.controls.update();
   });
-  resizeObserver.observe(container);
+  resizeObserver.observe(canvasWrap);
 
   const overlay = mountOverlay({
     host: container,
@@ -209,6 +218,24 @@ export function mountViewer(container: HTMLElement): MountedViewer {
       // Controller.reset() goes to beat 1; the scene listener picks it up.
     },
   });
+
+  // Reset-view button: snaps the camera back to the current beat's default
+  // waypoint. Helpful on touch when free-orbit drifts the camera off the
+  // facade. Cancels any in-flight camera tween before snapping.
+  const resetBtn = createResetButton(() => {
+    if (animRunner.has(TWEEN_KEY_CAMERA)) animRunner.cancel(TWEEN_KEY_CAMERA);
+    const target = computeBeatWaypoint(
+      controller.current,
+      scene,
+      facadeBox,
+      panels,
+    );
+    if (!target) return;
+    scene.camera.position.copy(target.position);
+    scene.controls.target.copy(target.target);
+    scene.controls.update();
+  });
+  container.appendChild(resetBtn);
 
   return {
     scene,
@@ -228,7 +255,13 @@ export function mountViewer(container: HTMLElement): MountedViewer {
       if (overlay.element.parentElement === container) {
         container.removeChild(overlay.element);
       }
+      if (resetBtn.parentElement === container) {
+        container.removeChild(resetBtn);
+      }
       scene.dispose();
+      if (canvasWrap.parentElement === container) {
+        container.removeChild(canvasWrap);
+      }
     },
   };
 }
@@ -506,10 +539,10 @@ function computeBeatWaypoint(
   const aspect = scene.camera.aspect;
 
   if (state.beat === 1) {
-    return frameBox(facadeBox, fov, aspect, WIDE_SHOT_PADDING);
+    return frameBox(facadeBox, fov, aspect, paddingForAspect(WIDE_SHOT_PADDING, aspect));
   }
   if (state.beat === 5) {
-    return frameBox(facadeBox, fov, aspect, WIDE_SHOT_PADDING * 1.1);
+    return frameBox(facadeBox, fov, aspect, paddingForAspect(WIDE_SHOT_PADDING * 1.1, aspect));
   }
 
   const focused = state.focusedPartId ? panels.get(state.focusedPartId) : null;
@@ -519,10 +552,10 @@ function computeBeatWaypoint(
   // Beat 3: small pull-back so the directive card has clearance.
   // Beat 4: hold position to read the panel tween cleanly.
   const contextScale = state.beat === 2 ? 2.4 : 2.6;
-  const padding =
+  const basePadding =
     state.beat === 2 ? CLOSE_SHOT_PADDING : CLOSE_SHOT_PADDING * 1.1;
   const focusBox = expandForContext(objectWorldBox(focused.group), contextScale);
-  return frameBox(focusBox, fov, aspect, padding);
+  return frameBox(focusBox, fov, aspect, paddingForAspect(basePadding, aspect));
 }
 
 function correctedPoseFor(part: FacadePart, bundle: EngineBundle): { t: [number, number, number]; q: [number, number, number, number] } {
@@ -552,6 +585,17 @@ function correctedPoseFor(part: FacadePart, bundle: EngineBundle): { t: [number,
 // ---------------------------------------------------------------------------
 // Ground plane (sized off the rendered AABB)
 // ---------------------------------------------------------------------------
+
+function createResetButton(onClick: () => void): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "de-reset-view";
+  btn.setAttribute("aria-label", "Reset camera view");
+  btn.title = "Reset view";
+  btn.textContent = "Reset view";
+  btn.addEventListener("click", onClick);
+  return btn;
+}
 
 function buildGroundPlane(facadeBox: THREE.Box3): THREE.Object3D {
   const size = new THREE.Vector3();

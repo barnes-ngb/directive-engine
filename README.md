@@ -128,6 +128,17 @@ markup is portable. Demo-scoped tokens (`--de-*`) live in
 systemsforge.build site and synced by hand — see the header comment in
 `overlay.css` for the source-of-truth file path.
 
+### Touch controls
+
+The viewer uses `OrbitControls` with one-finger rotate and two-finger
+pinch-zoom. For touch gestures to reach OrbitControls instead of being
+consumed as page scroll/zoom, **`touch-action: none` must be set on the
+canvas wrapper** (`.de-canvas-wrap` in `overlay.css`). Without it, mobile
+browsers will eat the drag gesture and only pinch-zoom will appear to
+work — rotation will silently fail. The rule lives on the wrapper rather
+than the parent `#viewer` element so the page and any scrollable overlay
+cards keep their default touch behaviour outside the canvas region.
+
 ## Accessibility
 - Beat transitions are announced via `aria-live="polite"`.
 - `prefers-reduced-motion` snaps every tween to its end state.
