@@ -35,7 +35,8 @@
       html, body {
         margin: 0;
         padding: 0;
-        height: 100%;
+        height: 100vh;
+        height: 100dvh;
         background: #14161b;
         overscroll-behavior: none;
       }
@@ -43,11 +44,17 @@
         font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         color: #e8eaed;
       }
+      /* `100dvh` (dynamic viewport height) matches the *visible* viewport on
+         mobile, shrinking when the URL bar / home indicator overlays. Using
+         `100vh` (the static viewport) on iOS Safari / Android Chrome pushes
+         the bottom nav-bar offscreen behind the chrome. The double declaration
+         keeps `100vh` as the fallback for browsers without dvh support. */
       #viewer {
         position: fixed;
         inset: 0;
         width: 100vw;
         height: 100vh;
+        height: 100dvh;
         overflow: hidden;
         /* No global touch-action here — scope it to the canvas wrapper below
            so the page and scrollable overlay cards keep working on touch. */

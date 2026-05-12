@@ -34,24 +34,34 @@ export const WIDE_SHOT_PADDING = 1.25;
 export const CLOSE_SHOT_PADDING = 1.15;
 
 /**
- * Extra padding applied when the viewport is portrait (aspect < 1). The
- * bounding-sphere fit guarantees the AABB corners are inside the FOV cone,
- * but the overlay headline and bottom sheet eat ~25% of the canvas region
- * on phones — pull back another ~20% so the facade clears those overlays
- * with margin. Multiplicative on the per-beat padding.
+ * Padding multiplier applied when the viewport is portrait (aspect < 1).
+ *
+ * On mobile portrait the canvas region is itself portrait (60dvh of a
+ * 393×852-class device → ~393×511, aspect ~0.77). The bounding-sphere fit
+ * already has to pull back to keep the wider-than-tall facade inside the
+ * narrow horizontal FOV, so any value > 1 here is double padding and leaves
+ * a wide grey margin around the facade.
+ *
+ * Phase 6c flipped this from 1.2 → 0.82: on the narrowest portrait aspect
+ * we multiply the per-beat padding by ~0.82, ramping to 1.0 (no effect) at
+ * aspect 1.0. Net result: facade fills ~70-75% of canvas width on phones
+ * while keeping enough margin that no panel touches the canvas edge.
+ *
+ * Landscape (aspect ≥ 1) short-circuits and uses the base padding unchanged.
  */
-export const PORTRAIT_EXTRA_PADDING = 1.2;
+export const PORTRAIT_PADDING_FACTOR = 0.82;
 
 /**
  * Compute the effective padding for a given aspect ratio. On portrait
- * (aspect < 1), multiplies in `PORTRAIT_EXTRA_PADDING`; ramps linearly
- * between aspect 1.0 (no bump) and aspect 0.5 (full bump) so a square
- * viewport gets a gentler nudge than an iPhone portrait.
+ * (aspect < 1), scales the base padding by `PORTRAIT_PADDING_FACTOR`; ramps
+ * linearly between aspect 1.0 (no change) and aspect 0.5 (full scale) so a
+ * square viewport gets a gentler nudge than an iPhone portrait. On
+ * landscape, returns the base padding unchanged.
  */
 export function paddingForAspect(basePadding: number, aspect: number): number {
   if (aspect >= 1) return basePadding;
   const t = Math.min(1, Math.max(0, (1 - aspect) / 0.5));
-  return basePadding * (1 + (PORTRAIT_EXTRA_PADDING - 1) * t);
+  return basePadding * (1 + (PORTRAIT_PADDING_FACTOR - 1) * t);
 }
 
 /**

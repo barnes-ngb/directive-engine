@@ -77,11 +77,15 @@
     --de-fs-chip: 10.5px;
   }
 
-  /* Canvas region: top 60vh on mobile portrait. The overlay cards live
-     in the remaining 40vh below. */
+  /* Canvas region: top 60dvh on mobile portrait. The overlay cards live
+     in the remaining 40dvh below. `dvh` (dynamic viewport height) tracks
+     the *visible* viewport — `vh` on iOS Safari / Android Chrome includes
+     space hidden behind the URL bar / home indicator, which pushes the
+     bottom nav row offscreen. The `vh` line is the fallback. */
   .de-canvas-wrap {
     inset: 0 0 auto 0;
     height: 60vh;
+    height: 60dvh;
   }
 
   /* Bottom-sheet region for the cards/nav: a visual band below the canvas
@@ -95,6 +99,7 @@
     left: 0;
     right: 0;
     top: 60vh;
+    top: 60dvh;
     bottom: 0;
     background: linear-gradient(to bottom, rgba(20, 22, 27, 0.0) 0%, rgba(20, 22, 27, 0.55) 12%, rgba(20, 22, 27, 0.85) 100%);
     border-top: 1px solid var(--de-border);

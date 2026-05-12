@@ -159,6 +159,53 @@ Additionally:
 | `touchstart` event reaches canvas on overlay-card region | No |
 | `touchstart` event reaches canvas on canvas-wrap region | Yes |
 
+## Phase 6c follow-up findings
+
+After the Phase 6b deploy, two cosmetic issues remained on Pixel-class
+portrait viewports:
+
+1. **Bottom nav clipped.** `#viewer` and the canvas wrapper used `100vh`
+   / `60vh`, which on iOS Safari and Android Chrome includes space
+   hidden behind the dynamic URL bar / home indicator. The Back +
+   Continue buttons rendered offscreen even with
+   `env(safe-area-inset-bottom)` padding already on the nav row.
+
+   Fix: switch the layout heights to the dynamic viewport unit `dvh`
+   (`100dvh` on `#viewer`, `60dvh` on `.de-canvas-wrap`, `60dvh` on the
+   `.de-overlay::before` band). Static `vh` is kept as a fallback for
+   the few browsers without `dvh`. The viewport meta already had
+   `viewport-fit=cover` and the safe-area `env()` calls were already
+   in place — `dvh` was the only missing piece.
+
+2. **Camera framing too distant.** `PORTRAIT_EXTRA_PADDING = 1.2`
+   *added* 20% padding on portrait on top of the bounding-sphere fit.
+   But the bounding-sphere fit on portrait already pulls the camera
+   back to fit the wider-than-tall facade inside the narrow horizontal
+   FOV, so the extra factor was double padding and the facade filled
+   only ~30-40% of the canvas height.
+
+   Fix: rename and flip to `PORTRAIT_PADDING_FACTOR = 0.82` — on
+   portrait we *scale down* the per-beat padding (still leaving margin
+   from the bounding-sphere conservatism). Landscape (aspect ≥ 1)
+   short-circuits and uses the base padding unchanged, so desktop /
+   tablet landscape framing is untouched. The canvas-aspect (Option A
+   in the phase-6c brief) was already in place: `scene.camera.aspect`
+   reflects the canvas wrapper's actual size, not the viewport.
+
+## Maintenance notes (read before regressing)
+
+- Any new mobile-layout container that needs to fill the viewport must
+  use `dvh`, not `vh`. Apply `env(safe-area-inset-bottom)` padding to
+  anything pinned near `bottom: 0`.
+- Keep `viewport-fit=cover` on the viewport meta tag in
+  `demo/index.html`. Without it, `env(safe-area-inset-bottom)` returns
+  0 on iOS and the nav row drifts back into the home-indicator strip.
+- The camera framing path is canvas-aspect-driven via the
+  `ResizeObserver` in `src/viewer/scene.ts` and `src/viewer/index.ts`.
+  If a future change replaces the wrapper with a different size
+  source, re-verify that `scene.camera.aspect` reflects the canvas
+  (not the window) before tuning padding.
+
 ## One-paragraph summary
 
 All three symptoms collapse to a missing canvas/overlay layout split.

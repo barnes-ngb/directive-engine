@@ -3,7 +3,7 @@ import * as THREE from "three";
 import {
   CLOSE_SHOT_PADDING,
   DEFAULT_VIEW_DIRECTION,
-  PORTRAIT_EXTRA_PADDING,
+  PORTRAIT_PADDING_FACTOR,
   WIDE_SHOT_PADDING,
   expandForContext,
   fitDistance,
@@ -136,14 +136,16 @@ describe("paddingForAspect", () => {
     expect(paddingForAspect(1.25, 1.0)).toBeCloseTo(1.25, 6);
   });
 
-  it("ramps up on portrait", () => {
-    expect(paddingForAspect(1.25, 0.5)).toBeCloseTo(1.25 * PORTRAIT_EXTRA_PADDING, 6);
+  it("tightens on portrait (factor < 1)", () => {
+    // Phase 6c: portrait scales padding *down* so the facade isn't pulled
+    // back further than the bounding-sphere fit already requires.
+    expect(paddingForAspect(1.25, 0.5)).toBeCloseTo(1.25 * PORTRAIT_PADDING_FACTOR, 6);
     const mid = paddingForAspect(1.25, 0.75);
-    expect(mid).toBeGreaterThan(1.25);
-    expect(mid).toBeLessThan(1.25 * PORTRAIT_EXTRA_PADDING);
+    expect(mid).toBeLessThan(1.25);
+    expect(mid).toBeGreaterThan(1.25 * PORTRAIT_PADDING_FACTOR);
   });
 
-  it("clamps below aspect 0.5 to the full bump", () => {
-    expect(paddingForAspect(1.25, 0.3)).toBeCloseTo(1.25 * PORTRAIT_EXTRA_PADDING, 6);
+  it("clamps below aspect 0.5 to the full portrait factor", () => {
+    expect(paddingForAspect(1.25, 0.3)).toBeCloseTo(1.25 * PORTRAIT_PADDING_FACTOR, 6);
   });
 });
