@@ -1,133 +1,100 @@
 # Mobile fix diagnosis (Phase 6b)
 
 Date: 2026-05-12
-Branch: `claude/mobile-camera-touch-controls-urfO2` (will be re-pushed as
-`phase-6b-mobile-camera-layout`).
+Branch: `phase-6b-mobile-camera-layout` (PR #135).
 
-The Phase 6 fixture extension (9-panel facade) is live on
-`directive-engine.vercel.app/` but three mobile-portrait bugs remain. This
-note records the root cause analysis from a code read of `src/viewer/*`,
-`src/styles/*`, and `demo/index.html`. A live DevTools capture would tighten
-the numbers below, but the failure modes are fully visible from the source
-and reproducible by inspection.
+Phase 6 on `main` already redid the camera framing math (see
+`docs/camera-fix-diagnosis.md` and `src/viewer/camera-framing.ts`) and ships
+proper AABB-derived framing with FOV/aspect awareness plus a resize re-snap.
+Phase 6b layers the remaining mobile-only fixes on top of that work:
 
-## Geometry of the facade
+1. **Bottom overlay/nav offscreen on mobile portrait**
+2. **Touch rotation broken (zoom works, drag doesn't)**
+3. **No way to reset framing after free-orbit drags the camera away**
 
-`datasets/toy_facade_v1/nominal.json` puts 9 panel centres on a 3×3 grid:
-
-| axis | centres                      | centre-to-centre span | panel size |
-|------|------------------------------|-----------------------|------------|
-| X    | −1550, 0, +1550 mm           | 3100 mm               | 1500 mm    |
-| Y    | −1050, 0, +1050 mm           | 2100 mm               | 1000 mm    |
-
-True facade extents (centre span + one panel):
-
-- Full width  = 3100 + 1500 = **4600 mm** (4.6 m)
-- Full height = 2100 + 1000 = **3100 mm** (3.1 m)
-- Diagonal    = √(4.6² + 3.1²) ≈ **5.55 m**
-
-## Issue 1 — Camera too close on mobile portrait
+## Issue 1 — Bottom overlay/nav offscreen on mobile
 
 ### Root cause
 
-Two compounding bugs in `src/viewer/index.ts`:
-
-1. **`computePanelBounds()` (line 544) only walks centre positions.** It
-   does not add the panel half-extent, so `spanX = 3100`, `spanY = 2100`
-   instead of 4600/3100. The Phase 6 writeup
-   (`docs/camera-fix-diagnosis.md`) computed a bbox but the in-tree
-   implementation never reflected panel size.
-
-2. **`deriveCameraPosition()` (line 561) does not use the camera's FOV.**
-   It uses
-   `radius = (max(spanX, spanY) * 1.8 + 2500) * aspectFactor`
-   with `aspectFactor = 1.55` for portrait. With the under-counted spans
-   this yields camera distance ≈ 13.3 m from facade centre. At 35° vertical
-   FOV and a typical portrait aspect of 0.45 the horizontal FOV is ≈ 16°,
-   so the visible horizontal extent at 13.3 m is ≈ 3.7 m — short of the
-   facade's true 4.6 m width. Result: the side panels fall outside the
-   frame on portrait phones.
-
-3. **Resize doesn't recompute camera position.** The scene's
-   `ResizeObserver` (scene.ts:140) updates `camera.aspect` but never
-   re-derives the position, so rotating from landscape→portrait stays
-   framed for landscape.
-
-### Fix
-
-- Include the panel half-extent in `computePanelBounds()`.
-- Replace the heuristic radius with proper FOV math:
-  `distV = (spanY/2) / tan(vFOV/2) * padding`,
-  `distH = (spanX/2) / tan(hFOV/2) * padding`, take the max.
-- Padding factor: 1.15 for landscape, 1.25 for portrait.
-- Re-run framing on viewport resize and update the cached wide-shot
-  waypoint so beats 1 and 5 reflect the new aspect.
-
-## Issue 2 — Bottom overlay/nav offscreen on mobile
-
-### Root cause
-
-`demo/index.html` declares `#viewer` as `position: fixed; inset: 0`
-(full-viewport canvas), and `mountViewer()` appends the overlay (`.de-overlay`)
+`demo/index.html` declares `#viewer` as `position: fixed; inset: 0` (full
+viewport canvas), and `mountViewer()` appends the overlay (`.de-overlay`)
 inside `#viewer` with `position: absolute; inset: 0`. There is no
-canvas-vs-overlay split — the canvas always fills the entire viewport and the
-overlay layers on top of it.
+canvas-vs-overlay split — the canvas always fills the entire viewport and
+the overlay layers on top of it.
 
 The Phase 4 mobile spec ("canvas 60vh top, overlay 40vh bottom") was treated
-as a bottom-sheet overlay over a full-screen canvas. In practice on iOS
-Safari + Pixel-class viewports the bottom-pinned cards (`bottom: 76px`) and
+as a bottom-sheet overlay over a full-screen canvas. In practice on mobile
+Safari and similar viewports the bottom-pinned cards (`bottom: 76px`) and
 beat-nav (`bottom: 12px`) end up under the browser chrome / home indicator,
-because `100vh` is the dynamic viewport height that includes the
-collapsing URL bar. The cards are technically on-screen but hidden behind
-chrome.
+because `100vh` is the dynamic viewport height that includes the collapsing
+URL bar and excludes the safe-area inset.
 
 ### Fix
 
-Per the design decision (constrain canvas, keep overlay full-viewport):
-
-- Introduce a `de-canvas-region` wrapper inside `#viewer`. Scene mounts to
-  this wrapper instead of `#viewer` directly.
+- Introduce a `de-canvas-region` wrapper inside `#viewer`. The Three.js
+  scene mounts to this wrapper instead of `#viewer` directly.
 - Desktop/tablet: wrapper is 100% × 100% (no visible change).
-- Mobile portrait (<768px): wrapper is `width: 100%; height: 60dvh` anchored
-  to the top. The overlay is left covering the whole `#viewer` so the
+- Mobile portrait (`max-width: 767px`): wrapper is `height: 60dvh` anchored
+  to the top. The overlay continues to cover the whole `#viewer` so the
   bottom-pinned cards / nav land in the bottom 40dvh region under the
   shrunken canvas.
-- Switch the mobile bottom-pin offsets to use `dvh` / `env(safe-area-inset-bottom)`
-  so the nav clears the iOS home indicator and dynamic URL bar.
+- Bottom-pin offsets use `calc(... + env(safe-area-inset-bottom, 0px))` so
+  the nav clears the iOS home indicator. `max-height` on the cards switches
+  from `vh` to `dvh` so the dynamic viewport drives the bound.
 
-## Issue 3 — Touch rotation broken (zoom works)
+## Issue 2 — Touch rotation broken
 
 ### Root cause
 
-`demo/index.html` sets `touch-action: none` on `#viewer` but **not** on the
-`<canvas>` itself. On iOS Safari, `touch-action` is not always inherited
-correctly through canvases (the canvas's user-agent style can re-enable
-touch panning), so a one-finger drag on the canvas is consumed as page-pan
-and never reaches OrbitControls. Two-finger pinches still reach the
-renderer because pinch is `touch-action: pinch-zoom` only when set; with
-`none` on the wrapper at least pinch survives, but one-finger drag is
-swallowed.
+`demo/index.html` sets `touch-action: none` on `#viewer`, but **not** on
+the `<canvas>` itself. On iOS Safari `touch-action` is not always inherited
+correctly through WebGL canvases — the user-agent style can re-enable
+single-finger panning — so a drag on the canvas is consumed as page-pan and
+never reaches OrbitControls. Two-finger pinches still survive because the
+dolly gesture is recognised at the canvas before the page-pan filter runs.
 
-OrbitControls itself is fine — by default it handles touch:
-`ONE: TOUCH.ROTATE`, `TWO: TOUCH.DOLLY_PAN`. With `controls.enablePan =
-false`, the second-finger pan is a no-op; pinch still triggers dolly.
+OrbitControls itself is fine. By default it maps `ONE: TOUCH.ROTATE`,
+`TWO: TOUCH.DOLLY_PAN`. With `controls.enablePan = false` the pan portion
+of `DOLLY_PAN` is a no-op; pinch still triggers dolly.
 
 ### Fix
 
 - Apply `touch-action: none` and `user-select: none` directly to the
-  `canvas` element.
+  `<canvas>` element in `src/viewer/scene.ts` (both as inline style and via
+  CSS on `.de-canvas-region > canvas`).
 - Explicitly set `controls.touches = { ONE: TOUCH.ROTATE, TWO:
-  TOUCH.DOLLY_PAN }` for documentation and to be safe against future
-  three.js default changes.
+  TOUCH.DOLLY_PAN }` so future three.js default changes don't silently
+  break the mapping.
+
+## Issue 3 — Camera reset after free-orbit
+
+### Root cause
+
+Once the user grabs OrbitControls, the camera tween cancels (Phase 3
+"free-orbit always wins") and there is no path back to the beat's default
+framing short of stepping forward and back. New visitors on phones who
+explore the scene end up looking at the floor or the back of the facade
+with no obvious recovery.
+
+### Fix
+
+Add a small "Reset view" button in the top-right of the overlay
+(`src/viewer/overlay/reset-view-button.ts`). It calls
+`computeBeatWaypoint(...)` (the same helper that drives initial framing
+and resize re-snaps) and tweens the camera back over
+`DEFAULT_CAMERA_DURATION_MS`. The button collapses to icon-only on mobile
+to keep the corner uncluttered next to the fallback link.
 
 ## Verification plan
 
 - Build with `npm run build` and serve via `npm run preview`.
-- Open in Chrome DevTools at Pixel 7 Pro (412×915), iPad Mini (768×1024),
-  desktop default. Capture Beat 1 wide shot at each.
-- On the phone profile, verify one-finger drag rotates and pinch zooms;
-  outside the canvas, page should still scroll (it doesn't, because the
-  whole viewport is fixed — that's fine, the spec is "page doesn't scroll
-  inside canvas" and there is no page scroll either way).
-- Tap reset-view button (Phase 6b addition): camera snaps to current
+- DevTools mobile emulation at Pixel 7 Pro (412×915), iPad Mini (768×1024),
+  desktop default. Beat 1 wide shot — confirm all 9 panels are visible at
+  each viewport (this is now true automatically because main's
+  `frameBox()` uses the real AABB plus FOV/aspect).
+- Drag with one finger on the canvas — camera rotates.
+- Pinch — camera zooms.
+- Tap "Reset view" after dragging — camera tweens back to the current
   beat's default waypoint.
+- Mobile portrait: cards + beat-nav visible above the home indicator with
+  no horizontal scrolling.

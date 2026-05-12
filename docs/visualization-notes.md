@@ -82,18 +82,30 @@ order or CSS, verify one-finger drag still rotates on a phone.
 
 ## Camera framing
 
-`src/viewer/index.ts` derives the wide-shot distance from the panel
-bounding box and the current viewport aspect using FOV math:
+All camera waypoints (wide shot + per-beat close-ups) flow through
+`src/viewer/camera-framing.ts`. The math is a single primitive:
 
 ```
-distV = (spanY / 2) / tan(vFOV / 2)
-distH = (spanX / 2) / tan(hFOV / 2)   // hFOV from vFOV and aspect
-distance = max(distV, distH) * padding
+fitDistance(bboxRadius, vFOV, aspect, padding):
+    halfV = vFOV / 2
+    tanV  = tan(halfV)
+    tanH  = aspect * tanV
+    return bboxRadius / min(tanV, tanH) * padding
 ```
 
-`padding` is 1.15 on landscape, 1.25 on portrait. `spanX`/`spanY` are full
-facade extents (centre-to-centre span + one panel dimension) — easy to
-forget the panel size, leading to side panels falling outside the frame.
+`frameBox(bbox, fov, aspect, padding)` wraps `fitDistance()` over a
+`THREE.Box3` — uses the AABB's bounding-sphere radius (half the diagonal),
+which is conservative but guarantees the AABB fits at any orientation.
 
-Wide-shot reframes on `resize`/`orientationchange` for beats 1 and 5. Close-up
-beats hold their framing to avoid sudden zoom jumps during free-orbit.
+The AABB itself comes from the *rendered geometry*
+(`THREE.Box3.setFromObject()` via `unionWorldBox()` / `objectWorldBox()`),
+not from fixture centroids — so adding panels, changing panel dimensions,
+or tweaking the as-built poses automatically reframes the wide shot
+correctly.
+
+`ResizeObserver` on the canvas region re-snaps the camera when aspect
+changes (orientation flip, dev-tools open). `window` resize/orientationchange
+listeners back this up for iOS Safari where the canvas observer can fire
+late during the URL-bar collapse animation. The reset-view button reuses
+the same `computeBeatWaypoint()` helper so it always lands on the current
+beat's canonical framing.
