@@ -48,6 +48,14 @@ import {
   type FeatureMarkersHandle,
 } from "./viz/feature-markers.js";
 import { buildDofGhosts, type DofGhostsHandle } from "./viz/dof-ghosts.js";
+import {
+  CLOSE_SHOT_PADDING,
+  WIDE_SHOT_PADDING,
+  expandForContext,
+  frameBox,
+  objectWorldBox,
+  unionWorldBox,
+} from "./camera-framing.js";
 
 /** Tolerance band for "deviated" panel highlighting (mm). */
 const DEVIATED_SEVERE_MM = 5.0;
@@ -83,13 +91,13 @@ export function mountViewer(container: HTMLElement): MountedViewer {
 
   const fixture = loadToyFacadeFixture();
   const bundle = buildEngineBundle(fixture);
-  const bounds = computePanelBounds(fixture);
   const focusedPartId = pickFocusedPart(bundle);
 
+  // Scene is created with a placeholder camera; we recompute position once
+  // the panels are mounted (so we can read the true world-space AABB rather
+  // than a centroid-based guess).
   const scene = createScene({
     container,
-    lookAt: bounds.center,
-    cameraPosition: deriveCameraPosition(bounds),
     transparent: true,
   });
 
@@ -99,7 +107,22 @@ export function mountViewer(container: HTMLElement): MountedViewer {
     panels.set(part.partId, handle);
   }
 
-  scene.contentRoot.add(buildGroundPlane(bounds));
+  const facadeBox = unionWorldBox(
+    Array.from(panels.values(), (p) => p.group),
+  );
+  scene.contentRoot.add(buildGroundPlane(facadeBox));
+
+  // Initial wide shot — derived from the actual facade AABB, the current
+  // camera FOV, and the current viewport aspect.
+  const initialWide = frameBox(
+    facadeBox,
+    scene.camera.fov,
+    scene.camera.aspect,
+    WIDE_SHOT_PADDING,
+  );
+  scene.camera.position.copy(initialWide.position);
+  scene.controls.target.copy(initialWide.target);
+  scene.controls.update();
 
   // ---- Phase 3 visualization layer ------------------------------------------
 
@@ -137,24 +160,42 @@ export function mountViewer(container: HTMLElement): MountedViewer {
 
   const controller = new BeatController({ focusedPartId });
 
-  // Cache the wide-shot camera state so we can restore it on prev/restart.
-  const wideShot: CameraWaypoint = {
-    position: scene.camera.position.clone(),
-    target: scene.controls.target.clone(),
-  };
-
   const applyBeatToScene = (state: BeatState, previous: BeatState | null): void => {
     applyHighlights(panels, bundle, state);
     applyVisibility(state, arrows, featureMarkers, dofGhosts);
     animatePanelPoses(state, previous, fixture, bundle, panels, animRunner);
     animateArrows(state, previous, arrows, animRunner);
-    animateCamera(state, previous, scene, bounds, panels, wideShot, animRunner);
+    animateCamera(state, previous, scene, facadeBox, panels, animRunner);
   };
 
   controller.on((current, previous) => {
     applyBeatToScene(current, previous);
   });
   applyBeatToScene(controller.current, null);
+
+  // Re-snap camera framing when the viewport aspect changes (orientation
+  // rotation, browser resize, dev-tools open/close). Phase 4 only updated
+  // `camera.aspect`; the camera *position* never recomputed, so on portrait
+  // the wide shot stayed framed for landscape. Cheap to recompute on each
+  // resize event.
+  let lastAspect = scene.camera.aspect;
+  const resizeObserver = new ResizeObserver(() => {
+    const aspect = scene.camera.aspect;
+    if (Math.abs(aspect - lastAspect) < 0.01) return;
+    lastAspect = aspect;
+    if (animRunner.has(TWEEN_KEY_CAMERA)) return; // user-initiated tween wins
+    const target = computeBeatWaypoint(
+      controller.current,
+      scene,
+      facadeBox,
+      panels,
+    );
+    if (!target) return;
+    scene.camera.position.copy(target.position);
+    scene.controls.target.copy(target.target);
+    scene.controls.update();
+  });
+  resizeObserver.observe(container);
 
   const overlay = mountOverlay({
     host: container,
@@ -179,6 +220,7 @@ export function mountViewer(container: HTMLElement): MountedViewer {
       unsubscribeTick();
       reduceMotionQuery?.removeEventListener?.("change", onReduceMotionChange);
       scene.controls.removeEventListener("start", onUserOrbitStart);
+      resizeObserver.disconnect();
       arrows.dispose();
       featureMarkers?.dispose();
       dofGhosts?.dispose();
@@ -406,12 +448,11 @@ function animateCamera(
   state: BeatState,
   previous: BeatState | null,
   scene: SceneHandle,
-  bounds: PanelBounds,
+  facadeBox: THREE.Box3,
   panels: Map<string, PanelHandle>,
-  wideShot: CameraWaypoint,
   runner: AnimRunner,
 ): void {
-  const target = pickCameraWaypoint(state, scene, bounds, panels, wideShot);
+  const target = computeBeatWaypoint(state, scene, facadeBox, panels);
   if (!target) return;
 
   // On first apply (no previous state) we snap so the initial frame is correct.
@@ -443,68 +484,45 @@ function animateCamera(
   });
 }
 
-function pickCameraWaypoint(
+/**
+ * Per-beat camera waypoint, derived from the current viewport's FOV /
+ * aspect and the rendered geometry's world-space AABB.
+ *
+ *   Beat 1, 5 — wide shot framing the full facade (beat 5 pulls back a
+ *               touch via slightly larger padding).
+ *   Beat 2-4 — close on the focused panel, with the focus AABB expanded
+ *               by ~2.4× so 1-2 neighbouring panels stay in frame for
+ *               spatial context. Beats 3 + 4 add a small extra padding
+ *               nudge so the directive card / bottom sheet doesn't crowd
+ *               the focused panel.
+ */
+function computeBeatWaypoint(
   state: BeatState,
   scene: SceneHandle,
-  bounds: PanelBounds,
+  facadeBox: THREE.Box3,
   panels: Map<string, PanelHandle>,
-  wideShot: CameraWaypoint,
 ): CameraWaypoint | null {
-  // Beats 1 and 5: wide shot. Beats 2-4: close on focused panel, with slight
-  // framing nudges between beats to keep the camera alive without being busy.
-  if (state.beat === 1 || state.beat === 5) {
-    // Beat 5 pulls back a little further than the intro to show the
-    // verification metric panel context.
-    if (state.beat === 5) {
-      return scaleWideShot(wideShot, bounds, 1.15);
-    }
-    return { position: wideShot.position.clone(), target: wideShot.target.clone() };
+  const fov = scene.camera.fov;
+  const aspect = scene.camera.aspect;
+
+  if (state.beat === 1) {
+    return frameBox(facadeBox, fov, aspect, WIDE_SHOT_PADDING);
+  }
+  if (state.beat === 5) {
+    return frameBox(facadeBox, fov, aspect, WIDE_SHOT_PADDING * 1.1);
   }
 
-  if (!state.focusedPartId) return null;
-  const focused = panels.get(state.focusedPartId);
+  const focused = state.focusedPartId ? panels.get(state.focusedPartId) : null;
   if (!focused) return null;
 
-  const center = focused.group.position.clone();
-  const baseRadius =
-    Math.max(DEFAULT_PANEL_DIMENSIONS.widthMm, DEFAULT_PANEL_DIMENSIONS.heightMm) * 3.2;
-
-  // Beat 2: dolly in close to read DOF ghosts + feature markers.
-  // Beat 3: tiny pull-back to make room for the directive card.
+  // Beat 2: dolly in tight (still showing neighbours).
+  // Beat 3: small pull-back so the directive card has clearance.
   // Beat 4: hold position to read the panel tween cleanly.
-  const radiusScale = state.beat === 2 ? 1.0 : state.beat === 3 ? 1.15 : 1.1;
-  // Portrait viewports need extra room so the directive card (bottom sheet)
-  // doesn't overlap the focused panel.
-  const aspectFactor =
-    typeof window !== "undefined" && window.innerHeight > window.innerWidth
-      ? 1.35
-      : 1.0;
-  const radius = baseRadius * radiusScale * aspectFactor;
-
-  return {
-    position: new THREE.Vector3(
-      center.x + radius * 0.55,
-      center.y + radius * 0.35,
-      center.z + radius * 0.85,
-    ),
-    target: center,
-  };
-  // (bounds is part of the API for future use — silence unused warning.)
-  void scene;
-}
-
-function scaleWideShot(
-  wideShot: CameraWaypoint,
-  bounds: PanelBounds,
-  factor: number,
-): CameraWaypoint {
-  // Pull the camera away from the look-at by `factor` for the verify shot.
-  const offset = new THREE.Vector3().subVectors(wideShot.position, bounds.center);
-  offset.multiplyScalar(factor);
-  return {
-    position: bounds.center.clone().add(offset),
-    target: wideShot.target.clone(),
-  };
+  const contextScale = state.beat === 2 ? 2.4 : 2.6;
+  const padding =
+    state.beat === 2 ? CLOSE_SHOT_PADDING : CLOSE_SHOT_PADDING * 1.1;
+  const focusBox = expandForContext(objectWorldBox(focused.group), contextScale);
+  return frameBox(focusBox, fov, aspect, padding);
 }
 
 function correctedPoseFor(part: FacadePart, bundle: EngineBundle): { t: [number, number, number]; q: [number, number, number, number] } {
@@ -532,49 +550,15 @@ function correctedPoseFor(part: FacadePart, bundle: EngineBundle): { t: [number,
 }
 
 // ---------------------------------------------------------------------------
-// Bounds + camera framing (carried forward from Phase 1)
+// Ground plane (sized off the rendered AABB)
 // ---------------------------------------------------------------------------
 
-interface PanelBounds {
-  center: THREE.Vector3;
-  spanX: number;
-  spanY: number;
-}
-
-function computePanelBounds(fixture: FacadeFixture): PanelBounds {
-  if (fixture.parts.length === 0) {
-    return { center: new THREE.Vector3(), spanX: 1, spanY: 1 };
-  }
-  const min = new THREE.Vector3(Infinity, Infinity, Infinity);
-  const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
-  for (const p of fixture.parts) {
-    const [x, y, z] = p.nominal.t;
-    min.min(new THREE.Vector3(x, y, z));
-    max.max(new THREE.Vector3(x, y, z));
-  }
-  const center = min.clone().add(max).multiplyScalar(0.5);
-  const spanX = Math.max(max.x - min.x, DEFAULT_PANEL_DIMENSIONS.widthMm);
-  const spanY = Math.max(max.y - min.y, DEFAULT_PANEL_DIMENSIONS.heightMm);
-  return { center, spanX, spanY };
-}
-
-function deriveCameraPosition(bounds: PanelBounds): THREE.Vector3 {
-  // Pull back further when the viewport is portrait (mobile) so the whole
-  // facade fits within the canvas's narrower horizontal field of view.
-  const aspectFactor =
-    typeof window !== "undefined" && window.innerHeight > window.innerWidth
-      ? 1.55
-      : 1.0;
-  const radius = (Math.max(bounds.spanX, bounds.spanY) * 1.8 + 2500) * aspectFactor;
-  return new THREE.Vector3(
-    bounds.center.x + radius * 0.7,
-    bounds.center.y + radius * 0.4,
-    bounds.center.z + radius * 0.7,
-  );
-}
-
-function buildGroundPlane(bounds: PanelBounds): THREE.Object3D {
-  const groundSize = Math.max(bounds.spanX, bounds.spanY) * 6 + 10_000;
+function buildGroundPlane(facadeBox: THREE.Box3): THREE.Object3D {
+  const size = new THREE.Vector3();
+  facadeBox.getSize(size);
+  const center = new THREE.Vector3();
+  facadeBox.getCenter(center);
+  const groundSize = Math.max(size.x, size.y) * 6 + 10_000;
   const geom = new THREE.PlaneGeometry(groundSize, groundSize);
   const mat = new THREE.MeshStandardMaterial({
     color: 0xe6e8eb,
@@ -583,7 +567,8 @@ function buildGroundPlane(bounds: PanelBounds): THREE.Object3D {
   });
   const plane = new THREE.Mesh(geom, mat);
   plane.rotation.x = -Math.PI / 2;
-  plane.position.y = bounds.center.y - DEFAULT_PANEL_DIMENSIONS.heightMm * 0.6;
+  // Sit a hair below the facade's lowest panel.
+  plane.position.y = facadeBox.min.y - 50;
   plane.receiveShadow = true;
   plane.name = "ground";
   return plane;
