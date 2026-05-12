@@ -168,4 +168,5 @@ compression, and self-hosting plan. Output assets live in the
 systemsforge.build site repo under `site/static/video/`.
 
 ## License
-Add MIT or Apache-2.0 (or your preference) once you’re ready to publish widely.
+
+[MIT](LICENSE)
