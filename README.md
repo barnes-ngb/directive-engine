@@ -139,6 +139,19 @@ work — rotation will silently fail. The rule lives on the wrapper rather
 than the parent `#viewer` element so the page and any scrollable overlay
 cards keep their default touch behaviour outside the canvas region.
 
+### Mobile viewport heights
+
+Full-viewport containers on mobile must use `100dvh` (dynamic viewport
+height) rather than `100vh`. `vh` includes space hidden behind the
+mobile browser's dynamic URL bar / home-indicator strip, which pushes
+bottom-anchored UI (the Back/Continue nav row) offscreen. The viewport
+meta tag in `demo/index.html` carries `viewport-fit=cover`, and
+anything pinned near `bottom: 0` (the beat-nav, directive card,
+verification panel) pads with `env(safe-area-inset-bottom)` so it
+clears the iOS home indicator. Keep these patterns when adding new
+mobile layout — `vh` and a missing safe-area pad are the two ways the
+bottom row gets clipped.
+
 ## Accessibility
 - Beat transitions are announced via `aria-live="polite"`.
 - `prefers-reduced-motion` snaps every tween to its end state.
