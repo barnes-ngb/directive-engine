@@ -76,6 +76,30 @@
 }
 
 /* ------------------------------------------------------------------ */
+/*  Canvas region                                                      */
+/*                                                                     */
+/*  Wraps the Three.js renderer's <canvas>. Full-bleed on desktop and  */
+/*  tablet; constrained to the top portion of the viewport on mobile   */
+/*  portrait so the overlay's bottom-sheet cards have room. The canvas */
+/*  element itself sits on `touch-action: none` so OrbitControls       */
+/*  receives single-finger drag events on mobile browsers.             */
+/* ------------------------------------------------------------------ */
+
+.de-canvas-region {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.de-canvas-region > canvas {
+  display: block;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Root container                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -429,6 +453,56 @@
   font-size: var(--de-fs-label);
   color: var(--de-fg-dim);
   font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Reset-view button (top-right, below the fallback link)             */
+/*                                                                     */
+/*  Snaps the camera back to the current beat's default waypoint.      */
+/*  Small icon-and-label pill; matches the de-fallback-link styling.   */
+/* ------------------------------------------------------------------ */
+
+.de-reset-view {
+  position: absolute;
+  top: calc(var(--de-space-5) + 32px);
+  right: var(--de-space-5);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--de-fs-label);
+  font-family: var(--de-font);
+  color: var(--de-fg-dim);
+  background: var(--de-bg);
+  border: 1px solid var(--de-border);
+  border-radius: var(--de-radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.de-reset-view:hover {
+  color: var(--de-fg);
+  border-color: var(--de-border-strong);
+}
+
+.de-reset-view__label {
+  display: inline;
+}
+
+/* On narrow viewports keep the icon and drop the label so the button stays
+   compact next to the fallback link. */
+@media (max-width: 767px) {
+  .de-reset-view {
+    top: calc(8px + 32px);
+    right: 8px;
+    padding: 6px 8px;
+  }
+
+  .de-reset-view__label {
+    display: none;
+  }
 }
 
 /* ------------------------------------------------------------------ */

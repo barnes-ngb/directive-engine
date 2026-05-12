@@ -15,6 +15,7 @@ import {
 } from "./verification-panel.js";
 import { createBeatNav } from "./beat-nav.js";
 import { createFallbackView, type FallbackHandle } from "./fallback-view.js";
+import { createResetViewButton } from "./reset-view-button.js";
 
 export interface OverlayHandle {
   element: HTMLElement;
@@ -34,6 +35,12 @@ export interface OverlayOptions {
   onApply: () => void;
   /** Called when the user resets to beat 1. */
   onRestart: () => void;
+  /**
+   * Called when the user taps "Reset view". The owner tweens the camera
+   * back to the current beat's default waypoint. Optional so headless
+   * tests of the overlay can omit it.
+   */
+  onResetView?: () => void;
 }
 
 export function mountOverlay(opts: OverlayOptions): OverlayHandle {
@@ -56,8 +63,15 @@ export function mountOverlay(opts: OverlayOptions): OverlayHandle {
 
   const fallback: FallbackHandle = createFallbackView(buildFallbackContent(opts));
 
+  // Reset-view button: optional; only mounted when the owner provides a
+  // handler. Keeps the overlay self-contained when headless-tested.
+  const resetView = opts.onResetView
+    ? createResetViewButton({ onReset: opts.onResetView })
+    : null;
+
   root.appendChild(fallback.link);
   root.appendChild(headline.element);
+  if (resetView) root.appendChild(resetView.element);
   root.appendChild(card.element);
   root.appendChild(verification.element);
   root.appendChild(nav.element);

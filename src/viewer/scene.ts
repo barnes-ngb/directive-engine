@@ -106,11 +106,27 @@ export function createScene(options: SceneOptions): SceneHandle {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
+  controls.enableRotate = true;
+  controls.enableZoom = true;
   controls.enablePan = false;
+  // Touch mapping: one-finger drag rotates, two-finger pinch zooms.
+  // DOLLY_PAN includes pan but enablePan=false makes the pan portion a no-op.
+  controls.touches = {
+    ONE: THREE.TOUCH.ROTATE,
+    TWO: THREE.TOUCH.DOLLY_PAN,
+  };
   // Keep the user above ground.
   controls.maxPolarAngle = Math.PI * 0.49;
   controls.target.copy(lookAt);
   controls.update();
+
+  // CSS-level safeguard: even with touch-action: none on the host, some
+  // mobile browsers re-enable touch panning on canvas elements unless the
+  // attribute is set directly. Apply it here so OrbitControls reliably
+  // receives single-finger drag events on iOS and Android.
+  renderer.domElement.style.touchAction = "none";
+  renderer.domElement.style.userSelect = "none";
+  (renderer.domElement.style as CSSStyleDeclaration & { webkitUserSelect?: string }).webkitUserSelect = "none";
 
   const contentRoot = new THREE.Group();
   contentRoot.name = "contentRoot";

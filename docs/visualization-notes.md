@@ -61,3 +61,39 @@ completion so the post-Apply scene state is correct.
 If a beat advances while a tween is running, the AnimRunner replaces the
 in-flight tween with the new one keyed identically. End states remain
 correct because the new tween reads `from` as the current scene state.
+
+## Touch input — `touch-action: none` is load-bearing
+
+OrbitControls receives single-finger drag (rotate) and two-finger pinch
+(dolly) via touch events on `renderer.domElement` (the `<canvas>`). Mobile
+browsers will otherwise consume single-finger drag as page-pan and the
+canvas never sees it. To keep this working, both must be true:
+
+1. `.de-canvas-region` and the `<canvas>` itself have `touch-action: none`
+   (set in `src/styles/overlay.css` and inline in `src/viewer/scene.ts`).
+2. `controls.touches` is explicitly set to `{ ONE: TOUCH.ROTATE, TWO:
+   TOUCH.DOLLY_PAN }` in `src/viewer/scene.ts`. `enablePan = false` makes
+   the pan portion of `DOLLY_PAN` a no-op; pinch still works as dolly.
+
+Do not drop the inline `touch-action` on the canvas — iOS Safari does not
+always inherit it from the wrapper when WebGL canvases are involved, even
+with the style set on `#viewer`. If a future change touches scene mount
+order or CSS, verify one-finger drag still rotates on a phone.
+
+## Camera framing
+
+`src/viewer/index.ts` derives the wide-shot distance from the panel
+bounding box and the current viewport aspect using FOV math:
+
+```
+distV = (spanY / 2) / tan(vFOV / 2)
+distH = (spanX / 2) / tan(hFOV / 2)   // hFOV from vFOV and aspect
+distance = max(distV, distH) * padding
+```
+
+`padding` is 1.15 on landscape, 1.25 on portrait. `spanX`/`spanY` are full
+facade extents (centre-to-centre span + one panel dimension) — easy to
+forget the panel size, leading to side panels falling outside the frame.
+
+Wide-shot reframes on `resize`/`orientationchange` for beats 1 and 5. Close-up
+beats hold their framing to avoid sudden zoom jumps during free-orbit.

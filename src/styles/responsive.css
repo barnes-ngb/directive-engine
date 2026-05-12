@@ -66,6 +66,17 @@
     --de-fs-chip: 10.5px;
   }
 
+  /* Canvas takes the top 60% of the viewport; bottom 40% is overlay
+     bottom-sheet (directive card / verification panel / beat nav).
+     dvh is the dynamic viewport height — accounts for the iOS Safari
+     URL bar collapsing so the cards don't slip under browser chrome.
+     Older browsers fall back to vh. */
+  .de-canvas-region {
+    bottom: auto;
+    height: 60vh;
+    height: 60dvh;
+  }
+
   /* Headline shrinks to a single line strip at the very top. */
   .de-overlay__headline {
     top: 8px;
@@ -94,11 +105,11 @@
   .directive-card {
     left: 8px;
     right: 8px;
-    bottom: 76px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     width: auto;
     padding: 14px 16px;
     border-radius: var(--de-radius);
-    max-height: 38vh;
+    max-height: 34dvh;
     overflow-y: auto;
   }
 
@@ -116,10 +127,10 @@
   .verification-panel {
     left: 8px;
     right: 8px;
-    bottom: 76px;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     width: auto;
     padding: 14px 16px;
-    max-height: 38vh;
+    max-height: 34dvh;
     overflow-y: auto;
   }
 
@@ -127,9 +138,10 @@
     gap: 8px;
   }
 
-  /* Beat nav pinned to the very bottom, full-width pill. */
+  /* Beat nav pinned to the very bottom, full-width pill. Adds the safe
+     area inset so the nav clears the iOS home indicator. */
   .de-beat-nav {
-    bottom: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     left: 8px;
     right: 8px;
     transform: none;
