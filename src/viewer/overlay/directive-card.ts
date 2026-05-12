@@ -15,8 +15,17 @@ export interface DirectiveCardOptions {
 export interface DirectiveCardHandle {
   /** Root DOM element. */
   element: HTMLElement;
-  /** Populate the card from a Step + its constraint. */
-  render(step: Step, constraint: PartConstraint | undefined): void;
+  /**
+   * Populate the card from a Step + its constraint. When `applied` is true,
+   * the status chip flips to `ok`, the deviation chip shows the post-apply
+   * residual (from `verification[0].expected_residual`), and the Apply
+   * button disables — Beat 4's view of the same directive after correction.
+   */
+  render(
+    step: Step,
+    constraint: PartConstraint | undefined,
+    applied?: boolean,
+  ): void;
   /** Update visibility (true to show, false to hide). */
   setVisible(visible: boolean): void;
   /** Enable/disable the Apply button. */
@@ -61,15 +70,23 @@ export function createDirectiveCard(opts: DirectiveCardOptions): DirectiveCardHa
   actions.appendChild(applyBtn);
   root.appendChild(actions);
 
-  function render(step: Step, constraint: PartConstraint | undefined): void {
+  function render(
+    step: Step,
+    constraint: PartConstraint | undefined,
+    applied = false,
+  ): void {
     partLabel.textContent = step.part_id;
     body.textContent = formatDirective(step, constraint);
 
     chips.replaceChildren();
-    chips.appendChild(buildStatusChip(step.status));
-    if (typeof step.computed_errors.translation_error_norm_mm === "number") {
-      const dev = step.computed_errors.translation_error_norm_mm;
-      chips.appendChild(buildInfoChip(`Δ ${dev.toFixed(1)}mm`));
+    const deviation = applied
+      ? residualNorm(step)
+      : step.computed_errors.translation_error_norm_mm;
+    const status: Status = applied ? "ok" : step.status;
+
+    chips.appendChild(buildStatusChip(status));
+    if (typeof deviation === "number") {
+      chips.appendChild(buildInfoChip(`Δ ${deviation.toFixed(1)}mm`));
     }
     if (constraint) {
       chips.appendChild(
@@ -77,10 +94,20 @@ export function createDirectiveCard(opts: DirectiveCardOptions): DirectiveCardHa
       );
     }
 
-    // Disable Apply for non-correctable states.
     const correctable = step.status === "pending" || step.status === "clamped";
-    applyBtn.disabled = !correctable;
-    applyBtn.textContent = step.status === "ok" ? "Already in tolerance" : "Apply";
+    if (applied) {
+      applyBtn.disabled = true;
+      applyBtn.textContent = "Applied";
+    } else {
+      applyBtn.disabled = !correctable;
+      applyBtn.textContent = step.status === "ok" ? "Already in tolerance" : "Apply";
+    }
+  }
+
+  function residualNorm(step: Step): number {
+    const vec = step.verification[0]?.expected_residual.translation_mm_vec;
+    if (!vec) return 0;
+    return Math.hypot(vec[0], vec[1], vec[2]);
   }
 
   function setVisible(visible: boolean): void {

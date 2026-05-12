@@ -126,7 +126,7 @@ function updateDirectiveCard(
   if (!partId) return;
   const step = opts.bundle.stepByPartId.get(partId);
   const constraint = opts.bundle.constraintById.get(partId);
-  if (step) card.render(step, constraint);
+  if (step) card.render(step, constraint, beat === 4);
   // Disable Apply once we've already advanced past beat 3.
   card.setApplyEnabled(beat === 3 && isCorrectable(step));
 }
