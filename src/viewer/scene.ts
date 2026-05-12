@@ -106,7 +106,16 @@ export function createScene(options: SceneOptions): SceneHandle {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
+  controls.enableRotate = true;
+  controls.enableZoom = true;
   controls.enablePan = false;
+  // Explicit touch mapping: one finger rotates, two-finger pinch dollies.
+  // (DOLLY_PAN with enablePan=false collapses to pinch-zoom only.) Setting
+  // this explicitly guards against the three.js default changing under us.
+  controls.touches = {
+    ONE: THREE.TOUCH.ROTATE,
+    TWO: THREE.TOUCH.DOLLY_PAN,
+  };
   // Keep the user above ground.
   controls.maxPolarAngle = Math.PI * 0.49;
   controls.target.copy(lookAt);

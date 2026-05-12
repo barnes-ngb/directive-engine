@@ -34,6 +34,27 @@ export const WIDE_SHOT_PADDING = 1.25;
 export const CLOSE_SHOT_PADDING = 1.15;
 
 /**
+ * Extra padding applied when the viewport is portrait (aspect < 1). The
+ * bounding-sphere fit guarantees the AABB corners are inside the FOV cone,
+ * but the overlay headline and bottom sheet eat ~25% of the canvas region
+ * on phones — pull back another ~20% so the facade clears those overlays
+ * with margin. Multiplicative on the per-beat padding.
+ */
+export const PORTRAIT_EXTRA_PADDING = 1.2;
+
+/**
+ * Compute the effective padding for a given aspect ratio. On portrait
+ * (aspect < 1), multiplies in `PORTRAIT_EXTRA_PADDING`; ramps linearly
+ * between aspect 1.0 (no bump) and aspect 0.5 (full bump) so a square
+ * viewport gets a gentler nudge than an iPhone portrait.
+ */
+export function paddingForAspect(basePadding: number, aspect: number): number {
+  if (aspect >= 1) return basePadding;
+  const t = Math.min(1, Math.max(0, (1 - aspect) / 0.5));
+  return basePadding * (1 + (PORTRAIT_EXTRA_PADDING - 1) * t);
+}
+
+/**
  * Distance from a sphere-bounded target needed to keep that sphere fully
  * inside both vertical and horizontal FOV.
  *

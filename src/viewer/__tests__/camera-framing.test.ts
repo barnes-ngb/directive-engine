@@ -3,10 +3,12 @@ import * as THREE from "three";
 import {
   CLOSE_SHOT_PADDING,
   DEFAULT_VIEW_DIRECTION,
+  PORTRAIT_EXTRA_PADDING,
   WIDE_SHOT_PADDING,
   expandForContext,
   fitDistance,
   frameBox,
+  paddingForAspect,
 } from "../camera-framing.js";
 
 describe("fitDistance", () => {
@@ -125,5 +127,23 @@ describe("constants", () => {
   it("close shot padding is sane", () => {
     expect(CLOSE_SHOT_PADDING).toBeGreaterThan(1);
     expect(CLOSE_SHOT_PADDING).toBeLessThan(2);
+  });
+});
+
+describe("paddingForAspect", () => {
+  it("returns the base padding on landscape (aspect ≥ 1)", () => {
+    expect(paddingForAspect(1.25, 16 / 9)).toBeCloseTo(1.25, 6);
+    expect(paddingForAspect(1.25, 1.0)).toBeCloseTo(1.25, 6);
+  });
+
+  it("ramps up on portrait", () => {
+    expect(paddingForAspect(1.25, 0.5)).toBeCloseTo(1.25 * PORTRAIT_EXTRA_PADDING, 6);
+    const mid = paddingForAspect(1.25, 0.75);
+    expect(mid).toBeGreaterThan(1.25);
+    expect(mid).toBeLessThan(1.25 * PORTRAIT_EXTRA_PADDING);
+  });
+
+  it("clamps below aspect 0.5 to the full bump", () => {
+    expect(paddingForAspect(1.25, 0.3)).toBeCloseTo(1.25 * PORTRAIT_EXTRA_PADDING, 6);
   });
 });
