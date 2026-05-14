@@ -1,0 +1,106 @@
+# Example: minimal CLI invocation
+
+A 20-point synthetic scan of two vertical panel edges, demonstrating the
+point-cloud ingest path end-to-end.
+
+## Run it
+
+```bash
+npx tsx scripts/ingest-pointcloud.ts examples/minimal-scan.ply examples/minimal-parts.json
+```
+
+## Expected output
+
+```
+Parsed 20 points from examples/minimal-scan.ply
+  P-01: t=[~0.0, 0.0, ~0.0]mm  confidence=~95%
+  P-01: No adjustment required (within tolerance). Status: ok. Tolerance: ±5.0mm.
+  P-02: t=[~6.0, 0.0, ~0.0]mm  confidence=~95%
+  P-02: Translate -6.0mm along X. Status: pending. Tolerance: ±5.0mm.
+```
+
+(Exact values vary slightly with the PCA fit; tolerances rounded.)
+
+## What's happening
+
+- `minimal-scan.ply` carries 20 points: 10 along a vertical edge near the
+  origin (P-01), 10 along a vertical edge near x = 506mm (P-02).
+- `minimal-parts.json` declares the **nominal** lines: P-01 should sit at
+  x = 0; P-02 should sit at x = 500.
+- The engine segments points near each nominal line (tube radius 35mm),
+  fits a line via PCA, derives a pose from the fit, and computes the
+  delta vs nominal.
+- P-01's points scatter within ±0.5mm of nominal → reported as OK.
+- P-02's points sit 6mm off-nominal → engine emits a translate directive.
+
+## File formats
+
+### PLY (ASCII)
+
+Standard ASCII PLY with at minimum `x y z` float properties per vertex.
+Binary PLY is not yet supported.
+
+```
+ply
+format ascii 1.0
+element vertex N
+property float x
+property float y
+property float z
+end_header
+x1 y1 z1
+x2 y2 z2
+...
+```
+
+Optional `intensity` property is accepted and preserved on `ScanPoint`.
+
+### part-lines.json
+
+JSON array of nominal part lines. Each entry declares the canonical
+position of a part's defining edge (or centerline, axis — whatever the
+PCA should fit against).
+
+```json
+[
+  {
+    "partId": "P-01",
+    "p0Nominal": [x, y, z],
+    "p1Nominal": [x, y, z]
+  }
+]
+```
+
+> **Format note:** the example uses array form for `p0Nominal` /
+> `p1Nominal`. If the CLI errors on parse, the codebase's `Vec3` may
+> expect object form `{"x": ..., "y": ..., "z": ...}` instead — switch
+> the JSON to match.
+
+## Make your own
+
+For your own data:
+
+1. **Scan output → PLY/XYZ.** Most scanners export PLY natively. Most
+   point-cloud tools (CloudCompare, Open3D, MeshLab) export ASCII PLY
+   from any format.
+2. **Decide what "nominal part line" means for your geometry.** For
+   panel edges: pick a defining edge per panel (e.g., the left vertical
+   edge). For tubes: the centerline. For brackets: the bolt axis. The
+   choice constrains what the engine measures.
+3. **Write `part-lines.json` with one entry per part.** The
+   `p0Nominal` / `p1Nominal` are in your scan's coordinate frame
+   (assumes the scan is already aligned to the model; if not, use the
+   `T_model_scan` parameter via the module API rather than the CLI).
+4. **Run.** The CLI emits one line per part: pose estimate, confidence,
+   directive. Pipe to a file if you want the full output.
+
+## Limitations
+
+- Binary PLY not supported (ASCII only)
+- Single line fit per part (no multi-feature parts; one edge or
+  centerline per `partId`)
+- Pose recovery returns identity rotation — rotation directives come
+  from constraint quantization, not line-fit residuals. See the main
+  README for context.
+- Tube radius is global (default 35mm). For mixed-scale parts, run
+  ingestion per-part with different `config.tube_radius_mm` values.
