@@ -43,6 +43,36 @@ Try it: `npx tsx scripts/ingest-pointcloud.ts <scan.ply> <part-lines.json>`
 The 5-beat demo still runs on pre-computed poses; the point-cloud path
 is exercised by tests and the CLI script, not the browser viewer.
 
+## Known limitations
+
+The v0.2 engine has three intentional scopes worth naming up front:
+
+- **Pose recovery returns identity rotation.** The line-fit pipeline
+  recovers a part's translation from the PCA fit residual, but rotation
+  is not extracted from the fit. Rotation directives (`rotate_to_index`)
+  are emitted by quantizing against the named index features declared in
+  the constraint set — the engine knows which discrete positions a part
+  can occupy, not which one the scan suggests. Useful for a-priori
+  constrained installs (slotted bolt patterns, indexed mounting
+  brackets); less useful when the scan should determine which index was
+  achieved. Recovering rotation from line-fit residuals is a planned
+  enhancement.
+
+- **One line per part.** Each part contributes a single defining edge or
+  centerline to the PCA fit. Parts with multiple features (e.g., an
+  L-bracket with two perpendicular edges) currently need to be decomposed
+  into multiple `partId`s, each with its own line. Multi-line joint
+  recovery is on the roadmap.
+
+- **ASCII PLY and XYZ only.** Binary PLY support is the natural next
+  layer — same parser shape, different reader. Not yet implemented
+  because the post's scope is "primitives generalize," not "we ingest
+  every format."
+
+These are scope decisions, not bugs. The math chain that would close
+each gap is mostly already in the codebase; what's missing is the
+specific extraction or reader at the boundary.
+
 ## Core API usage (v0.1 / v0.2-features)
 `generateDirectives` is the canonical entry point for producing installer-ready directives.
 The contract assumes:
