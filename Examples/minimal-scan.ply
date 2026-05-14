@@ -1,0 +1,31 @@
+ply
+format ascii 1.0
+comment Synthetic point cloud for directive-engine CLI demo
+comment Two vertical panel edges, 10 points each
+comment P-01 sits ~0mm from nominal (sub-tolerance, will report OK)
+comment P-02 sits ~6mm from nominal in +X (exceeds 5mm tolerance, will emit a directive)
+element vertex 20
+property float x
+property float y
+property float z
+end_header
+0.1 100 0.0
+-0.1 200 0.1
+0.2 300 -0.1
+0.0 400 0.0
+-0.1 500 0.1
+0.1 600 -0.1
+0.0 700 0.0
+-0.1 800 0.1
+0.2 900 -0.1
+0.0 950 0.0
+506.0 100 0.0
+505.9 200 0.1
+506.1 300 -0.1
+506.0 400 0.0
+505.8 500 0.1
+506.2 600 -0.1
+506.0 700 0.0
+505.9 800 0.1
+506.1 900 -0.1
+506.0 950 0.0
