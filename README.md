@@ -19,6 +19,8 @@ When reality capture shows deviations, teams still need **field-executable instr
 
 ## What’s included
 - `src/core/` — engine: `generateDirectives()`, DOF projection, status logic
+- `src/core/scan/` — point-cloud segmentation, PCA line fit, pose-from-fit + confidence
+- `src/pipelines/` — end-to-end pipelines incl. point-cloud ingest
 - `src/presentation/` — installer-language directive formatter
 - `src/viewer/` — Three.js scene, beat controller, animations, deviation arrows, DOF ghosts
 - `src/styles/` — overlay CSS using portfolio-site class names
@@ -26,6 +28,20 @@ When reality capture shows deviations, teams still need **field-executable instr
 - `schemas/` — JSON Schemas for inputs/outputs
 - `datasets/` — fixture datasets + golden expected outputs
 - `site/` — markdown “website bones” mirrored to the portfolio site
+
+## Scan ingest (v0.2.1)
+
+`src/pipelines/pointcloudIngest.ts` accepts ASCII PLY or XYZ point
+clouds and, given nominal part lines, produces an `AsBuiltPosesDataset`
+the engine consumes. The pipeline: anchors → rigid alignment (Horn's
+method) → tube segmentation → PCA line fit → pose + confidence. Tests
+in `src/__tests__/pointcloud.ingest.test.ts` exercise the path
+end-to-end.
+
+Try it: `npx tsx scripts/ingest-pointcloud.ts <scan.ply> <part-lines.json>`
+
+The 5-beat demo still runs on pre-computed poses; the point-cloud path
+is exercised by tests and the CLI script, not the browser viewer.
 
 ## Core API usage (v0.1 / v0.2-features)
 `generateDirectives` is the canonical entry point for producing installer-ready directives.
