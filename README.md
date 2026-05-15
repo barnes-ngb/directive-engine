@@ -1,33 +1,28 @@
 # Directive Engine
-**Pixels to atoms — as-built deviations → installer-ready directives** (pivot / translate / index) with a 5-beat 3D walkthrough and pass/fail verification.
 
-- **Live demo:** [directive-engine.vercel.app](https://directive-engine.vercel.app)
-- **Case study:** [systemsforge.build/work/directive-engine](https://systemsforge.build/work/directive-engine)
-- **Demo video (60–90s):** *(link added when capture lands)*
+**As-built reality → installer-ready directives.** A v0.2 demo for translating geometric deviation into field-executable action, with DOF-aware constraints and pass/fail verification.
 
-This repo is a **contracts-first** TypeScript implementation:
-- Engine in `src/core/` (`generateDirectives()` is the canonical entry point).
-- Presentation layer in `src/presentation/` (installer-language formatter).
-- Three.js viewer in `src/viewer/` with a 5-beat guided walkthrough.
+**Live demo:** https://directive-engine.vercel.app
+**Write-up:** https://systemsforge.build/writing/pixels-to-atoms/
+**Case study:** https://systemsforge.build/work/directive-engine/
 
-## What this solves
-When reality capture shows deviations, teams still need **field-executable instructions**:
-- what to move (and in which frame),
-- how much,
-- what’s allowed (constraints),
-- and how to verify closure.
+MIT-licensed. Runs in a browser. 187 unit tests passing.
 
-## What’s included
-- `src/core/` — engine: `generateDirectives()`, DOF projection, status logic
-- `src/core/scan/` — point-cloud segmentation, PCA line fit, pose-from-fit + confidence
-- `src/pipelines/` — end-to-end pipelines incl. point-cloud ingest
-- `src/presentation/` — installer-language directive formatter
-- `src/viewer/` — Three.js scene, beat controller, animations, deviation arrows, DOF ghosts
-- `src/styles/` — overlay CSS using portfolio-site class names
-- `docs/` — demo script, data contract, capture checklist
+## The problem
+
+Capture tells you where reality is. It doesn’t tell you what to do about it.
+
+A scan says the wall is 8mm off. A deviation map says the panel is rotated 1.4° from nominal. Neither says: *translate −6.5mm along slot S2, rotate to index 0 on P3, verify residual under 2mm.*
+
+That translation layer — from observation to installer-executable action — is what Directive Engine builds.
+
+## What’s in this repo
+
+- `src/` — TypeScript implementation of the core engine
+- `demo/` — browser-based 3D walkthrough (deployed at directive-engine.vercel.app)
 - `schemas/` — JSON Schemas for inputs/outputs
-- `datasets/` — fixture datasets + golden expected outputs
-- `site/` — markdown “website bones” mirrored to the portfolio site
+- `datasets/toy_facade_v1/` — fixture data plus golden expected outputs
+- `docs/` — overview, demo script, data contract
 
 ## Scan ingest (v0.2.1)
 
@@ -73,7 +68,7 @@ These are scope decisions, not bugs. The math chain that would close
 each gap is mostly already in the codebase; what's missing is the
 specific extraction or reader at the boundary.
 
-## Core API usage (v0.1 / v0.2-features)
+## Core API usage (v0.2)
 `generateDirectives` is the canonical entry point for producing installer-ready directives.
 The contract assumes:
 - **Units**: millimeters
@@ -215,4 +210,4 @@ systemsforge.build site repo under `site/static/video/`.
 
 ## License
 
-[MIT](LICENSE)
+MIT — see LICENSE.
