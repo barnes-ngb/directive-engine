@@ -40,6 +40,7 @@ export function buildFacade() {
   const ghost = mat('#f4f4f3', {roughness: 0.42, transparent: true, opacity: 0.12});
 
   const others = [];
+  const otherAnchors = [];
   const hero = new THREE.Group();
   const parts = {};
   for (const p of PARTS) {
@@ -57,6 +58,7 @@ export function buildFacade() {
         a.rotation.x = Math.PI / 2;
         a.position.set(px + sx, py, -0.08);
         root.add(a);
+        otherAnchors.push(a);
       }
       continue;
     }
@@ -158,6 +160,7 @@ export function buildFacade() {
     for (const g of others) {
       g.material = iso > 0.5 ? ghost : panelMat;
     }
+    for (const a of otherAnchors) a.visible = iso <= 0.5;
     wall.material.opacity = 1;
     parts.slab.material = s.ghost ? ghost : heroMat;
     const hl = s.highlight;

@@ -197,7 +197,7 @@ export function runLive() {
     canvas.classList.remove('drag');
   });
   canvas.addEventListener('wheel', (e) => {
-    orbitTarget.d = clamp(orbitTarget.d * (1 + e.deltaY * 0.001), 0.35, 2.2);
+    orbitTarget.d = clamp(orbitTarget.d * (1 + e.deltaY * 0.001), 0.35, 1.6);
     takeControl();
     e.preventDefault();
   }, {passive: false});
