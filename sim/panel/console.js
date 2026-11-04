@@ -134,7 +134,8 @@ export function createConsole(app) {
   const tourChip = add(`<div class="tourchip"><i></i><span>AUTO TOUR · CLICK TO TAKE CONTROL</span></div>`);
   btn.tour = tourChip;
   add(`<div class="cp" style="position:absolute;left:0;right:0;top:874px;text-align:center;font-weight:500;color:${C.faint}">DRAG TO ORBIT &nbsp;·&nbsp; SCROLL TO ZOOM &nbsp;·&nbsp; H HIDES THE OVERLAY</div>`);
-  add(`<div class="cp mu" style="position:absolute;left:35px;top:862px;font-size:8.6px;font-weight:500">EVERY NUMBER ON THIS PAGE IS READ FROM generateDirectives() · 188 TESTS · MIT</div>`);
+  add(`<div class="cp mu" style="position:absolute;left:35px;top:846px;font-size:8.6px;font-weight:500">EVERY NUMBER ON THIS PAGE IS READ FROM generateDirectives() · 188 TESTS · MIT</div>`);
+  const dbg = add(`<div class="mono" style="position:absolute;left:35px;top:862px;font-size:9px;color:${C.mute};white-space:pre"></div>`);
 
   // ------------------------------------------------------------ callouts
   const callSvg = add(`<svg data-callouts style="position:absolute;inset:0;overflow:visible" width="1600" height="900"></svg>`);
@@ -173,7 +174,7 @@ export function createConsole(app) {
       statusChip.textContent = sol.status;
       statusChip.style.color = STATUS_COLOR[sol.status];
       statusChip.style.borderColor = STATUS_COLOR[sol.status];
-      dirText.innerHTML = sol.text.replace(/\((Lateral[^)]*|Four-position[^)]*|Hinge[^)]*)\)/g, '').replace(/\. /g, '.<br>');
+      dirText.innerHTML = sol.text.replace(/ \([^()]*(\([^()]*\))?[^()]*\)/g, '').replace(/\s+\./g, '.').replace(/\. /g, '.<br>');
       dirFoot.textContent = sol.reasons.join(' · ').replace(/_/g, ' ');
       // verification
       const shown = s.applied > 0.999 ? sol.residual : sol.errNorm;
@@ -222,6 +223,7 @@ export function createConsole(app) {
       }
       callSvg.innerHTML = lh;
       callG.innerHTML = ch;
+      dbg.textContent = s.debug || '';
     },
   };
 }

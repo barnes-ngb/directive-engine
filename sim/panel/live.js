@@ -32,18 +32,21 @@ html,body{background:#ecedef;overflow:hidden;margin:0}
 `;
 
 // camera presets: target in metres (the hero sits at the origin), azimuth, elevation, distance
+// distance that makes a height h (m) fill fraction f of the viewport at the stage's vertical fov
+const FOV = 28;
+const dist = (h, f) => h / f / (2 * Math.tan((FOV * Math.PI) / 360));
 const VIEWS = {
-  hero: {tx: 0.1, ty: 0.05, tz: 0, az: 0.55, el: 0.22, d: 5.6, sx: -120, sy: 0},
-  front: {tx: 0, ty: 0, tz: 0, az: 0.02, el: 0.04, d: 6.4, sx: -120, sy: 0},
-  side: {tx: 0.2, ty: 0, tz: 0.1, az: 1.25, el: 0.12, d: 4.2, sx: -120, sy: 0},
-  detail: {tx: 0.3, ty: 0, tz: -0.05, az: 0.9, el: 0.3, d: 1.9, sx: -120, sy: 20},
+  hero: {tx: 0.1, ty: 0.05, tz: 0, az: 0.55, el: 0.22, d: dist(1.0, 0.42), sx: -120, sy: 0},
+  front: {tx: 0, ty: 0, tz: 0, az: 0.02, el: 0.04, d: dist(3.1, 0.78), sx: -120, sy: 0},
+  side: {tx: 0.1, ty: 0, tz: 0.22, az: 1.38, el: 0.2, d: dist(1.0, 0.42), sx: -120, sy: 0},
+  detail: {tx: 0.25, ty: 0, tz: 0, az: 0.8, el: 0.25, d: dist(0.8, 0.5), sx: -120, sy: 20},
 };
 
 // the five beats of the tour: when each starts (s), the view, the toggles, the apply fraction target, callouts
 const TOUR = [
   {beat: 'detect', at: 0, cam: 'hero', toggles: {callouts: true}, applied: 0, say: 'P-05 is off nominal'},
-  {beat: 'constrain', at: 6, cam: 'detail', toggles: {explode: true, isolate: true, callouts: true}, applied: 0, say: 'the features the installer can move'},
-  {beat: 'directive', at: 13, cam: 'detail', toggles: {isolate: true, callouts: true}, applied: 0, say: 'written in J1, S2, P3'},
+  {beat: 'constrain', at: 6, cam: 'side', toggles: {explode: true, isolate: true, callouts: true}, applied: 0, say: 'the features the installer can move'},
+  {beat: 'directive', at: 13, cam: 'detail', toggles: {isolate: true, glass: true, callouts: true}, applied: 0, say: 'written in J1, S2, P3'},
   {beat: 'apply', at: 19, cam: 'hero', toggles: {callouts: true}, applied: 1, say: 'the panel moves along the directive'},
   {beat: 'verify', at: 25, cam: 'front', toggles: {}, applied: 1, say: 'residual against tolerance'},
 ];
@@ -199,8 +202,10 @@ export function runLive() {
     e.preventDefault();
   }, {passive: false});
   let hudOn = true;
+  let dbgOn = false;
   addEventListener('keydown', (e) => {
-    if (e.key === 'h') {
+    if (e.key === 'd') dbgOn = !dbgOn;
+    else if (e.key === 'h') {
       hudOn = !hudOn;
       ui.root.style.display = hudOn ? 'block' : 'none';
     } else if (e.key === ' ') ui.btn.apply.onclick();
@@ -258,7 +263,15 @@ export function runLive() {
         callouts.push({name: id, sub, at, label, w: 90, o: at ? 1 : 0});
       }
     }
-    ui.update({sol, cam, toggles, applied, beat, touring, callouts, scale});
+    const hp = st.fac.hero.position;
+    const cp = st.camera.position;
+    const pj = (id) => {
+      const p = st.fac.featureWorld(id);
+      const q = st.project(p[0], p[1], p[2]);
+      return `${id} w(${p[0].toFixed(2)},${p[1].toFixed(2)},${p[2].toFixed(2)}) s(${q ? q.map((v) => v.toFixed(0)).join(',') : 'off'})`;
+    };
+    const debug = `cam (${cp.x.toFixed(2)},${cp.y.toFixed(2)},${cp.z.toFixed(2)}) d=${camNow.d.toFixed(2)} az=${camNow.az.toFixed(2)}  hero (${hp.x.toFixed(3)},${hp.y.toFixed(3)},${hp.z.toFixed(3)})  ${pj('J1')}  ${pj('S2')}  ${pj('P3')}`;
+    ui.update({sol, cam, toggles, applied, beat, touring, callouts, scale, debug: dbgOn ? debug : ''});
     requestAnimationFrame(loop);
   };
   (async () => {

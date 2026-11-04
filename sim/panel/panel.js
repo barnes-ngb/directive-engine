@@ -66,14 +66,16 @@ export function buildFacade() {
   // hero panel parts, in the panel's part frame (origin at panel centre, x along width, y up, z out of the wall)
   parts.slab = box(W, H, D, heroMat);
   parts.slab.position.z = 0;
+  const slabEdge = new THREE.LineSegments(new THREE.EdgesGeometry(parts.slab.geometry), new THREE.LineBasicMaterial({color: INK, transparent: true, opacity: 0.35}));
+  parts.slab.add(slabEdge);
   hero.add(parts.slab);
 
   // J1: hinge at the right edge, a vertical pin with two knuckles
   const j1 = new THREE.Group();
-  const pin = cyl(0.014, H * 0.92, steel, 20);
+  const pin = cyl(0.009, H * 0.86, steel, 20);
   j1.add(pin);
   for (const sy of [-0.32, 0.32]) {
-    const k = cyl(0.026, 0.12, steel, 20);
+    const k = cyl(0.018, 0.09, steel, 20);
     k.position.y = sy;
     j1.add(k);
   }
@@ -83,12 +85,12 @@ export function buildFacade() {
 
   // S2: the slot bracket behind the centre, a plate with a lateral slot cut as two rails
   const s2 = new THREE.Group();
-  const plate = box(0.26, 0.11, 0.012, steel);
+  const plate = box(0.34, 0.16, 0.016, steel);
   s2.add(plate);
-  const slotTop = box(0.2, 0.012, 0.014, accent);
-  slotTop.position.set(0, 0.03, 0.002);
-  const slotBot = box(0.2, 0.012, 0.014, accent);
-  slotBot.position.set(0, -0.03, 0.002);
+  const slotTop = box(0.26, 0.014, 0.018, accent);
+  slotTop.position.set(0, 0.04, 0.002);
+  const slotBot = box(0.26, 0.014, 0.018, accent);
+  slotBot.position.set(0, -0.04, 0.002);
   s2.add(slotTop, slotBot);
   s2.position.set(0, 0, -D / 2 - 0.012);
   parts.S2 = s2;
@@ -96,10 +98,10 @@ export function buildFacade() {
 
   // P3: four bolts in a square pattern about the panel's vertical axis, the locking bolt lit
   const p3 = new THREE.Group();
-  const R = 0.075;
+  const R = 0.11;
   for (let i = 0; i < 4; i++) {
     const a = (i * Math.PI) / 2 + Math.PI / 4;
-    const b = cyl(0.011, 0.05, i === 0 ? accent : steel, 12);
+    const b = cyl(0.016, 0.07, i === 0 ? accent : steel, 12);
     b.rotation.x = Math.PI / 2;
     b.position.set(Math.cos(a) * R, Math.sin(a) * R, 0);
     p3.add(b);
@@ -137,7 +139,7 @@ export function buildFacade() {
   };
 
   // explode offsets along +z (out of the wall), metres, scaled by state.explode 0..1
-  const EXPLODE = {slab: 0.42, J1: 0.2, S2: 0.14, P3: 0.26};
+  const EXPLODE = {slab: 0.5, J1: 0.22, S2: 0.1, P3: 0.3};
   const home = {slab: parts.slab.position.clone(), J1: parts.J1.position.clone(), S2: parts.S2.position.clone(), P3: parts.P3.position.clone()};
 
   /**
